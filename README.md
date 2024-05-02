@@ -1,0 +1,1 @@
+# wppconnect-extension
