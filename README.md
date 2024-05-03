@@ -1,46 +1,85 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# WPPconnect Chrome Extension
 
-## Available Scripts
+This is an open-source Chrome Extension that allows you to send messages in bulk via WhatsApp™ Web. You need to have WhatsApp™ Web open in your browser while using this extension.
 
-In the project directory, you can run:
+## Installation
 
-### `npm start`
+For now you can download the `extension.zip` file from the [latest release](https://github.com/wppconnect-team/wppconnect-extension/releases/latest) and load it as an [unpacked extension in Chrome](#loading-an-unpacked-extension).
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Usage
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+1. Open WhatsApp™ Web in your Chrome browser.
+2. Click on the WPPconnect extension icon in the toolbar.
+3. Click on the **Options** button to configure the message and attachment you want to send.
+4. Paste the phone numbers list you want to send.
+5. Click on the **Send** button to start sending the messages.
 
-### `npm test`
+Note that this extension is intended for legitimate and ethical use cases only. Any misuse or abuse of the extension is not the responsibility of the developers.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Building from Source
 
-### `npm run build`
+If you prefer to build the extension from the source code, follow these steps:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Prerequisites
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- Ensure you have the latest Node.js and npm installed. You can follow the instructions to install them from [Node.js official website](https://nodejs.org/).
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Clone the Repository
 
-### `npm run eject`
+```bash
+git clone https://github.com/wppconnect-team/wppconnect-extension.git
+cd wppconnect
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Install Dependencies
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+npm install
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Build the Extension
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```bash
+npm run build
+```
 
-## Learn More
+This will compile the TypeScript and bundle the JavaScript files into the `dist` directory, ready for local development and testing.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Load the Extension in Chrome
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+1. Go to the Extensions page by entering `chrome://extensions` in a new tab.
+    - Alternatively, click on the Extensions menu puzzle button and select **Manage Extensions** at the bottom of the menu.
+    - Or, click the Chrome menu, hover over **More Tools**, then select **Extensions**.
+2. Enable Developer Mode by clicking the toggle switch next to **Developer mode**.
+3. Click the **Load unpacked** button and select the `dist` directory.
+
+Now, the WPPconnect Chrome Extension should be loaded in your Chrome browser, and you can start using it immediately.
+
+## Disclaimer
+
+This extension is not affiliated with or endorsed by WhatsApp™ or Facebook™. The use of this extension is at your own risk. The developers are not responsible for any damages, legal consequences, or other liabilities that may arise from the use of this extension.
+
+## Acknowledgments
+
+This project uses the following packages:
+
+- [@wppconnect/wa-js](https://github.com/wppconnect-team/wa-js) (Apache License 2.0)
+- [react](https://github.com/facebook/react) (MIT License)
+- [react-dom](https://github.com/facebook/react) (MIT License)
+- [@types](https://github.com/DefinitelyTyped/DefinitelyTyped) (MIT License)
+- [autoprefixer](https://github.com/postcss/autoprefixer) (MIT License)
+- [copy-webpack-plugin](https://github.com/webpack-contrib/copy-webpack-plugin) (MIT License)
+- [css-loader](https://github.com/webpack-contrib/css-loader) (MIT License)
+- [cssnano](https://github.com/cssnano/cssnano) (MIT License)
+- [postcss-loader](https://github.com/webpack-contrib/postcss-loader) (MIT License)
+- [rimraf](https://github.com/isaacs/rimraf) (ISC License)
+- [speed-measure-webpack-plugin](https://github.com/stephencookdev/speed-measure-webpack-plugin) (MIT License)
+- [style-loader](https://github.com/webpack-contrib/style-loader) (MIT License)
+- [tailwindcss](https://github.com/tailwindlabs/tailwindcss) (MIT License)
+- [ts-loader](https://github.com/TypeStrong/ts-loader) (MIT License)
+- [typescript](https://github.com/microsoft/TypeScript) (Apache License 2.0)
+- [webpack-cli](https://github.com/webpack/webpack-cli) (MIT License)
+- [webpack-merge](https://github.com/survivejs/webpack-merge) (MIT License)
+- [@playwright/test](https://github.com/microsoft/playwright) (Apache License 2.0)
+- [qrcode-terminal](https://github.com/gtanner/qrcode-terminal) (MIT License)

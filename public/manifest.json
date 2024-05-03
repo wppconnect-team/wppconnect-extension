@@ -1,24 +1,79 @@
 {
   "manifest_version": 3,
-  "name": "My Extension",
+  "name": "WPPconnect Extension",
   "version": "1.0.0",
-  "description": "A simple Chrome extension.",
+  "action": {
+    "default_icon": {
+      "16": "icons/wppconnect16.png",
+      "32": "icons/wppconnect32.png",
+      "48": "icons/wppconnect48.png",
+      "64": "icons/wppconnect64.png",
+      "128": "icons/wppconnect128.png",
+      "256": "icons/wppconnect256.png",
+      "512": "icons/wppconnect512.png",
+      "1024": "icons/wppconnect1024.png"
+    },
+    "default_popup": "popup.html",
+    "default_title": "WPPconnect"
+  },
+  "default_locale": "en",
+  "description": "__MSG_appDesc__",
   "icons": {
-    "16": "logo192.png",
-    "48": "logo192.png",
-    "128": "logo192.png"
+    "16": "icons/wppconnect16.png",
+    "32": "icons/wppconnect32.png",
+    "48": "icons/wppconnect48.png",
+    "64": "icons/wppconnect64.png",
+    "128": "icons/wppconnect128.png",
+    "256": "icons/wppconnect256.png",
+    "512": "icons/wppconnect512.png",
+    "1024": "icons/wppconnect1024.png"
   },
-  "background": {
-    "service_worker": "./static/js/background.js"
-  },
+  "author": "wppconnect@marcosvr.com",
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["./static/js/content.js"]
+      "js": [
+        "js/content_script.js"
+      ],
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "js": [
+        "js/wa-js.js"
+      ],
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "world": "MAIN"
     }
   ],
-  "action": {
-    "default_popup": "index.html"
+  "externally_connectable": {
+    "matches": ["https://web.whatsapp.com/*"]
   },
-  "permissions": ["storage", "tabs", "activeTab"]
+  "homepage_url": "https://github.com/wppconnect-team/wppconnect-extension",
+  "options_ui": {
+    "open_in_tab": false,
+    "page": "options.html"
+  },
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "short_name": "WPPconnect",
+  "storage": {
+    "managed_schema": "schema.json"
+  },
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "resources": [
+        "js/wa-js.js",
+        "js/wppconnect.js"
+      ]
+    }
+  ]
 }

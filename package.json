@@ -1,48 +1,45 @@
 {
-  "name": "wppconnect-extension",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.96",
-    "@types/react": "^18.3.1",
-    "@types/react-dom": "^18.3.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-scripts": "5.0.1",
-    "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4",
-    "webextension-polyfill": "^0.11.0"
-  },
+  "name": "wppconnect",
+  "version": "1.0.0",
+  "description": "WPPconnect Chrome Extension that allows you to send messages in bulk via WhatsApp™ Web",
+  "main": "index.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "watch": "webpack --config webpack/webpack.dev.js --watch --progress",
+    "dev": "tsc --noEmit && webpack --config webpack/webpack.dev.js",
+    "build": "tsc --noEmit && webpack --config webpack/webpack.prod.js",
+    "clean": "rimraf dist"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "author": "wppconnect-team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wppconnect-team/wppconnect-extension.git"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "dependencies": {
+    "@wppconnect/wa-js": "^3.2.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.267",
-    "@types/webextension-polyfill": "^0.10.7"
+    "@playwright/test": "^1.35.1",
+    "@tsconfig/recommended": "^1.0.6",
+    "@types/chrome": "^0.0.239",
+    "@types/node": "^20.12.8",
+    "@types/react": "^18.2.14",
+    "@types/react-dom": "^18.2.6",
+    "autoprefixer": "^10.4.14",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "cssnano": "^6.0.1",
+    "postcss-loader": "^7.3.3",
+    "qrcode-terminal": "^0.12.0",
+    "rimraf": "^5.0.1",
+    "speed-measure-webpack-plugin": "^1.5.0",
+    "style-loader": "^3.3.3",
+    "tailwindcss": "^3.3.2",
+    "ts-loader": "^9.4.4",
+    "typescript": "^5.1.5",
+    "webpack-cli": "^5.1.4",
+    "webpack-merge": "^5.9.0"
   }
 }

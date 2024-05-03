@@ -1,0 +1,25 @@
+name: Automatically merge dependabot pull requests
+
+on:
+  pull_request:
+    types:
+      - opened
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    steps:
+      - id: automerge
+        name: automerge
+        uses: "pascalgn/automerge-action@v0.16.3"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MERGE_FILTER_AUTHOR: dependabot[bot]
+          MERGE_LABELS: dependencies
+          MERGE_METHOD: rebase
+          MERGE_FORKS: false
+          MERGE_DELETE_BRANCH: true

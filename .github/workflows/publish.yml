@@ -1,0 +1,81 @@
+name: Publish to Chrome Web Store
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Update version number
+        run: |
+          # Determine the version change type based on commit message
+          if [[ "${{ github.event.head_commit.message }}" =~ "#major" ]]; then
+            npm version major --no-git-tag-version
+          elif [[ "${{ github.event.head_commit.message }}" =~ "#minor" ]]; then
+            npm version minor --no-git-tag-version
+          else
+            npm version patch --no-git-tag-version
+          fi
+
+          # Update manifest.json version
+          echo "VERSION=$(npm pkg get version | tr -d '"')" >> $GITHUB_ENV
+          sed -i "s/\"version\": \".*\"/\"version\": \"$(npm pkg get version | tr -d '"')\"/g" public/manifest.json
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "Bump version to ${{ env.VERSION }} [skip ci]" -a
+          git push
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+
+      - uses: actions/cache@v4
+        id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+
+      - if: ${{ steps.npm-cache.outputs.cache-hit != 'true' }}
+        name: List the state of node modules
+        continue-on-error: true
+        run: npm list
+
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Zip files
+        run: zip -r extension.zip dist/
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body: ${{ github.event.head_commit.message }}
+          files: extension.zip
+          name: Release ${{ env.VERSION }}
+          tag_name: ${{ env.VERSION }}
+    
+      - name: Publish to Chrome Web Store
+        uses: mnao305/chrome-extension-upload@v5.0.0
+        with:
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          extension-id: 'kcdlihaidnmkenhlnofkjfoachidbnif'
+          file-path: extension.zip
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}

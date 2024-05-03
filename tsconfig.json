@@ -1,26 +1,18 @@
 {
-  "compilerOptions": {
-    "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
+    "extends": "@tsconfig/recommended/tsconfig.json",
+    "compilerOptions": {
+        "baseUrl": "./src",
+        "jsx": "react-jsx",
+        "moduleResolution": "Node",
+        "noEmit": false,
+        "noFallthroughCasesInSwitch": true,
+        "outDir": "./dist/js",
+    },
+    "display": "WPPconnect",
+    "exclude": [
+        "node_modules"
     ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx"
-  },
-  "include": [
-    "src"
-  ]
+    "include": [
+        "./src"
+    ]
 }
