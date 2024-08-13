@@ -4,7 +4,7 @@ First off, thank you for considering contributing to the Wppconnect Chrome Exten
 
 ## Code of Conduct
 
-This project and everyone participating in it are governed by the [Wppconnect Chrome Extension Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [wppconnect@marcosvr.com](mailto:wppconnect@marcosvr.com).
+This project and everyone participating in it are governed by the [Wppconnect Chrome Extension Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to wppconnect.
 
 ## I don't want to read this whole thing I just have a question!!!
 

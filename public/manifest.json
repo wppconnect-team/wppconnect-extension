@@ -28,7 +28,7 @@
     "512": "icons/wppconnect512.png",
     "1024": "icons/wppconnect1024.png"
   },
-  "author": "wppconnect@marcosvr.com",
+  "author": "wppconnect-team",
   "content_scripts": [
     {
       "js": [
