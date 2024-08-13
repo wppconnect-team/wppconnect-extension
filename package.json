@@ -1,7 +1,7 @@
 {
   "name": "wppconnect",
   "version": "1.0.0",
-  "description": "WPPconnect Chrome Extension that allows you to send messages in bulk via WhatsApp™ Web",
+  "description": "Wppconnect Chrome Extension that allows you to send messages in bulk via WhatsApp™ Web",
   "main": "index.js",
   "scripts": {
     "watch": "webpack --config webpack/webpack.dev.js --watch --progress",
@@ -16,7 +16,7 @@
     "url": "git+https://github.com/wppconnect-team/wppconnect-extension.git"
   },
   "dependencies": {
-    "@wppconnect/wa-js": "^3.2.3",
+    "@wppconnect/wa-js": "^3.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

@@ -1,7 +1,7 @@
 import { Message } from "types/Message";
 
-const DATABASE_NAME = "WPPconnectMessagesDB";
-const MESSAGE_STORE_NAME = "WPPconnectMessagesStore";
+const DATABASE_NAME = "WppconnectMessagesDB";
+const MESSAGE_STORE_NAME = "WppconnectMessagesStore";
 
 export class AsyncStorageManager {
     private database: IDBDatabase | null = null;

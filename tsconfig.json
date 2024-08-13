@@ -8,7 +8,7 @@
         "noFallthroughCasesInSwitch": true,
         "outDir": "./dist/js",
     },
-    "display": "WPPconnect",
+    "display": "Wppconnect",
     "exclude": [
         "node_modules"
     ],

@@ -1,6 +1,6 @@
 {
     "appName": {
-        "message": "WPPconnect",
+        "message": "Wppconnect",
         "description": "Extension name"
     },
     "appDesc": {
@@ -178,7 +178,7 @@
         "description": "Placeholder of the message field of the popup"
     },
     "defaultMessage": {
-        "message": "Sent by WPPconnect",
+        "message": "Sent by Wppconnect",
         "description": "Default message"
     },
     "addButtonLabel": {

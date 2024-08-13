@@ -63,7 +63,7 @@ pipeline {
                     customHeaders: [
                         [name: 'Authorization', value: "Basic ${NTFY_TOKEN}"],
                         [name: 'X-Click', value: "${BUILD_URL}"],
-                        [name: 'X-Title', value: 'WPPconnect CI Failed'],
+                        [name: 'X-Title', value: 'Wppconnect CI Failed'],
                     ]
         }
 

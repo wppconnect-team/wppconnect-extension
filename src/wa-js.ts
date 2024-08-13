@@ -159,7 +159,7 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.QUEUE_STATUS, () => asyncQue
 storageManager.clearDatabase();
 
 WPP.webpack?.onInjected(() => {
-    console.log('WPPconnect: Loader injected!');
+    console.log('Wppconnect: Loader injected!');
 });
 
 WPP.webpack?.injectLoader();

@@ -1,6 +1,6 @@
 {
     "appName": {
-        "message": "WPPconnect",
+        "message": "Wppconnect",
         "description": "Nome da extensão"
     },
     "appDesc": {
@@ -178,7 +178,7 @@
         "description": "Placeholder do campo de mensagem do popup"
     },
     "defaultMessage": {
-        "message": "Enviado por WPPconnect",
+        "message": "Enviado por Wppconnect",
         "description": "Mensagem padrão"
     },
     "addButtonLabel": {

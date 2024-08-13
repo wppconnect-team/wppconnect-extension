@@ -1,13 +1,13 @@
 import ChromeMessageContentTypes from "types/ChromeMessageContentTypes";
 
 type MessageData<K extends keyof ChromeMessageContentTypes> = {
-  source: 'WPPconnect';
+  source: 'Wppconnect';
   type: K;
   payload: ChromeMessageContentTypes[K]["payload"];
 };
 
 type MessageDataResponse<K extends keyof ChromeMessageContentTypes> = {
-  source: 'WPPconnect';
+  source: 'Wppconnect';
   type: `${K}_RESPONSE`;
   payload: ChromeMessageContentTypes[K]["response"];
 };
@@ -26,9 +26,9 @@ export default class AsyncChromeMessageManager {
 
   private forwardMessagesFromWebpageToPopup() {
     window.addEventListener("message", (event) => {
-      if (event.source === window && event.origin === window.location.origin && event.data.source === 'WPPconnect') {
+      if (event.source === window && event.origin === window.location.origin && event.data.source === 'Wppconnect') {
         void chrome.runtime.sendMessage(event.data).catch((error) => {
-          console.error('WPPconnect.AsyncChromeMessageManager.forwardMessagesFromWebpageToPopup', error, event);
+          console.error('Wppconnect.AsyncChromeMessageManager.forwardMessagesFromWebpageToPopup', error, event);
           return;
         });
       }
@@ -37,7 +37,7 @@ export default class AsyncChromeMessageManager {
 
   private forwardResponsesFromPopupToWebpage() {
     chrome.runtime.onMessage.addListener((message) => {
-      if (message.source === 'WPPconnect') window.postMessage(message, window.location.origin);
+      if (message.source === 'Wppconnect') window.postMessage(message, window.location.origin);
     });
   }
 
@@ -50,18 +50,18 @@ export default class AsyncChromeMessageManager {
         this.addWebpageMessageHandler(type, handler);
       }
     } catch (error) {
-      console.error('WPPconnect.AsyncChromeMessageManager.addHandler', error);
+      console.error('Wppconnect.AsyncChromeMessageManager.addHandler', error);
     }
   }
 
   private addWebpageMessageHandler<K extends keyof ChromeMessageContentTypes>(type: K, handler: MessageHandler<K>) {
     window.addEventListener("message", async (event) => {
-      if (event.source === window && event.origin === window.location.origin && event.data.type === type && event.data.source === 'WPPconnect') {
+      if (event.source === window && event.origin === window.location.origin && event.data.type === type && event.data.source === 'Wppconnect') {
         try {
           const response = await handler(event.data.payload)
-          window.postMessage({ source: 'WPPconnect', type: `${type}_RESPONSE`, payload: response }, window.location.origin);
+          window.postMessage({ source: 'Wppconnect', type: `${type}_RESPONSE`, payload: response }, window.location.origin);
         } catch (error) {
-          console.error(`WPPconnect.AsyncChromeMessageManager.addWebpageMessageHandler ${type}_RESPONSE`, error);
+          console.error(`Wppconnect.AsyncChromeMessageManager.addWebpageMessageHandler ${type}_RESPONSE`, error);
         }
       }
     });
@@ -69,12 +69,12 @@ export default class AsyncChromeMessageManager {
 
   private addExtensionMessageHandler<K extends keyof ChromeMessageContentTypes>(type: K, handler: MessageHandler<K>) {
     chrome.runtime.onMessage.addListener(async (message) => {
-      if (message.source === 'WPPconnect' && message.type === type) {
+      if (message.source === 'Wppconnect' && message.type === type) {
         try {
           const response = await handler(message.payload);
-          void chrome.runtime.sendMessage({ source: 'WPPconnect', type: `${type}_RESPONSE`, payload: response });
+          void chrome.runtime.sendMessage({ source: 'Wppconnect', type: `${type}_RESPONSE`, payload: response });
         } catch (error) {
-          console.error(`WPPconnect.AsyncChromeMessageManager.addExtensionMessageHandler ${type}_RESPONSE`, error);
+          console.error(`Wppconnect.AsyncChromeMessageManager.addExtensionMessageHandler ${type}_RESPONSE`, error);
         }
       }
     });
@@ -84,12 +84,12 @@ export default class AsyncChromeMessageManager {
     type: K,
     payload: ChromeMessageContentTypes[K]["payload"]
   ): Promise<ChromeMessageContentTypes[K]["response"]> {
-    const message: MessageData<K> = {  source: 'WPPconnect', type, payload };
+    const message: MessageData<K> = {  source: 'Wppconnect', type, payload };
 
     return new Promise((resolve, reject) => {
       try {
         const listener = (response: MessageDataResponse<K>) => {
-          if (response.source === 'WPPconnect' && response.type === `${type}_RESPONSE`) {
+          if (response.source === 'Wppconnect' && response.type === `${type}_RESPONSE`) {
             chrome.runtime.onMessage.removeListener(listener);
             resolve(response.payload);
           }
@@ -102,7 +102,7 @@ export default class AsyncChromeMessageManager {
           this.sendExtensionMessage(message, listener);
         }
       } catch (error) {
-        console.error('WPPconnect.AsyncChromeMessageManager.sendMessage', error)
+        console.error('Wppconnect.AsyncChromeMessageManager.sendMessage', error)
         reject(error);
       }
     });
@@ -113,7 +113,7 @@ export default class AsyncChromeMessageManager {
   ) {
     window.postMessage(message, window.location.origin);
     const responseListener = (event: MessageEvent) => {
-      if (event.source === window && event.origin === window.location.origin && event.data.source === 'WPPconnect' && event.data.type === `${message.type}_RESPONSE`) {
+      if (event.source === window && event.origin === window.location.origin && event.data.source === 'Wppconnect' && event.data.type === `${message.type}_RESPONSE`) {
         listener(event.data);
         window.removeEventListener("message", responseListener);
       }
@@ -135,7 +135,7 @@ export default class AsyncChromeMessageManager {
       });
     } else if (this.source === "contentScript") {
       void chrome.runtime.sendMessage(message).catch((error) => {
-        console.error('WPPconnect.AsyncChromeMessageManager.sendExtensionMessage', error);
+        console.error('Wppconnect.AsyncChromeMessageManager.sendExtensionMessage', error);
       });
     }
   }

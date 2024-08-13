@@ -1,10 +1,10 @@
-# Contributing to WPPconnect Chrome Extension
+# Contributing to Wppconnect Chrome Extension
 
-First off, thank you for considering contributing to the WPPconnect Chrome Extension! It's people like you that make the open-source community such a great place to learn, inspire, and create. Any contributions you make will benefit everybody else and are greatly appreciated.
+First off, thank you for considering contributing to the Wppconnect Chrome Extension! It's people like you that make the open-source community such a great place to learn, inspire, and create. Any contributions you make will benefit everybody else and are greatly appreciated.
 
 ## Code of Conduct
 
-This project and everyone participating in it are governed by the [WPPconnect Chrome Extension Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [wppconnect@marcosvr.com](mailto:wppconnect@marcosvr.com).
+This project and everyone participating in it are governed by the [Wppconnect Chrome Extension Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [wppconnect@marcosvr.com](mailto:wppconnect@marcosvr.com).
 
 ## I don't want to read this whole thing I just have a question!!!
 
@@ -31,19 +31,19 @@ Please refer to the `README.md` file for instructions on setting up your develop
 
 ### Reporting Bugs
 
-This section guides you through submitting a bug report for the WPPconnect Chrome Extension. Following these guidelines helps maintainers and the community understand your report, reproduce the behavior, and find related reports.
+This section guides you through submitting a bug report for the Wppconnect Chrome Extension. Following these guidelines helps maintainers and the community understand your report, reproduce the behavior, and find related reports.
 
 **Before creating bug reports, please check [this list](https://github.com/wppconnect-team/wppconnect-extension/issues) as you might find out that you don't need to create one.** When you are creating a bug report, please include as many details as possible. Fill out [the required template](.github/ISSUE_TEMPLATE/bug_report.md), the information it asks for helps us resolve issues faster.
 
 ### Suggesting Enhancements
 
-This section guides you through submitting an enhancement suggestion for the WPPconnect Chrome Extension, including completely new features and minor improvements to existing functionality. Following these guidelines helps maintainers and the community understand your suggestion and find related suggestions.
+This section guides you through submitting an enhancement suggestion for the Wppconnect Chrome Extension, including completely new features and minor improvements to existing functionality. Following these guidelines helps maintainers and the community understand your suggestion and find related suggestions.
 
 Fill in [the template](.github/ISSUE_TEMPLATE/feature_request.md), including the steps that you imagine you would take if the feature you're requesting existed.
 
 ### Your First Code Contribution
 
-Unsure where to begin contributing to WPPconnect? You can start by looking through these `beginner` and `help-wanted` issues:
+Unsure where to begin contributing to Wppconnect? You can start by looking through these `beginner` and `help-wanted` issues:
 
 - [Beginner issues](https://github.com/wppconnect-team/wppconnect-extension/issues?q=is%3Aissue+is%3Aopen+label%3Abeginner) - issues which should only require a few lines of code, and a test or two.
 - [Help wanted issues](https://github.com/wppconnect-team/wppconnect-extension/issues?q=is%3Aissue+is%3Aopen+label%3Ahelp-wanted) - issues which should be a bit more involved than `beginner` issues.
@@ -52,10 +52,10 @@ Unsure where to begin contributing to WPPconnect? You can start by looking throu
 
 The process described here has several goals:
 
-- Maintain the quality of WPPconnect
+- Maintain the quality of Wppconnect
 - Fix problems that are important to users
-- Engage the community in working toward the best possible WPPconnect Chrome Extension
-- Enable a sustainable system for WPPconnect's maintainers to review contributions
+- Engage the community in working toward the best possible Wppconnect Chrome Extension
+- Enable a sustainable system for Wppconnect's maintainers to review contributions
 
 Please follow these steps to have your contribution considered by the maintainers:
 
@@ -85,7 +85,7 @@ Use BEM (Block Element Modifier) notation which is explained in the [css-tricks 
 - Don't include issue numbers in the PR title
 - Do include concise and specific commit messages for easier reviewing
 
-Thank you for reading through the contributing guide, and welcome to the WPPconnect Chrome Extension project!
+Thank you for reading through the contributing guide, and welcome to the Wppconnect Chrome Extension project!
 
 ## Acknowledgments
 

@@ -8,6 +8,7 @@ tmp/
 /wa-js-test-*/
 *.png
 .DS_Store
+dist.zip
 
 # lock files
 package-lock.json

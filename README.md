@@ -1,5 +1,5 @@
 
-# WPPconnect Chrome Extension
+# Wppconnect Chrome Extension
 
 This is an open-source Chrome Extension that allows you to send messages in bulk via WhatsApp™ Web. You need to have WhatsApp™ Web open in your browser while using this extension.
 
@@ -10,7 +10,7 @@ For now you can download the `extension.zip` file from the [latest release](http
 ## Usage
 
 1. Open WhatsApp™ Web in your Chrome browser.
-2. Click on the WPPconnect extension icon in the toolbar.
+2. Click on the Wppconnect extension icon in the toolbar.
 3. Click on the **Options** button to configure the message and attachment you want to send.
 4. Paste the phone numbers list you want to send.
 5. Click on the **Send** button to start sending the messages.
@@ -54,7 +54,7 @@ This will compile the TypeScript and bundle the JavaScript files into the `dist`
 2. Enable Developer Mode by clicking the toggle switch next to **Developer mode**.
 3. Click the **Load unpacked** button and select the `dist` directory.
 
-Now, the WPPconnect Chrome Extension should be loaded in your Chrome browser, and you can start using it immediately.
+Now, the Wppconnect Chrome Extension should be loaded in your Chrome browser, and you can start using it immediately.
 
 ## Disclaimer
 

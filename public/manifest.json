@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "WPPconnect Extension",
-  "version": "1.0.0",
+  "name": "Wppconnect Extension",
+  "version": "1.0.6",
   "action": {
     "default_icon": {
       "16": "icons/wppconnect16.png",
@@ -14,7 +14,7 @@
       "1024": "icons/wppconnect1024.png"
     },
     "default_popup": "popup.html",
-    "default_title": "WPPconnect"
+    "default_title": "Wppconnect"
   },
   "default_locale": "en",
   "description": "__MSG_appDesc__",
@@ -61,7 +61,7 @@
     "activeTab",
     "storage"
   ],
-  "short_name": "WPPconnect",
+  "short_name": "Wppconnect",
   "storage": {
     "managed_schema": "schema.json"
   },
