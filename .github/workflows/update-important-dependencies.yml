@@ -1,0 +1,73 @@
+name: Update important dependencies
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Update range for npm-check-updates"
+        required: true
+        default: "minor"
+        type: choice
+        options:
+          - patch
+          - minor
+          - latest
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: Refresh important npm packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Update package ranges
+        run: |
+          npx npm-check-updates \
+            --upgrade \
+            --target "${{ inputs.target || 'minor' }}" \
+            --filter "@wppconnect/wa-js,react,react-dom,@types/react,@types/react-dom,typescript,@playwright/test,webpack-cli,webpack-merge,ts-loader,copy-webpack-plugin,tailwindcss,postcss-loader,autoprefixer,css-loader,cssnano,style-loader,rimraf"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Validate locale JSON
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('public/_locales/en/messages.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('public/_locales/pt_BR/messages.json','utf8'))"
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Remove ignored lockfile
+        run: rm -f package-lock.json
+
+      - name: Create update pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update important dependencies"
+          title: "chore: update important dependencies"
+          body: |
+            ## Summary
+            - Updates important runtime, React, build, and test dependencies.
+            - Runs install, locale JSON validation, and production build before opening the PR.
+
+            ## Validation
+            - npm install
+            - locale JSON parse check
+            - npm run build
+          branch: chore/update-important-dependencies
+          delete-branch: true
+          labels: dependencies

@@ -1,0 +1,42 @@
+name: Validate important updates
+
+on:
+  pull_request:
+    paths:
+      - ".github/dependabot.yml"
+      - ".github/workflows/**"
+      - "package.json"
+      - "public/manifest.json"
+      - "src/**"
+      - "webpack/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Validate locale JSON
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('public/_locales/en/messages.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('public/_locales/pt_BR/messages.json','utf8'))"
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
