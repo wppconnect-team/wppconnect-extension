@@ -1,10 +1,11 @@
-import { ControlInput } from '../atoms/ControlFactory';
 import React, { ChangeEvent, Component, createRef } from 'react';
+import { ControlInput } from '../atoms/ControlFactory';
 
 interface CountryCode {
     value: number;
     label: string;
 }
+
 const language = chrome.i18n.getUILanguage().substring(0, 2);
 let countryCodes: CountryCode[] = [];
 try {
@@ -21,9 +22,11 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
     options: CountryCode[],
     filteredOptions: CountryCode[]
 }> {
-    constructor(props: { options: CountryCode[] }) {
+    constructor(props: { options?: CountryCode[] }) {
         super(props);
         this.defaultLabelSelectCountryCode = chrome.i18n.getMessage('defaultLabelSelectCountryCode');
+        this.searchPlaceholder = chrome.i18n.getMessage('countryCodeSearchPlaceholder') || 'Search';
+        this.emptyLabel = chrome.i18n.getMessage('countryCodeEmptyLabel') || 'No prefix found';
         const defaultOptions = [{ value: 0, label: this.defaultLabelSelectCountryCode }, ...countryCodes];
         const { options = defaultOptions } = props;
         this.state = {
@@ -37,6 +40,8 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
 
     wrapperRef = createRef<HTMLDivElement>();
     defaultLabelSelectCountryCode: string;
+    searchPlaceholder: string;
+    emptyLabel: string;
 
     toggleOpen = () => {
         this.setState(prevState => ({
@@ -73,7 +78,7 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
             });
     }
 
-    componentDidUpdate(prevProps: Readonly<{ options: CountryCode[] }>, prevState: Readonly<{
+    componentDidUpdate(prevProps: Readonly<{ options?: CountryCode[] }>, prevState: Readonly<{
         isOpen: boolean,
         searchValue: string,
         selectedValue: CountryCode | undefined,
@@ -91,82 +96,70 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
 
     render() {
         const { isOpen, searchValue, selectedValue, filteredOptions } = this.state;
-        const { options } = this.props;
 
         return (
             <div className="relative select-none" ref={this.wrapperRef}>
-                <div
+                <button
                     className={[
                         'w-full',
-                        'flex-auto',
-                        'bg-slate-100',
-                        'dark:bg-slate-900',
-                        'border',
-                        'border-slate-400',
-                        'dark:border-slate-600',
-                        'p-2',
+                        'min-h-[2.75rem]',
                         'rounded-lg',
-                        'transition-shadow',
-                        'ease-in-out',
-                        'duration-150',
-                        'focus:shadow-equal',
-                        'focus:shadow-blue-800',
-                        'dark:focus:shadow-blue-200',
+                        'border',
+                        'border-slate-300',
+                        'bg-white',
+                        'px-3',
+                        'py-2',
+                        'text-left',
+                        'text-sm',
+                        'text-slate-900',
+                        'shadow-sm',
+                        'transition',
+                        'hover:border-slate-400',
                         'focus:outline-none',
-                        'cursor-pointer',
-                        'flex',
-                        'justify-between',
-                        'items-center'
+                        'focus:ring-2',
+                        'focus:ring-emerald-500',
+                        'dark:border-slate-700',
+                        'dark:bg-slate-900',
+                        'dark:text-slate-100',
                     ].join(' ')}
+                    type="button"
                     onClick={this.toggleOpen}
+                    aria-expanded={isOpen}
                 >
-                    <span>{selectedValue ? selectedValue.label : 'Selecione um Prefixo'}</span>
-                    <svg
-                        className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''
-                            }`}
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            d="M4.86133 6.7539L8.00065 9.89322L11.1399 6.7539"
-                            stroke="#374151"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    </svg>
-                </div>
-                {
-                    isOpen && (
-                        <div className="absolute w-full mt-1 z-10 border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 rounded-md shadow-lg">
+                    <span className="flex items-center justify-between gap-3">
+                        <span className="truncate">{selectedValue ? selectedValue.label : this.defaultLabelSelectCountryCode}</span>
+                        <span className={`text-xs text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}>v</span>
+                    </span>
+                </button>
+                {isOpen && (
+                    <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950">
+                        <div className="border-b border-slate-200 p-2 dark:border-slate-800">
                             <ControlInput
-                                className="p-2 w-full"
                                 type="text"
-                                placeholder="Procurar"
+                                placeholder={this.searchPlaceholder}
                                 value={searchValue}
                                 onChange={this.handleSearch}
                             />
-                            <ul>
-                                {filteredOptions.length ? (
-                                    filteredOptions.map((option, index) => (
-                                        <li
-                                            key={index}
-                                            className={`p-2 cursor-pointer hover:bg-blue-400 dark:hover:bg-blue-600${selectedValue === option ? ' bg-blue-200 dark:bg-blue-800' : ''}`}
+                        </div>
+                        <ul className="max-h-64 overflow-auto py-1">
+                            {filteredOptions.length ? (
+                                filteredOptions.map((option) => (
+                                    <li key={option.value}>
+                                        <button
+                                            className={`w-full px-3 py-2 text-left text-sm transition hover:bg-emerald-50 dark:hover:bg-emerald-950 ${selectedValue === option ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-50' : 'text-slate-700 dark:text-slate-200'}`}
+                                            type="button"
                                             onClick={() => this.handleSelect(option)}
                                         >
                                             {option.label}
-                                        </li>
-                                    ))
-                                ) : (
-                                    <li className="p-2 cursor-default text-slate-400 dark:text-slate-600">Nenhum prefixo encontrado</li>
-                                )}
-                            </ul>
-                        </div>
-                    )
-                }
+                                        </button>
+                                    </li>
+                                ))
+                            ) : (
+                                <li className="px-3 py-3 text-sm text-slate-500">{this.emptyLabel}</li>
+                            )}
+                        </ul>
+                    </div>
+                )}
             </div >
         );
     }
