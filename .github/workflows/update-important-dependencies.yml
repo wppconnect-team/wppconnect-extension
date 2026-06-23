@@ -54,7 +54,7 @@ jobs:
         run: rm -f package-lock.json
 
       - name: Create update pull request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: update important dependencies"
