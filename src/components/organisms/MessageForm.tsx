@@ -25,6 +25,8 @@ export default class MessageForm extends Component<{ className?: string }, { mes
     footerSuggestionMessageForm = chrome.i18n.getMessage('footerSuggestionMessageForm');
     delayLabelMessageForm = chrome.i18n.getMessage('delayLabelMessageForm');
     countryCodePrefixMessageForm = chrome.i18n.getMessage('countryCodePrefixMessageForm');
+    messageDraftLabel = chrome.i18n.getMessage('messageDraftLabel') || 'Message';
+    selectedAttachmentLabel = chrome.i18n.getMessage('selectedAttachmentLabel') || 'Selected file';
 
     componentDidMount() {
         chrome.storage.local.get(
@@ -79,7 +81,7 @@ export default class MessageForm extends Component<{ className?: string }, { mes
     }
 
     handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files) {
+        if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.onload = ev => {
@@ -115,31 +117,25 @@ export default class MessageForm extends Component<{ className?: string }, { mes
                 <p className="mb-1">{this.footerLabelMessageForm}</p>
                 <p>{this.footerSuggestionMessageForm}</p>
             </>}>
-            <div className="mt-4 mx-4 flex flex-row gap-4">
-                <div className="flex flex-col basis-1/2">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+                <label className="flex min-h-[14rem] flex-col gap-2">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{this.messageDraftLabel}</span>
                     <ControlTextArea
+                        className="min-h-[12rem] resize-y"
                         value={message}
                         onChange={this.handleMessageChange}
                     />
-                </div>
-                <div className={['px-4',
-                    'py-6',
-                    'flex',
-                    'flex-col',
-                    'flex-auto',
-                    'basis-1/2',
-                    'border-2',
-                    'border-dashed',
-                    'border-slate-400',
-                    'dark:border-slate-600',
-                    'rounded-lg'].join(' ')}>
-                    <label htmlFor="attachment" className="mb-2 text-center cursor-pointer">
-                        {attachment?.name ? attachment.name : <>
-                            <p className="mb-2 text-2xl">🖼</p>
-                            <p className="text-sm text-slate-800 dark:text-slate-200">
-                                {this.attachmentLabelMessageForm}
-                            </p>
-                        </>}
+                </label>
+                <div className="flex flex-col gap-3">
+                    <label
+                        htmlFor="attachment"
+                        className="flex min-h-[12rem] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center transition hover:border-emerald-400 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-600 dark:hover:bg-emerald-950"
+                    >
+                        <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg font-bold text-emerald-700 shadow-sm dark:bg-slate-950 dark:text-emerald-300">+</span>
+                        <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                            {attachment?.name ? this.selectedAttachmentLabel : this.attachmentLabelMessageForm}
+                        </span>
+                        {attachment?.name && <span className="mt-1 max-w-full truncate text-xs text-slate-500">{attachment.name}</span>}
                     </label>
                     <input
                         id="attachment"
@@ -152,48 +148,33 @@ export default class MessageForm extends Component<{ className?: string }, { mes
                     {attachment != null &&
                         <Button
                             variant="danger"
+                            type="button"
                             onClick={this.handleFileClear}
                         >{this.cleanButtonLabel}</Button>}
                 </div>
             </div>
-            <div className="mx-4 flex items-center">
-                <label htmlFor="delay">{this.delayLabelMessageForm} (<span className="font-mono">{this.state.delay.toFixed(1)}s</span>):</label>
-                <input
-                    type="range"
-                    id="delay"
-                    name="delay"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={this.state.delay}
-                    onChange={(e) => this.setState({ delay: +e.target.value })}
-                    className={['w-full',
-                        'h-1.5',
-                        'bg-slate-100',
-                        'dark:bg-slate-900',
-                        'border',
-                        'border-slate-400',
-                        'dark:border-slate-600',
-                        'accent-slate-600',
-                        'dark:accent-slate-400',
-                        'appearance-none',
-                        'outline-none',
-                        'rounded-full',
-                        'cursor-pointer',
-                        'transition-shadow',
-                        'ease-in-out',
-                        'duration-150',
-                        'hover:bg-blue-100',
-                        'dark:hover:bg-blue-900',
-                        'focus:shadow-equal',
-                        'focus:shadow-blue-800',
-                        'dark:focus:shadow-blue-200',
-                        'focus:outline-none'].join(' ')}
-                />
-            </div>
-            <div className="mb-4 mx-4 flex flex-col">
-            <label className="mb-2">{this.countryCodePrefixMessageForm}</label>
-            <SelectCountryCode />
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+                <label className="flex flex-col gap-2">
+                    <span className="flex items-center justify-between gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <span>{this.delayLabelMessageForm}</span>
+                        <span className="rounded-full bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-100">{this.state.delay.toFixed(1)}s</span>
+                    </span>
+                    <input
+                        type="range"
+                        id="delay"
+                        name="delay"
+                        min="0"
+                        max="10"
+                        step="0.1"
+                        value={this.state.delay}
+                        onChange={(e) => this.setState({ delay: +e.target.value })}
+                        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-emerald-600 outline-none dark:bg-slate-800"
+                    />
+                </label>
+                <label className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{this.countryCodePrefixMessageForm}</span>
+                    <SelectCountryCode />
+                </label>
             </div>
         </Box>;
     }

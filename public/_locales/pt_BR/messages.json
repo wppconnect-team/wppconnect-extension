@@ -208,5 +208,85 @@
     "optionsButtonLabel": {
         "message": "Opções",
         "description": "Label do botão de opções"
+    },
+    "contactsLabel": {
+        "message": "Contatos",
+        "description": "Label do campo de contatos do popup"
+    },
+    "uniqueContactsLabel": {
+        "message": "Únicos",
+        "description": "Label da métrica de contatos únicos"
+    },
+    "totalContactsLabel": {
+        "message": "Total",
+        "description": "Label da métrica de total de contatos"
+    },
+    "readyToSendLabel": {
+        "message": "Pronto para enviar",
+        "description": "Label de estado pronto"
+    },
+    "reviewContactsLabel": {
+        "message": "Revisar contatos",
+        "description": "Título do formulário do popup"
+    },
+    "queueFinishedLabel": {
+        "message": "Fila finalizada",
+        "description": "Título do popup de fila concluída"
+    },
+    "optionsPageTitle": {
+        "message": "Configurações do Wppconnect",
+        "description": "Título da página de opções"
+    },
+    "optionsPageSubtitle": {
+        "message": "Prepare a mensagem, os controles de envio e os logs.",
+        "description": "Subtítulo da página de opções"
+    },
+    "messageDraftLabel": {
+        "message": "Mensagem",
+        "description": "Label do campo de mensagem"
+    },
+    "selectedAttachmentLabel": {
+        "message": "Arquivo selecionado",
+        "description": "Label do anexo selecionado"
+    },
+    "countryCodeSearchPlaceholder": {
+        "message": "Buscar prefixo",
+        "description": "Placeholder da busca de prefixo"
+    },
+    "countryCodeEmptyLabel": {
+        "message": "Nenhum prefixo encontrado",
+        "description": "Estado vazio da busca de prefixo"
+    },
+    "emptyButtonsLabel": {
+        "message": "Nenhum botão configurado ainda.",
+        "description": "Estado vazio de botões"
+    },
+    "buttonLimitLabel": {
+        "message": "Até 3 botões podem ser enviados com cada mensagem.",
+        "description": "Texto auxiliar do limite de botões"
+    },
+    "deleteButtonLabel": {
+        "message": "Excluir",
+        "description": "Label do botão de excluir"
+    },
+    "deleteButtonConfirmLabel": {
+        "message": "Excluir este botão?",
+        "description": "Confirmação de exclusão de botão"
+    },
+    "dragButtonLabel": {
+        "message": "Arraste para reordenar",
+        "description": "Label do controle de arrastar"
+    },
+    "emptyLogsLabel": {
+        "message": "Nenhum log de envio ainda.",
+        "description": "Estado vazio dos logs"
+    },
+    "yesLabel": {
+        "message": "Sim",
+        "description": "Label genérico de sim"
+    },
+    "noLabel": {
+        "message": "Não",
+        "description": "Label genérico de não"
     }
 }

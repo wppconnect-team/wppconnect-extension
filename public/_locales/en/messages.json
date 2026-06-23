@@ -208,5 +208,85 @@
     "optionsButtonLabel": {
         "message": "Options",
         "description": "Label of the options button"
+    },
+    "contactsLabel": {
+        "message": "Contacts",
+        "description": "Label for the popup contacts field"
+    },
+    "uniqueContactsLabel": {
+        "message": "Unique",
+        "description": "Label for unique contacts metric"
+    },
+    "totalContactsLabel": {
+        "message": "Total",
+        "description": "Label for total contacts metric"
+    },
+    "readyToSendLabel": {
+        "message": "Ready to send",
+        "description": "Ready state label"
+    },
+    "reviewContactsLabel": {
+        "message": "Review contacts",
+        "description": "Popup form title"
+    },
+    "queueFinishedLabel": {
+        "message": "Queue finished",
+        "description": "Popup completed queue title"
+    },
+    "optionsPageTitle": {
+        "message": "Wppconnect settings",
+        "description": "Options page title"
+    },
+    "optionsPageSubtitle": {
+        "message": "Prepare the message, delivery controls and send logs.",
+        "description": "Options page subtitle"
+    },
+    "messageDraftLabel": {
+        "message": "Message",
+        "description": "Message textarea label"
+    },
+    "selectedAttachmentLabel": {
+        "message": "Selected file",
+        "description": "Selected attachment label"
+    },
+    "countryCodeSearchPlaceholder": {
+        "message": "Search prefix",
+        "description": "Country prefix search placeholder"
+    },
+    "countryCodeEmptyLabel": {
+        "message": "No prefix found",
+        "description": "Country prefix empty state"
+    },
+    "emptyButtonsLabel": {
+        "message": "No buttons configured yet.",
+        "description": "Buttons empty state"
+    },
+    "buttonLimitLabel": {
+        "message": "Up to 3 buttons can be sent with each message.",
+        "description": "Buttons limit helper text"
+    },
+    "deleteButtonLabel": {
+        "message": "Delete",
+        "description": "Delete button label"
+    },
+    "deleteButtonConfirmLabel": {
+        "message": "Delete this button?",
+        "description": "Button delete confirmation"
+    },
+    "dragButtonLabel": {
+        "message": "Drag to reorder",
+        "description": "Drag handle label"
+    },
+    "emptyLogsLabel": {
+        "message": "No send logs yet.",
+        "description": "Logs empty state"
+    },
+    "yesLabel": {
+        "message": "Yes",
+        "description": "Generic yes label"
+    },
+    "noLabel": {
+        "message": "No",
+        "description": "Generic no label"
     }
 }

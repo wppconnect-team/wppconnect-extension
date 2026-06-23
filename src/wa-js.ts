@@ -5,9 +5,19 @@ import storageManager, { AsyncStorageManager } from './utils/AsyncStorageManager
 import { ChromeMessageTypes } from './types/ChromeMessageTypes';
 import WPP from '@wppconnect/wa-js';
 
+type WPPWithWebpack = typeof WPP & {
+    webpack?: {
+        onReady(callback: () => void): void;
+        onInjected(callback: () => void): void;
+        injectLoader(): void;
+    }
+};
+
+const WPPRuntime = WPP as WPPWithWebpack;
+
 declare global {
     interface Window {
-        WPP: typeof WPP;
+        WPP: WPPWithWebpack;
     }
 }
 
@@ -143,7 +153,7 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.SEND_MESSAGE, async (message
         return addToQueue(message);
     } else {
         return new Promise((resolve, reject) => {
-            window.WPP.webpack.onReady(async () => {
+            window.WPP.webpack!.onReady(async () => {
                 try {
                     resolve(await addToQueue(message));
                 } catch (error) {
@@ -158,8 +168,8 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.QUEUE_STATUS, () => asyncQue
 
 storageManager.clearDatabase();
 
-WPP.webpack?.onInjected(() => {
+WPPRuntime.webpack?.onInjected(() => {
     console.log('Wppconnect: Loader injected!');
 });
 
-WPP.webpack?.injectLoader();
+WPPRuntime.webpack?.injectLoader();

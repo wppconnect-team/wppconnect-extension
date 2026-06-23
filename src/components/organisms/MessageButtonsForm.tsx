@@ -3,7 +3,9 @@ import Button from '../atoms/Button';
 import { ControlInput, ControlSelect } from '../atoms/ControlFactory';
 import Box from '../molecules/Box';
 
-export default class MessageButtonsForm extends Component<{ className?: string }, { buttons: { id: number, type: string, value: string, text: string }[], draggedIndex: number | null, dropIndex: number | null }>{
+type ButtonRow = { id: number, type: string, value: string, text: string };
+
+export default class MessageButtonsForm extends Component<{ className?: string }, { buttons: ButtonRow[], draggedIndex: number | null, dropIndex: number | null }>{
     constructor(props: { className?: string }) {
         super(props);
         this.state = {
@@ -26,6 +28,11 @@ export default class MessageButtonsForm extends Component<{ className?: string }
     urlTypeMessageButtonsForm = chrome.i18n.getMessage('urlTypeMessageButtonsForm');
     phoneNumberTypeMessageButtonsForm = chrome.i18n.getMessage('phoneNumberTypeMessageButtonsForm');
     idTypeMessageButtonsForm = chrome.i18n.getMessage('idTypeMessageButtonsForm');
+    emptyButtonsLabel = chrome.i18n.getMessage('emptyButtonsLabel') || 'No buttons configured';
+    buttonLimitLabel = chrome.i18n.getMessage('buttonLimitLabel') || 'Up to 3 buttons';
+    deleteButtonLabel = chrome.i18n.getMessage('deleteButtonLabel') || 'Delete';
+    deleteButtonConfirmLabel = chrome.i18n.getMessage('deleteButtonConfirmLabel') || 'Delete this button?';
+    dragButtonLabel = chrome.i18n.getMessage('dragButtonLabel') || 'Drag';
 
     componentDidMount() {
         chrome.storage.local.get({ buttons: [] }, data => this.setState({
@@ -34,7 +41,7 @@ export default class MessageButtonsForm extends Component<{ className?: string }
                     (prop) => !['text'].includes(prop)
                 );
                 return {
-                    id: type === 'id' ? button[type] : Math.floor(Math.random() * 1000),
+                    id: type === 'id' ? +button[type] || Math.floor(Math.random() * 1000) : Math.floor(Math.random() * 1000),
                     type: type,
                     value: button[type] || '',
                     text: button.text
@@ -43,29 +50,24 @@ export default class MessageButtonsForm extends Component<{ className?: string }
         }));
     }
 
-    compareArrays = (arr1: { id: number, type: string, value: string, text: string }[], arr2: { id: number, type: string, value: string, text: string }[]) => {
-        // Check if arrays have different lengths
+    compareArrays = (arr1: ButtonRow[], arr2: ButtonRow[]) => {
         if (arr1.length !== arr2.length) {
             return false;
         }
-        // Check if each object in arr1 has a corresponding object in arr2
         for (let i = 0; i < arr1.length; i++) {
             let obj1 = arr1[i];
             let obj2 = arr2[i];
             if (!obj2) {
-                // If obj2 is undefined, there is no matching object in arr2
                 return false;
             }
-            // Check if properties of obj1 and obj2 are the same
             if (obj1.id !== obj2.id || obj1.type !== obj2.type || obj1.value !== obj2.value || obj1.text !== obj2.text) {
                 return false;
             }
         }
-        // If we reach this point, the arrays are equal
         return true;
     }
 
-    componentDidUpdate(prevProps: Readonly<{ className?: string }>, prevState: Readonly<{ buttons: { id: number, type: string, value: string, text: string }[]; }>, snapshot?: any) {
+    componentDidUpdate(prevProps: Readonly<{ className?: string }>, prevState: Readonly<{ buttons: ButtonRow[]; }>, snapshot?: any) {
         const { buttons } = this.state;
         if (!this.compareArrays(prevState.buttons, buttons)) {
             chrome.storage.local.set({
@@ -77,18 +79,18 @@ export default class MessageButtonsForm extends Component<{ className?: string }
         }
     }
 
-    handleDrag = (event: DragEvent<HTMLTableRowElement>, index: number) => {
+    handleDrag = (event: DragEvent<HTMLDivElement>, index: number) => {
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', `${index}`);
         this.setState({ draggedIndex: index });
     }
 
-    handleDragOver = (event: DragEvent<HTMLTableRowElement>, index: number) => {
+    handleDragOver = (event: DragEvent<HTMLDivElement>, index: number) => {
         event.preventDefault();
         this.setState({ dropIndex: index });
     }
 
-    handleDrop = (event: DragEvent<HTMLTableRowElement>, index: number) => {
+    handleDrop = (event: DragEvent<HTMLDivElement>, index: number) => {
         event.preventDefault();
         const sourceIndex = event.dataTransfer.getData('text');
         const buttons = [...this.state.buttons];
@@ -98,9 +100,8 @@ export default class MessageButtonsForm extends Component<{ className?: string }
     }
 
     handleTypeChange = (event: ChangeEvent<HTMLSelectElement>, id: number) => {
-        const buttons = [...this.state.buttons];
         this.setState({
-            buttons: buttons.map(button => {
+            buttons: this.state.buttons.map(button => {
                 if (button.id !== id) return button;
                 const type = event.target.value;
                 let value = button.value || '';
@@ -120,9 +121,8 @@ export default class MessageButtonsForm extends Component<{ className?: string }
     }
 
     handleValueChange = (event: ChangeEvent<HTMLInputElement>, id: number) => {
-        const buttons = [...this.state.buttons];
         this.setState({
-            buttons: buttons.map(button => {
+            buttons: this.state.buttons.map(button => {
                 if (button.id !== id) return button;
                 let value = event.target.value;
                 if (button.type === 'phoneNumber') {
@@ -141,9 +141,8 @@ export default class MessageButtonsForm extends Component<{ className?: string }
     }
 
     handleTextChange = (event: ChangeEvent<HTMLInputElement>, id: number) => {
-        const buttons = [...this.state.buttons];
         this.setState({
-            buttons: buttons.map(button => {
+            buttons: this.state.buttons.map(button => {
                 if (button.id !== id) return button;
                 return {
                     id: button.id || 0,
@@ -156,13 +155,13 @@ export default class MessageButtonsForm extends Component<{ className?: string }
     }
 
     handleDeleteButton = (id: number) => {
-        const buttons = [...this.state.buttons];
-        this.setState({ buttons: buttons.filter(button => button.id !== id) });
+        if (!window.confirm(this.deleteButtonConfirmLabel)) return;
+        this.setState({ buttons: this.state.buttons.filter(button => button.id !== id) });
     }
 
     handleAddButton = () => {
         const buttons = [...this.state.buttons, {
-            id: Math.floor(Math.random() * 1000),
+            id: Math.floor(Math.random() * 1000000),
             type: 'url',
             value: '',
             text: ''
@@ -176,73 +175,89 @@ export default class MessageButtonsForm extends Component<{ className?: string }
         return <Box
             className={this.props.className}
             title={this.messageButtonsFormTitle}
-            headerButtons={buttons.length < 3 && <Button variant="light" onClick={this.handleAddButton}>{this.addButtonLabel}</Button>}
+            headerButtons={<div className="flex items-center gap-3">
+                <span className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300 sm:inline-flex">{buttons.length}/3</span>
+                <Button variant="secondary" type="button" disabled={buttons.length >= 3} onClick={this.handleAddButton} icon="+">{this.addButtonLabel}</Button>
+            </div>}
             footer={<>
-                <p className="text-red-600 dark:text-red-400 font-bold mb-1">{this.importantNoteMessageButtonsForm}</p>
+                <p className="mb-2 font-semibold text-amber-700 dark:text-amber-300">{this.importantNoteMessageButtonsForm}</p>
                 <p>{this.listTitleNoteMessageButtonsForm}</p>
-                <ul className="list-disc ml-8">
+                <ul className="mt-2 list-disc space-y-1 pl-5">
                     <li dangerouslySetInnerHTML={{ __html: this.firstListItemNoteMessageButtonsForm }} />
                     <li dangerouslySetInnerHTML={{ __html: this.secondListItemNoteMessageButtonsForm }} />
                     <li dangerouslySetInnerHTML={{ __html: this.thirdListItemNoteMessageButtonsForm }} />
                 </ul>
             </>}>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                <span>{this.buttonLimitLabel}</span>
+                <span className="font-mono">{buttons.length}/3</span>
+            </div>
+            {buttons.length === 0 && <div className="rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                {this.emptyButtonsLabel}
+            </div>}
             {buttons.length > 0 &&
-                <table className="mx-4 table-auto">
-                    <thead>
-                        <tr className="text-left font-bold">
-                            <th className="px-4 py-2"></th>
-                            <th className="px-4 py-2 text-center">{this.typeLabelMessageButtonsForm}</th>
-                            <th className="px-4 py-2 text-center">{this.valueLabelMessageButtonsForm}</th>
-                            <th className="px-4 py-2 text-center">{this.textLabelMessageButtonsForm}</th>
-                            <th className="px-4 py-2 text-center"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {buttons.map((button, index) => (
-                            <tr
-                                key={button.id}
-                                draggable
-                                onDragStart={event => this.handleDrag(event, index)}
-                                onDragOver={event => this.handleDragOver(event, index)}
-                                onDrop={event => this.handleDrop(event, index)}
-                                className={`${index === draggedIndex ? 'bg-blue-100 dark:bg-blue-900' : ''} ${index === dropIndex ? 'border-dashed border-2' : 'border'}`}
+                <div className="space-y-3">
+                    {buttons.map((button, index) => (
+                        <div
+                            key={button.id}
+                            draggable
+                            onDragStart={event => this.handleDrag(event, index)}
+                            onDragOver={event => this.handleDragOver(event, index)}
+                            onDrop={event => this.handleDrop(event, index)}
+                            className={[
+                                'grid',
+                                'gap-3',
+                                'rounded-lg',
+                                'border',
+                                'border-slate-200',
+                                'bg-white',
+                                'p-3',
+                                'shadow-sm',
+                                'dark:border-slate-800',
+                                'dark:bg-slate-950',
+                                'lg:grid-cols-[2rem_10rem_minmax(0,1fr)_minmax(0,1fr)_auto]',
+                                index === draggedIndex ? 'ring-2 ring-emerald-400' : '',
+                                index === dropIndex ? 'border-dashed border-emerald-400' : ''
+                            ].join(' ')}
+                        >
+                            <div className="flex items-center justify-center rounded-md bg-slate-100 text-slate-500 dark:bg-slate-900" title={this.dragButtonLabel}>::</div>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-xs font-semibold text-slate-500">{this.typeLabelMessageButtonsForm}</span>
+                                <ControlSelect value={button.type} onChange={event => this.handleTypeChange(event, button.id)}>
+                                    <option value="url">{this.urlTypeMessageButtonsForm}</option>
+                                    <option value="phoneNumber">{this.phoneNumberTypeMessageButtonsForm}</option>
+                                    <option value="id">{this.idTypeMessageButtonsForm}</option>
+                                </ControlSelect>
+                            </label>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-xs font-semibold text-slate-500">{this.valueLabelMessageButtonsForm}</span>
+                                <ControlInput
+                                    className={button.type === 'id' ? 'bg-slate-50 text-slate-500 dark:bg-slate-900' : ''}
+                                    type={button.type === 'phoneNumber' ? 'tel' : button.type === 'url' ? 'url' : 'text'}
+                                    value={button.value}
+                                    onChange={event => this.handleValueChange(event, button.id)}
+                                    disabled={button.type === 'id'}
+                                />
+                            </label>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-xs font-semibold text-slate-500">{this.textLabelMessageButtonsForm}</span>
+                                <ControlInput
+                                    type="text"
+                                    value={button.text}
+                                    onChange={event => this.handleTextChange(event, button.id)}
+                                />
+                            </label>
+                            <Button
+                                variant="light"
+                                type="button"
+                                className="self-end text-rose-700 dark:text-rose-300"
+                                onClick={() => this.handleDeleteButton(button.id)}
                             >
-                                <td className="border px-4 py-2 cursor-move text-center">☰</td>
-                                <td className="border px-4 py-2">
-                                    <ControlSelect value={button.type} onChange={event => this.handleTypeChange(event, button.id)}>
-                                        <option value="url">{this.urlTypeMessageButtonsForm}</option>
-                                        <option value="phoneNumber">{this.phoneNumberTypeMessageButtonsForm}</option>
-                                        <option value="id">{this.idTypeMessageButtonsForm}</option>
-                                    </ControlSelect>
-                                </td>
-                                <td className="border px-4 py-2">
-                                    <ControlInput
-                                        className={button.type === 'id' ? 'bg-transparent border-0' : ''}
-                                        type={button.type === 'phoneNumber' ? 'tel' : button.type === 'url' ? 'url' : 'text'}
-                                        value={button.value}
-                                        onChange={event => this.handleValueChange(event, button.id)}
-                                        disabled={button.type === 'id'}
-                                    />
-                                </td>
-                                <td className="border px-4 py-2">
-                                    <ControlInput
-                                        type="text"
-                                        value={button.text}
-                                        onChange={event => this.handleTextChange(event, button.id)}
-                                    />
-                                </td>
-                                <td className="border text-center align-middle">
-                                    <Button
-                                        className="text-3xl text-red-500 hover:text-red-600 dark:hover:text-red-400 p-0 ring-0"
-                                        onClick={() => this.handleDeleteButton(button.id)}
-                                    >
-                                        ×
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>}
+                                {this.deleteButtonLabel}
+                            </Button>
+                        </div>
+                    ))}
+                </div>}
         </Box>;
     }
 }

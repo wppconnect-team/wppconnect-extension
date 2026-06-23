@@ -10,26 +10,32 @@ interface BoxProps extends HTMLAttributes<HTMLDivElement> {
 export default class Box extends Component<BoxProps, {}> {
     render() {
         const { children, title, headerButtons, bodyClassName, footer, ...boxProps } = this.props;
-        return <div {...boxProps} className={['max-w-xl',
+        return <section {...boxProps} className={['w-full',
+            'max-w-3xl',
             'mx-auto',
             'flex',
             'flex-col',
             'bg-white',
-            'dark:bg-black',
+            'dark:bg-slate-950',
             'dark:text-slate-100',
-            'shadow-lg',
-            'dark:shadow-none',
+            'border',
+            'border-slate-200',
+            'dark:border-slate-800',
+            'shadow-sm',
             'rounded-lg',
-            // 'overflow-hidden',
+            'overflow-hidden',
             ...(this.props.className || '').split(' ')
         ].join(' ')}>
             {(title || headerButtons) && <div className={['p-4',
                 'border-b',
                 'border-slate-200',
-                'dark:border-gray-800',
+                'dark:border-slate-800',
                 'flex',
+                'gap-3',
                 'justify-between',
-                'items-center'].join(' ')}>
+                'items-center',
+                'bg-slate-50',
+                'dark:bg-slate-900'].join(' ')}>
                 {title && <h1 className={['text-lg',
                     'font-semibold',
                     'text-slate-800',
@@ -41,17 +47,23 @@ export default class Box extends Component<BoxProps, {}> {
                 'flex',
                 'flex-col',
                 'gap-4',
+                'p-4',
                 ...(this.props.bodyClassName || '').split(' ')
             ].join(' ')}>
                 {children}
             </div>
             {footer && <div className={['px-4',
-                'py-2',
+                'py-3',
                 'border-t',
                 'border-slate-200',
-                'dark:border-gray-800'].join(' ')}>
+                'dark:border-slate-800',
+                'bg-slate-50',
+                'text-sm',
+                'text-slate-600',
+                'dark:bg-slate-900',
+                'dark:text-slate-300'].join(' ')}>
                 {footer}
             </div>}
-        </div>;
+        </section>;
     }
 }
