@@ -18,14 +18,14 @@ jobs:
       RELEASE_MESSAGE: ${{ github.event.head_commit.message || 'Manual release' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24.15.0
 
       - name: Configure git
         run: |
