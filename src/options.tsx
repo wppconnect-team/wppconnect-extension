@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
+import ArchiveForm from './components/organisms/ArchiveForm';
 import LogTable from './components/organisms/LogTable';
 import MessageButtonsForm from './components/organisms/MessageButtonsForm';
 import MessageForm from './components/organisms/MessageForm';
@@ -28,6 +29,7 @@ class Options extends Component<{}, {}>{
       </header>
       <MessageForm />
       <MessageButtonsForm />
+      <ArchiveForm />
       <LogTable />
     </main>;
   }

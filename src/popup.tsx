@@ -4,6 +4,7 @@ import './index.css';
 import Button from './components/atoms/Button';
 import { ControlTextArea } from './components/atoms/ControlFactory';
 import Box from './components/molecules/Box';
+import ArchiveStatus from './types/ArchiveStatus';
 import QueueStatus from './types/QueueStatus';
 import AsyncChromeMessageManager from './utils/AsyncChromeMessageManager';
 import { ChromeMessageTypes } from './types/ChromeMessageTypes';
@@ -14,7 +15,9 @@ type PopupState = {
   contacts: string,
   duplicatedContacts: number,
   status?: QueueStatus,
-  confirmed: boolean
+  archiveStatus?: ArchiveStatus,
+  confirmed: boolean,
+  activeOperation?: 'send' | 'archive'
 };
 
 class Popup extends Component<{}, PopupState> {
@@ -24,7 +27,9 @@ class Popup extends Component<{}, PopupState> {
       contacts: '',
       duplicatedContacts: 0,
       status: undefined,
+      archiveStatus: undefined,
       confirmed: true,
+      activeOperation: undefined
     };
   }
 
@@ -50,8 +55,16 @@ class Popup extends Component<{}, PopupState> {
   readyToSendLabel = chrome.i18n.getMessage('readyToSendLabel') || 'Ready to send';
   reviewContactsLabel = chrome.i18n.getMessage('reviewContactsLabel') || 'Review your contacts';
   queueFinishedLabel = chrome.i18n.getMessage('queueFinishedLabel') || 'Queue finished';
+  archiveChatsButtonLabel = chrome.i18n.getMessage('archiveChatsButtonLabel') || 'Archive chats';
+  archiveChatsConfirmLabel = chrome.i18n.getMessage('archiveChatsConfirmLabel') || 'Archive all non-archived chats?';
+  archiveProgressTitle = chrome.i18n.getMessage('archiveProgressTitle') || 'Archiving chats';
+  archiveFinishedTitle = chrome.i18n.getMessage('archiveFinishedTitle') || 'Archiving finished';
+  archivedChatsLabel = chrome.i18n.getMessage('archivedChatsLabel') || 'Archived';
+  archiveFailedLabel = chrome.i18n.getMessage('archiveFailedLabel') || 'Failed';
+  archiveCurrentChatLabel = chrome.i18n.getMessage('archiveCurrentChatLabel') || 'Current chat';
 
   queueStatusListener = 0;
+  archiveStatusListener = 0;
 
   componentDidMount() {
     const body = document.querySelector('body');
@@ -61,7 +74,9 @@ class Popup extends Component<{}, PopupState> {
     body.style.minWidth = '26rem';
 
     this.updateStatus();
+    this.updateArchiveStatus();
     this.queueStatusListener = window.setInterval(this.updateStatus, 250);
+    this.archiveStatusListener = window.setInterval(this.updateArchiveStatus, 250);
   }
 
   updateStatus = () => {
@@ -70,13 +85,23 @@ class Popup extends Component<{}, PopupState> {
     });
   }
 
+  updateArchiveStatus = () => {
+    PopupMessageManager.sendMessage(ChromeMessageTypes.ARCHIVE_STATUS, undefined).then((archiveStatus) => {
+      this.setState({ archiveStatus });
+    });
+  }
+
   componentWillUnmount() {
     clearInterval(this.queueStatusListener);
+    clearInterval(this.archiveStatusListener);
   }
 
   componentDidUpdate(prevProps: Readonly<{}>, prevState: Readonly<PopupState>, snapshot?: any) {
     if (!prevState.status?.isProcessing && this.state.status?.isProcessing) {
-      this.setState({ confirmed: false });
+      this.setState({ confirmed: false, activeOperation: 'send' });
+    }
+    if (!prevState.archiveStatus?.isProcessing && this.state.archiveStatus?.isProcessing) {
+      this.setState({ confirmed: false, activeOperation: 'archive' });
     }
   }
 
@@ -132,7 +157,15 @@ class Popup extends Component<{}, PopupState> {
       contacts.forEach(contact => {
         PopupMessageManager.sendMessage(ChromeMessageTypes.SEND_MESSAGE, { contact, message: data.message, attachment: data.attachment, buttons: data.buttons, delay: data.delay });
       });
-      this.setState({ confirmed: false });
+      this.setState({ confirmed: false, activeOperation: 'send' });
+    });
+  }
+
+  handleArchiveChats = () => {
+    if (!window.confirm(this.archiveChatsConfirmLabel)) return;
+    chrome.storage.local.get({ archiveDelayMs: 500 }, data => {
+      PopupMessageManager.sendMessage(ChromeMessageTypes.ARCHIVE_ALL_CHATS, { delayMs: data.archiveDelayMs });
+      this.setState({ confirmed: false, activeOperation: 'archive' });
     });
   }
 
@@ -165,6 +198,14 @@ class Popup extends Component<{}, PopupState> {
     return total === 0 ? 0 : Math.round((processed / total) * 100);
   }
 
+  getArchiveProgress = () => {
+    const processed = this.state.archiveStatus?.processedItems || 0;
+    const failed = this.state.archiveStatus?.failedItems || 0;
+    const total = this.state.archiveStatus?.totalItems || 0;
+
+    return total === 0 ? 0 : Math.round(((processed + failed) / total) * 100);
+  }
+
   renderMetric(label: string, value: string | number) {
     return <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
       <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
@@ -180,7 +221,7 @@ class Popup extends Component<{}, PopupState> {
       title={this.state.status?.isProcessing ? this.sendingMessagePopup : this.queueFinishedLabel}
       footer={this.state.status?.isProcessing ?
         <Button className="w-full" variant="danger" type="button" onClick={() => PopupMessageManager.sendMessage(ChromeMessageTypes.STOP_QUEUE, undefined)}>{this.cancelButtonLabel}</Button>
-        : <Button className="w-full" variant="primary" type="button" onClick={() => this.setState({ confirmed: true })}>{this.okButtonLabel}</Button>}>
+        : <Button className="w-full" variant="primary" type="button" onClick={() => this.setState({ confirmed: true, activeOperation: undefined })}>{this.okButtonLabel}</Button>}>
       <div className="space-y-4">
         <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
           <div className="mb-2 flex items-center justify-between gap-3 text-sm">
@@ -200,6 +241,43 @@ class Popup extends Component<{}, PopupState> {
           {this.renderMetric(this.messagesSentPopup, this.state.status?.processedItems || 0)}
           {this.renderMetric(this.state.status?.isProcessing ? this.messagesLeftPopup : this.messagesNotSentPopup, this.state.status?.remainingItems || 0)}
         </div>
+      </div>
+    </Box>;
+  }
+
+  renderArchiveProgress() {
+    const progress = this.getArchiveProgress();
+    const archiveStatus = this.state.archiveStatus;
+
+    return <Box
+      className="w-[26rem]"
+      title={archiveStatus?.isProcessing ? this.archiveProgressTitle : this.archiveFinishedTitle}
+      footer={archiveStatus?.isProcessing ?
+        <Button className="w-full" variant="danger" type="button" onClick={() => PopupMessageManager.sendMessage(ChromeMessageTypes.STOP_QUEUE, undefined)}>{this.cancelButtonLabel}</Button>
+        : <Button className="w-full" variant="primary" type="button" onClick={() => this.setState({ confirmed: true, activeOperation: undefined })}>{this.okButtonLabel}</Button>}>
+      <div className="space-y-4">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
+          <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+            <span className="truncate font-semibold text-slate-700 dark:text-slate-200">{archiveStatus?.currentChat || this.archiveChatsButtonLabel}</span>
+            <span className="font-mono text-slate-500">{progress}%</span>
+          </div>
+          <div className="h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+            <div
+              className={`h-full rounded-full progress-bar${archiveStatus?.isProcessing ? ' progress-bar-animated' : ''}`}
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {this.renderMetric(this.messageTimePopup, this.formatTime(archiveStatus?.elapsedTime || 0))}
+          {archiveStatus?.waiting ? this.renderMetric(this.waitingPopup, this.formatTime(archiveStatus.waiting)) : this.renderMetric(this.archiveFailedLabel, archiveStatus?.failedItems || 0)}
+          {this.renderMetric(this.archivedChatsLabel, archiveStatus?.processedItems || 0)}
+          {this.renderMetric(this.messagesLeftPopup, archiveStatus?.remainingItems || 0)}
+        </div>
+        {archiveStatus?.currentChat && <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          <span className="font-semibold">{this.archiveCurrentChatLabel}: </span>
+          <span className="font-mono">{archiveStatus.currentChat}</span>
+        </div>}
       </div>
     </Box>;
   }
@@ -234,11 +312,21 @@ class Popup extends Component<{}, PopupState> {
             {this.optionsButtonLabel}
           </Button>
         </div>
+        <Button
+          className="w-full"
+          variant="warning"
+          type="button"
+          onClick={this.handleArchiveChats}
+        >
+          {this.archiveChatsButtonLabel}
+        </Button>
       </Box>
     </form>;
   }
 
   render() {
+    if (this.state.activeOperation === 'archive') return this.renderArchiveProgress();
+    if (this.state.activeOperation === 'send' || !this.state.confirmed) return this.renderProgress();
     return this.state.confirmed ? this.renderForm() : this.renderProgress();
   }
 }

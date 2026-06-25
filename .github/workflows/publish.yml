@@ -1,81 +1,82 @@
-name: Publish to Chrome Web Store
+name: Release Chrome extension
 
 on:
   push:
     branches:
-      - master
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build_and_release:
+  release:
+    name: Build and publish GitHub release
     runs-on: ubuntu-latest
+    if: github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]')
+    env:
+      RELEASE_MESSAGE: ${{ github.event.head_commit.message || 'Manual release' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
-      
-      - name: Update version number
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configure git
         run: |
-          # Determine the version change type based on commit message
-          if [[ "${{ github.event.head_commit.message }}" =~ "#major" ]]; then
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump extension version
+        run: |
+          CURRENT_VERSION="$(node -p "require('./public/manifest.json').version")"
+          npm pkg set version="$CURRENT_VERSION"
+
+          if [[ "$RELEASE_MESSAGE" =~ "#major" ]]; then
             npm version major --no-git-tag-version
-          elif [[ "${{ github.event.head_commit.message }}" =~ "#minor" ]]; then
+          elif [[ "$RELEASE_MESSAGE" =~ "#minor" ]]; then
             npm version minor --no-git-tag-version
           else
             npm version patch --no-git-tag-version
           fi
 
-          # Update manifest.json version
-          echo "VERSION=$(npm pkg get version | tr -d '"')" >> $GITHUB_ENV
-          sed -i "s/\"version\": \".*\"/\"version\": \"$(npm pkg get version | tr -d '"')\"/g" public/manifest.json
-
-      - name: Commit changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "Bump version to ${{ env.VERSION }} [skip ci]" -a
-          git push
-
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        shell: bash
-        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-
-      - uses: actions/cache@v5
-        id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-
-
-      - if: ${{ steps.npm-cache.outputs.cache-hit != 'true' }}
-        name: List the state of node modules
-        continue-on-error: true
-        run: npm list
+          VERSION="$(npm pkg get version | tr -d '"')"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          node -e "const fs=require('fs'); const file='public/manifest.json'; const manifest=JSON.parse(fs.readFileSync(file,'utf8')); manifest.version=process.env.VERSION; fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n');"
 
       - name: Install dependencies
-        run: npm ci
-      - name: Build
+        run: npm install
+
+      - name: Validate locale JSON
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('public/_locales/en/messages.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('public/_locales/pt_BR/messages.json','utf8'))"
+
+      - name: Build extension
         run: npm run build
-      - name: Zip files
-        run: zip -r extension.zip dist/
-      - name: Create Release
+
+      - name: Create extension zip
+        run: |
+          cd dist
+          zip -r "../wppconnect-extension-v${{ env.VERSION }}.zip" .
+
+      - name: Commit version bump
+        run: |
+          git add package.json public/manifest.json
+          git commit -m "chore: release v${{ env.VERSION }} [skip ci]"
+          git tag "v${{ env.VERSION }}"
+          git push origin HEAD:main
+          git push origin "v${{ env.VERSION }}"
+
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          body: ${{ github.event.head_commit.message }}
-          files: extension.zip
-          name: Release ${{ env.VERSION }}
-          tag_name: ${{ env.VERSION }}
-    
-      - name: Publish to Chrome Web Store
-        uses: mnao305/chrome-extension-upload@v6.0.0
-        with:
-          client-id: ${{ secrets.CHROME_CLIENT_ID }}
-          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
-          extension-id: 'kcdlihaidnmkenhlnofkjfoachidbnif'
-          file-path: extension.zip
-          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          tag_name: "v${{ env.VERSION }}"
+          name: "Release v${{ env.VERSION }}"
+          body: ${{ env.RELEASE_MESSAGE }}
+          files: "wppconnect-extension-v${{ env.VERSION }}.zip"

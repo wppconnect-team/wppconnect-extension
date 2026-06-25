@@ -288,5 +288,49 @@
     "noLabel": {
         "message": "No",
         "description": "Generic no label"
+    },
+    "archiveFormTitle": {
+        "message": "Archiving",
+        "description": "Archive settings section title"
+    },
+    "archiveDelayLabel": {
+        "message": "Delay between archived chats",
+        "description": "Archive delay field label"
+    },
+    "archiveDelayHelp": {
+        "message": "Used when archiving chats from the popup.",
+        "description": "Archive delay help text"
+    },
+    "archiveFormFooter": {
+        "message": "Only non-archived chats that WhatsApp allows archiving will be processed.",
+        "description": "Archive settings footer"
+    },
+    "archiveChatsButtonLabel": {
+        "message": "Archive chats",
+        "description": "Archive chats button label"
+    },
+    "archiveChatsConfirmLabel": {
+        "message": "Archive all non-archived chats?",
+        "description": "Archive chats confirmation"
+    },
+    "archiveProgressTitle": {
+        "message": "Archiving chats",
+        "description": "Archive progress title"
+    },
+    "archiveFinishedTitle": {
+        "message": "Archiving finished",
+        "description": "Archive finished title"
+    },
+    "archivedChatsLabel": {
+        "message": "Archived",
+        "description": "Archived chats metric label"
+    },
+    "archiveFailedLabel": {
+        "message": "Failed",
+        "description": "Failed archive metric label"
+    },
+    "archiveCurrentChatLabel": {
+        "message": "Current chat",
+        "description": "Current archive chat label"
     }
 }

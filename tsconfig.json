@@ -4,6 +4,12 @@
         "baseUrl": "./src",
         "jsx": "react-jsx",
         "moduleResolution": "Node",
+        "ignoreDeprecations": "6.0",
+        "types": [
+            "chrome",
+            "node"
+        ],
+        "rootDir": "./src",
         "noEmit": false,
         "noFallthroughCasesInSwitch": true,
         "outDir": "./dist/js",

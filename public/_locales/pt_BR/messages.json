@@ -288,5 +288,49 @@
     "noLabel": {
         "message": "Não",
         "description": "Label genérico de não"
+    },
+    "archiveFormTitle": {
+        "message": "Arquivamento",
+        "description": "Título da seção de configuração de arquivamento"
+    },
+    "archiveDelayLabel": {
+        "message": "Delay entre chats arquivados",
+        "description": "Label do campo de delay de arquivamento"
+    },
+    "archiveDelayHelp": {
+        "message": "Usado ao arquivar chats pelo popup.",
+        "description": "Texto de ajuda do delay de arquivamento"
+    },
+    "archiveFormFooter": {
+        "message": "Somente chats não arquivados que o WhatsApp permite arquivar serão processados.",
+        "description": "Rodapé da configuração de arquivamento"
+    },
+    "archiveChatsButtonLabel": {
+        "message": "Arquivar chats",
+        "description": "Label do botão de arquivar chats"
+    },
+    "archiveChatsConfirmLabel": {
+        "message": "Arquivar todos os chats não arquivados?",
+        "description": "Confirmação de arquivamento de chats"
+    },
+    "archiveProgressTitle": {
+        "message": "Arquivando chats",
+        "description": "Título do progresso de arquivamento"
+    },
+    "archiveFinishedTitle": {
+        "message": "Arquivamento finalizado",
+        "description": "Título de arquivamento finalizado"
+    },
+    "archivedChatsLabel": {
+        "message": "Arquivados",
+        "description": "Label da métrica de chats arquivados"
+    },
+    "archiveFailedLabel": {
+        "message": "Falhas",
+        "description": "Label da métrica de falhas no arquivamento"
+    },
+    "archiveCurrentChatLabel": {
+        "message": "Chat atual",
+        "description": "Label do chat atual no arquivamento"
     }
 }
