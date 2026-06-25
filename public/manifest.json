@@ -1,7 +1,6 @@
 {
   "manifest_version": 3,
   "name": "Wppconnect Extension",
-  "version": "1.0.6",
   "action": {
     "default_icon": {
       "16": "icons/wppconnect16.png",
@@ -50,7 +49,9 @@
     }
   ],
   "externally_connectable": {
-    "matches": ["https://web.whatsapp.com/*"]
+    "matches": [
+      "https://web.whatsapp.com/*"
+    ]
   },
   "homepage_url": "https://github.com/wppconnect-team/wppconnect-extension",
   "options_ui": {
