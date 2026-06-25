@@ -40,7 +40,7 @@ module.exports = {
         alias: {
             '@': path.resolve(__dirname, 'src/'),
         },
-        extensions: ['.ts', '.tsx'],
+        extensions: ['.ts', '.tsx', '.js', '.json'],
     },
     watchOptions: {
         ignored: ['/node_modules', '/webpack', '/dist'],

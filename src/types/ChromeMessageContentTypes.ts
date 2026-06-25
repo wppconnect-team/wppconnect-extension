@@ -1,6 +1,7 @@
 import Log from "./Log";
 import { Message } from "./Message";
 import QueueStatus from "./QueueStatus";
+import ArchiveStatus from "./ArchiveStatus";
 import { ChromeMessageTypes } from "./ChromeMessageTypes";
 
 export default interface ChromeMessageContentTypes {
@@ -27,5 +28,15 @@ export default interface ChromeMessageContentTypes {
   [ChromeMessageTypes.STOP_QUEUE]: {
     payload: undefined;
     response: boolean;
+  };
+  [ChromeMessageTypes.ARCHIVE_ALL_CHATS]: {
+    payload: {
+      delayMs: number;
+    };
+    response: boolean;
+  };
+  [ChromeMessageTypes.ARCHIVE_STATUS]: {
+    payload: undefined;
+    response: ArchiveStatus;
   };
 }

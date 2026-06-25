@@ -18,10 +18,12 @@
   "dependencies": {
     "@wppconnect/wa-js": "^4.0.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "scheduler": "^0.27.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.35.1",
+    "@tailwindcss/postcss": "^4.3.1",
     "@tsconfig/recommended": "^1.0.6",
     "@types/chrome": "^0.0.239",
     "@types/node": "^20.12.8",

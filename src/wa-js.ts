@@ -1,4 +1,5 @@
 import type { Message } from './types/Message';
+import type ArchiveStatus from './types/ArchiveStatus';
 import asyncQueue from './utils/AsyncEventQueue';
 import AsyncChromeMessageManager from './utils/AsyncChromeMessageManager';
 import storageManager, { AsyncStorageManager } from './utils/AsyncStorageManager';
@@ -22,6 +23,120 @@ declare global {
 }
 
 const WebpageMessageManager = new AsyncChromeMessageManager('webpage');
+
+const emptyArchiveStatus = (): ArchiveStatus => ({
+    isProcessing: false,
+    totalItems: 0,
+    processedItems: 0,
+    remainingItems: 0,
+    failedItems: 0,
+    elapsedTime: 0,
+    waiting: false,
+    aborted: false
+});
+
+let archiveStatus: ArchiveStatus = emptyArchiveStatus();
+let archiveStartTime = 0;
+let archiveEndTime = 0;
+let abortArchive = false;
+
+const wait = async (delayMs: number) => new Promise(resolve => setTimeout(resolve, delayMs));
+
+const getChatId = (chat: any) => chat?.id?._serialized || chat?.id?.toString?.() || chat?.id;
+const normalizeArchiveDelay = (delayMs: number) => Math.min(10000, Math.max(0, Number.isFinite(delayMs) ? delayMs : 500));
+
+async function archiveAllChats({ delayMs }: { delayMs: number }) {
+    if (archiveStatus.isProcessing) return false;
+    if (!window.WPP.conn.isAuthenticated()) {
+        const errorMsg = 'Conecte-se primeiro!';
+        alert(errorMsg);
+        throw new Error(errorMsg);
+    }
+
+    delayMs = normalizeArchiveDelay(delayMs);
+    abortArchive = false;
+    archiveStartTime = Date.now();
+    archiveEndTime = 0;
+    archiveStatus = {
+        ...emptyArchiveStatus(),
+        isProcessing: true,
+        elapsedTime: 0
+    };
+
+    try {
+        const chats = await window.WPP.chat.list({ ignoreGroupMetadata: true });
+        const archivableChats = chats.filter(chat => !chat.archive && chat.canArchive?.() !== false);
+        archiveStatus = {
+            ...archiveStatus,
+            totalItems: archivableChats.length,
+            remainingItems: archivableChats.length
+        };
+
+        for (const chat of archivableChats) {
+            if (abortArchive) break;
+            const chatId = getChatId(chat);
+            archiveStatus = {
+                ...archiveStatus,
+                currentChat: chatId
+            };
+
+            try {
+                await window.WPP.chat.archive(chat.id);
+                archiveStatus = {
+                    ...archiveStatus,
+                    processedItems: archiveStatus.processedItems + 1,
+                    remainingItems: Math.max(archiveStatus.remainingItems - 1, 0)
+                };
+            } catch (error) {
+                archiveStatus = {
+                    ...archiveStatus,
+                    failedItems: archiveStatus.failedItems + 1,
+                    remainingItems: Math.max(archiveStatus.remainingItems - 1, 0)
+                };
+                WebpageMessageManager.sendMessage(ChromeMessageTypes.ADD_LOG, {
+                    level: 1,
+                    message: error instanceof Error ? error.message : 'Falha ao arquivar chat',
+                    attachment: false,
+                    contact: chatId
+                });
+            }
+
+            if (delayMs > 0 && archiveStatus.remainingItems > 0 && !abortArchive) {
+                archiveStatus = { ...archiveStatus, waiting: Date.now() };
+                const waitStart = Date.now();
+                while (Date.now() - waitStart < delayMs) {
+                    if (abortArchive) break;
+                    await wait(Math.min(100, delayMs));
+                }
+                archiveStatus = { ...archiveStatus, waiting: false };
+            }
+        }
+
+        return true;
+    } finally {
+        archiveEndTime = Date.now();
+        archiveStatus = {
+            ...archiveStatus,
+            isProcessing: false,
+            aborted: abortArchive,
+            currentChat: undefined,
+            waiting: false,
+            elapsedTime: archiveEndTime - archiveStartTime
+        };
+    }
+}
+
+function stopArchive() {
+    abortArchive = true;
+}
+
+function getArchiveStatus(): ArchiveStatus {
+    return {
+        ...archiveStatus,
+        elapsedTime: archiveStatus.isProcessing ? Date.now() - archiveStartTime : archiveEndTime - archiveStartTime,
+        waiting: archiveStatus.waiting === false ? false : Date.now() - archiveStatus.waiting
+    };
+}
 
 async function sendWPPMessage({ contact, message, attachment, buttons = [] }: Message) {
     if (attachment && buttons.length > 0) {
@@ -142,6 +257,7 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.RESUME_QUEUE, () => {
 WebpageMessageManager.addHandler(ChromeMessageTypes.STOP_QUEUE, () => {
     try {
         asyncQueue.stop();
+        stopArchive();
         return true;
     } catch (error) {
         return false;
@@ -165,6 +281,23 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.SEND_MESSAGE, async (message
 });
 
 WebpageMessageManager.addHandler(ChromeMessageTypes.QUEUE_STATUS, () => asyncQueue.getStatus());
+WebpageMessageManager.addHandler(ChromeMessageTypes.ARCHIVE_STATUS, () => getArchiveStatus());
+
+WebpageMessageManager.addHandler(ChromeMessageTypes.ARCHIVE_ALL_CHATS, async (payload) => {
+    if (window.WPP.isReady) {
+        return archiveAllChats(payload);
+    } else {
+        return new Promise((resolve, reject) => {
+            window.WPP.webpack!.onReady(async () => {
+                try {
+                    resolve(await archiveAllChats(payload));
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        });
+    }
+});
 
 storageManager.clearDatabase();
 
