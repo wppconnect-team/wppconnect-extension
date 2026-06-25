@@ -47,7 +47,7 @@ jobs:
 
           VERSION="$(npm pkg get version | tr -d '"')"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          node -e "const fs=require('fs'); const file='public/manifest.json'; const manifest=JSON.parse(fs.readFileSync(file,'utf8')); manifest.version=process.env.VERSION; fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n');"
+          VERSION="$VERSION" node -e "const fs=require('fs'); const file='public/manifest.json'; const manifest=JSON.parse(fs.readFileSync(file,'utf8')); manifest.version=process.env.VERSION; fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n');"
 
       - name: Install dependencies
         run: npm install
@@ -59,6 +59,17 @@ jobs:
 
       - name: Build extension
         run: npm run build
+
+      - name: Validate built manifest
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const manifest = JSON.parse(fs.readFileSync('dist/manifest.json', 'utf8'));
+          const validVersion = /^(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){0,3}$/.test(manifest.version || '');
+          if (!validVersion) {
+            throw new Error(`Invalid Chrome extension version: ${manifest.version || '<missing>'}`);
+          }
+          NODE
 
       - name: Create extension zip
         run: |
