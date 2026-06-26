@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wppconnect Extension Privacy Policy</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    main {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 48px 20px 72px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+      line-height: 1.2;
+    }
+
+    h2 {
+      margin-top: 32px;
+      font-size: 1.25rem;
+    }
+
+    p,
+    li {
+      font-size: 1rem;
+    }
+
+    code {
+      border-radius: 6px;
+      background: #e2e8f0;
+      padding: 2px 6px;
+    }
+
+    a {
+      color: #047857;
+    }
+
+    .updated {
+      margin: 0 0 32px;
+      color: #475569;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #020617;
+        color: #e2e8f0;
+      }
+
+      .updated {
+        color: #94a3b8;
+      }
+
+      code {
+        background: #1e293b;
+      }
+
+      a {
+        color: #34d399;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>Wppconnect Extension Privacy Policy</h1>
+    <p class="updated">Last updated: June 26, 2026</p>
+
+    <p>Wppconnect Extension is a Chrome extension that helps users operate WhatsApp Web through user-initiated actions such as preparing messages, sending messages, reviewing logs, archiving chats, and testing WA-JS capabilities.</p>
+
+    <p>This Privacy Policy explains what user data the extension processes, how it is used, and when it may be shared.</p>
+
+    <h2>Data processed by the extension</h2>
+    <p>The extension may process the following data inside the user's browser:</p>
+    <ul>
+      <li>WhatsApp contact identifiers and phone numbers entered by the user.</li>
+      <li>WhatsApp Web chat identifiers, chat metadata, unread counts, archive/pin/mute state, and recent message metadata when the user runs a related action.</li>
+      <li>Message text, attachments selected by the user, message buttons, delay settings, country prefix settings, archive delay settings, and WA-JS Lab input fields.</li>
+      <li>Local send logs, including contact, result message, attachment flag, status level, and timestamp.</li>
+      <li>WhatsApp Web connection/profile diagnostics requested by the user, such as connection state, account display name/status, platform/build information, and whether the account is authenticated.</li>
+    </ul>
+
+    <h2>How data is used</h2>
+    <p>The extension uses data only to provide its user-facing features:</p>
+    <ul>
+      <li>Send WhatsApp Web messages requested by the user.</li>
+      <li>Deduplicate and validate contact lists before sending.</li>
+      <li>Store message settings and extension preferences.</li>
+      <li>Display local progress and local logs.</li>
+      <li>Archive, unarchive, pin, mute, mark read/unread, open chats, and run other WA-JS Lab actions requested by the user.</li>
+      <li>Show diagnostics that help the user test WhatsApp Web and WA-JS behavior.</li>
+    </ul>
+
+    <h2>Local storage</h2>
+    <p>The extension stores settings and logs using <code>chrome.storage.local</code> in the user's browser. This includes message templates, attachments, buttons, delay settings, prefix settings, archive delay settings, and logs.</p>
+    <p>This data remains on the user's device unless the user clears it, removes the extension, or uses extension controls that clear logs/settings.</p>
+
+    <h2>Data sharing and transfers</h2>
+    <p>Wppconnect Extension does not send user data to Wppconnect servers or any developer-controlled analytics service.</p>
+    <p>Data may be transferred only when necessary for the extension's single purpose and only as directed by the user:</p>
+    <ul>
+      <li>To WhatsApp Web/WhatsApp when the user sends a message, attachment, poll, location, vCard, or performs a WhatsApp Web action.</li>
+      <li>To message recipients selected by the user through WhatsApp Web.</li>
+      <li>As required by law, security, or abuse-prevention obligations.</li>
+    </ul>
+    <p>The extension does not sell user data, does not use user data for advertising, and does not share user data with data brokers.</p>
+
+    <h2>Human access</h2>
+    <p>The developer does not have access to the user's WhatsApp chats, contacts, message content, attachments, logs, or local settings through the extension.</p>
+    <p>Human access to user data is not performed by the extension. If a user voluntarily shares diagnostic details in a support request or public issue, that information is handled only for support and troubleshooting.</p>
+
+    <h2>Permissions</h2>
+    <p>The extension uses Chrome permissions only to provide its core features:</p>
+    <ul>
+      <li><code>activeTab</code>: communicate with the active WhatsApp Web tab when the user opens the popup or runs an action.</li>
+      <li><code>storage</code>: store extension settings and logs locally in the browser.</li>
+      <li>Content scripts on <code>https://web.whatsapp.com/*</code>: integrate with WhatsApp Web and WA-JS.</li>
+    </ul>
+
+    <h2>Limited Use disclosure</h2>
+    <p>The extension's use and transfer of information received from Chrome APIs and WhatsApp Web is limited to providing and improving the extension's single purpose: helping the user operate WhatsApp Web from the extension. The extension does not use this data for advertising, profiling, unrelated analytics, or resale.</p>
+
+    <h2>Data retention and deletion</h2>
+    <p>Settings and logs are stored locally in the browser. Users can clear logs from the extension options page, clear extension storage through Chrome settings, or uninstall the extension to remove local extension data.</p>
+    <p>Messages and chat changes made in WhatsApp Web are controlled by WhatsApp and the user's WhatsApp account.</p>
+
+    <h2>Third-party services</h2>
+    <p>The extension operates on WhatsApp Web and uses WA-JS to interact with the WhatsApp Web runtime. WhatsApp and Meta process WhatsApp account and messaging data according to their own terms and privacy policies.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>This policy may be updated when the extension changes. Updates will be published in this repository and should be reflected in the Chrome Web Store listing before resubmission when required.</p>
+
+    <h2>Contact</h2>
+    <p>For privacy questions or support, open an issue at <a href="https://github.com/wppconnect-team/wppconnect-extension/issues">https://github.com/wppconnect-team/wppconnect-extension/issues</a>.</p>
+  </main>
+</body>
+
+</html>
