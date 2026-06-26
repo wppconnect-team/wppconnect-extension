@@ -28,9 +28,17 @@ export default class AsyncChromeMessageManager {
 
   private forwardMessagesFromWebpageToPopup() {
     window.addEventListener("message", (event) => {
-      if (event.source === window && event.origin === window.location.origin && event.data.source === 'Wppconnect') {
+      if (
+        event.source === window &&
+        event.origin === window.location.origin &&
+        event.data.source === 'Wppconnect' &&
+        typeof event.data.type === 'string' &&
+        event.data.type.endsWith('_RESPONSE')
+      ) {
         void chrome.runtime.sendMessage(event.data).catch((error) => {
-          console.error('Wppconnect.AsyncChromeMessageManager.forwardMessagesFromWebpageToPopup', error, event);
+          if (!this.isReceivingEndError(error)) {
+            console.error('Wppconnect.AsyncChromeMessageManager.forwardMessagesFromWebpageToPopup', error, event);
+          }
           return;
         });
       }
@@ -74,7 +82,11 @@ export default class AsyncChromeMessageManager {
       if (message.source === 'Wppconnect' && message.type === type) {
         try {
           const response = await handler(message.payload);
-          void chrome.runtime.sendMessage({ source: 'Wppconnect', type: `${type}_RESPONSE`, payload: response });
+          void chrome.runtime.sendMessage({ source: 'Wppconnect', type: `${type}_RESPONSE`, payload: response }).catch((error) => {
+            if (!this.isReceivingEndError(error)) {
+              console.error(`Wppconnect.AsyncChromeMessageManager.addExtensionMessageHandler ${type}_RESPONSE`, error);
+            }
+          });
         } catch (error) {
           console.error(`Wppconnect.AsyncChromeMessageManager.addExtensionMessageHandler ${type}_RESPONSE`, error);
         }
@@ -169,5 +181,10 @@ export default class AsyncChromeMessageManager {
         reject(error instanceof Error ? error : new Error(String(error)));
       });
     }
+  }
+
+  private isReceivingEndError(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.includes('Receiving end does not exist') || message.includes('Could not establish connection');
   }
 }
