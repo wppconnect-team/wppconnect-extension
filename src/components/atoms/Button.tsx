@@ -1,7 +1,7 @@
 import React, { ButtonHTMLAttributes, Component, ReactNode } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark';
+    variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark' | 'glass' | 'ghost';
     icon?: ReactNode;
 }
 
@@ -45,17 +45,12 @@ export default class Button extends Component<ButtonProps, {}> {
             case 'secondary':
                 classNames.push(
                     'border',
-                    'border-slate-300',
-                    'bg-white',
-                    'text-slate-700',
-                    'shadow-sm',
-                    'hover:border-slate-400',
-                    'hover:bg-slate-50',
-                    'dark:border-slate-700',
-                    'dark:bg-slate-900',
-                    'dark:text-slate-100',
-                    'dark:hover:border-slate-600',
-                    'dark:hover:bg-slate-800',
+                    'border-white/10',
+                    'bg-white/5',
+                    'text-slate-100',
+                    'shadow-[inset_0_1px_0_rgba(255,255,255,.05)]',
+                    'hover:border-white/20',
+                    'hover:bg-white/10',
                     'focus-visible:ring-slate-400'
                 );
                 break;
@@ -93,12 +88,10 @@ export default class Button extends Component<ButtonProps, {}> {
                 break;
             case 'light':
                 classNames.push(
-                    'bg-slate-100',
-                    'text-slate-700',
-                    'hover:bg-slate-200',
-                    'dark:bg-slate-800',
-                    'dark:text-slate-100',
-                    'dark:hover:bg-slate-700',
+                    'bg-white/5',
+                    'text-slate-300',
+                    'hover:bg-white/10',
+                    'hover:text-white',
                     'focus-visible:ring-slate-400'
                 );
                 break;
@@ -111,6 +104,28 @@ export default class Button extends Component<ButtonProps, {}> {
                     'dark:text-slate-950',
                     'dark:hover:bg-slate-200',
                     'focus-visible:ring-slate-500'
+                );
+                break;
+            case 'glass':
+                classNames.push(
+                    'border',
+                    'border-white/10',
+                    'bg-white/5',
+                    'text-slate-100',
+                    'shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_14px_30px_rgba(0,0,0,.16)]',
+                    'backdrop-blur',
+                    'hover:border-emerald-300/30',
+                    'hover:bg-white/10',
+                    'focus-visible:ring-emerald-400'
+                );
+                break;
+            case 'ghost':
+                classNames.push(
+                    'bg-transparent',
+                    'text-slate-300',
+                    'hover:bg-white/10',
+                    'hover:text-white',
+                    'focus-visible:ring-slate-400'
                 );
                 break;
         }

@@ -189,11 +189,11 @@ export default class MessageButtonsForm extends Component<{ className?: string }
             className={this.props.className}
             title={this.messageButtonsFormTitle}
             headerButtons={<div className="flex items-center gap-3">
-                <span className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300 sm:inline-flex">{buttons.length}/3</span>
+                <span className="hidden rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-300 sm:inline-flex">{buttons.length}/3</span>
                 <Button variant="secondary" type="button" disabled={buttons.length >= 3} onClick={this.handleAddButton} icon="+">{this.addButtonLabel}</Button>
             </div>}
             footer={<>
-                <p className="mb-2 font-semibold text-amber-700 dark:text-amber-300">{this.importantNoteMessageButtonsForm}</p>
+                <p className="mb-2 font-semibold text-amber-300">{this.importantNoteMessageButtonsForm}</p>
                 <p>{this.listTitleNoteMessageButtonsForm}</p>
                 <ul className="mt-2 list-disc space-y-1 pl-5">
                     <li dangerouslySetInnerHTML={{ __html: this.firstListItemNoteMessageButtonsForm }} />
@@ -201,11 +201,11 @@ export default class MessageButtonsForm extends Component<{ className?: string }
                     <li dangerouslySetInnerHTML={{ __html: this.thirdListItemNoteMessageButtonsForm }} />
                 </ul>
             </>}>
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-slate-950/35 px-3 py-2 text-sm text-slate-300">
                 <span>{this.buttonLimitLabel}</span>
                 <span className="font-mono">{buttons.length}/3</span>
             </div>
-            {buttons.length === 0 && <div className="rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            {buttons.length === 0 && <div className="rounded-lg border border-dashed border-white/12 px-4 py-8 text-center text-sm text-slate-400">
                 {this.emptyButtonsLabel}
             </div>}
             {buttons.length > 0 &&
@@ -222,18 +222,16 @@ export default class MessageButtonsForm extends Component<{ className?: string }
                                 'gap-3',
                                 'rounded-lg',
                                 'border',
-                                'border-slate-200',
-                                'bg-white',
+                                'border-white/10',
+                                'bg-slate-950/35',
                                 'p-3',
-                                'shadow-sm',
-                                'dark:border-slate-800',
-                                'dark:bg-slate-950',
+                                'shadow-[inset_0_1px_0_rgba(255,255,255,.04)]',
                                 'lg:grid-cols-[2rem_10rem_minmax(0,1fr)_minmax(0,1fr)_auto]',
                                 index === draggedIndex ? 'ring-2 ring-emerald-400' : '',
                                 index === dropIndex ? 'border-dashed border-emerald-400' : ''
                             ].join(' ')}
                         >
-                            <div className="flex items-center justify-center rounded-md bg-slate-100 text-slate-500 dark:bg-slate-900" title={this.dragButtonLabel}>::</div>
+                            <div className="flex items-center justify-center rounded-md bg-white/10 text-slate-400" title={this.dragButtonLabel}>::</div>
                             <label className="flex flex-col gap-1">
                                 <span className="text-xs font-semibold text-slate-500">{this.typeLabelMessageButtonsForm}</span>
                                 <ControlSelect value={button.type} onChange={event => this.handleTypeChange(event, button.id)}>
@@ -245,7 +243,7 @@ export default class MessageButtonsForm extends Component<{ className?: string }
                             <label className="flex flex-col gap-1">
                                 <span className="text-xs font-semibold text-slate-500">{this.valueLabelMessageButtonsForm}</span>
                                 <ControlInput
-                                    className={button.type === 'id' ? 'bg-slate-50 text-slate-500 dark:bg-slate-900' : ''}
+                                    className={button.type === 'id' ? 'bg-slate-900/80 text-slate-500' : ''}
                                     type={button.type === 'phoneNumber' ? 'tel' : button.type === 'url' ? 'url' : 'text'}
                                     value={button.value}
                                     onChange={event => this.handleValueChange(event, button.id)}
@@ -263,12 +261,12 @@ export default class MessageButtonsForm extends Component<{ className?: string }
                             <Button
                                 variant="light"
                                 type="button"
-                                className="self-end text-rose-700 dark:text-rose-300"
+                                className="self-end text-rose-300"
                                 onClick={() => this.handleDeleteButton(button.id)}
                             >
                                 {this.deleteButtonLabel}
                             </Button>
-                            {pendingDeleteId === button.id && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-100 lg:col-span-5">
+                            {pendingDeleteId === button.id && <div className="rounded-lg border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-100 lg:col-span-5">
                                 <div className="font-semibold">{this.deleteButtonConfirmLabel}</div>
                                 <div className="mt-3 flex justify-end gap-2">
                                     <Button variant="secondary" type="button" onClick={() => this.setState({ pendingDeleteId: null })}>

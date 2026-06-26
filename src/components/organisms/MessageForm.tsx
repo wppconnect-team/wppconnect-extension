@@ -119,7 +119,7 @@ export default class MessageForm extends Component<{ className?: string }, { mes
             </>}>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
                 <label className="flex min-h-[14rem] flex-col gap-2">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{this.messageDraftLabel}</span>
+                    <span className="text-sm font-semibold text-slate-300">{this.messageDraftLabel}</span>
                     <ControlTextArea
                         className="min-h-[12rem] resize-y"
                         value={message}
@@ -129,10 +129,10 @@ export default class MessageForm extends Component<{ className?: string }, { mes
                 <div className="flex flex-col gap-3">
                     <label
                         htmlFor="attachment"
-                        className="flex min-h-[12rem] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center transition hover:border-emerald-400 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-600 dark:hover:bg-emerald-950"
+                        className="flex min-h-[12rem] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/10 bg-slate-950/35 px-4 py-6 text-center transition hover:border-emerald-400/60 hover:bg-emerald-400/10"
                     >
-                        <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg font-bold text-emerald-700 shadow-sm dark:bg-slate-950 dark:text-emerald-300">+</span>
-                        <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/10 text-lg font-bold text-emerald-300 shadow-sm">+</span>
+                        <span className="text-sm font-semibold text-slate-100">
                             {attachment?.name ? this.selectedAttachmentLabel : this.attachmentLabelMessageForm}
                         </span>
                         {attachment?.name && <span className="mt-1 max-w-full truncate text-xs text-slate-500">{attachment.name}</span>}
@@ -155,9 +155,9 @@ export default class MessageForm extends Component<{ className?: string }, { mes
             </div>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
                 <label className="flex flex-col gap-2">
-                    <span className="flex items-center justify-between gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    <span className="flex items-center justify-between gap-2 text-sm font-semibold text-slate-300">
                         <span>{this.delayLabelMessageForm}</span>
-                        <span className="rounded-full bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-100">{this.state.delay.toFixed(1)}s</span>
+                        <span className="rounded-full bg-white/10 px-2 py-1 font-mono text-xs text-slate-100">{this.state.delay.toFixed(1)}s</span>
                     </span>
                     <input
                         type="range"
@@ -168,11 +168,11 @@ export default class MessageForm extends Component<{ className?: string }, { mes
                         step="0.1"
                         value={this.state.delay}
                         onChange={(e) => this.setState({ delay: +e.target.value })}
-                        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-emerald-600 outline-none dark:bg-slate-800"
+                        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-800 accent-emerald-500 outline-none"
                     />
                 </label>
                 <label className="flex flex-col gap-2">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{this.countryCodePrefixMessageForm}</span>
+                    <span className="text-sm font-semibold text-slate-300">{this.countryCodePrefixMessageForm}</span>
                     <SelectCountryCode />
                 </label>
             </div>

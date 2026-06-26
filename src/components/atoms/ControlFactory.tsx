@@ -16,26 +16,23 @@ class ControlFactory {
                 const classNames = ['w-full',
                     'flex-auto',
                     'min-h-[2.75rem]',
-                    'bg-white',
-                    'dark:bg-slate-900',
+                    'bg-slate-950/35',
                     'border',
-                    'border-slate-300',
-                    'dark:border-slate-700',
+                    'border-white/10',
                     'px-3',
                     'py-2',
                     'rounded-lg',
                     'text-sm',
-                    'text-slate-900',
-                    'dark:text-slate-100',
+                    'text-slate-100',
                     'placeholder:text-slate-400',
-                    'dark:placeholder:text-slate-500',
+                    'shadow-[inset_0_1px_0_rgba(255,255,255,.04)]',
+                    'outline-none',
                     'transition-shadow',
                     'ease-in-out',
                     'duration-150',
                     'focus:ring-2',
                     'focus:ring-emerald-500',
-                    'focus:border-emerald-500',
-                    'focus:outline-none'];
+                    'focus:border-emerald-400'];
 
                 if (type === 'input') {
                     return <input {...(props as React.InputHTMLAttributes<HTMLInputElement>)} className={[...classNames, ...(this.props.className || '').split(' ')].join(' ')} />;

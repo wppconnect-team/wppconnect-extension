@@ -424,5 +424,169 @@
     "wajsLabPlaceholderResult": {
         "message": "Execute uma ação para ver a resposta da WA-JS.",
         "description": "Placeholder do resultado WA-JS"
+    },
+    "dashboardTitle": {
+        "message": "WA Execuções",
+        "description": "Título do dashboard do popup"
+    },
+    "dashboardSubtitle": {
+        "message": "Automatize funções no WhatsApp",
+        "description": "Subtítulo do dashboard do popup"
+    },
+    "executionsTabLabel": {
+        "message": "Execuções",
+        "description": "Label da aba de execuções"
+    },
+    "historyTabLabel": {
+        "message": "Histórico",
+        "description": "Label da aba de histórico"
+    },
+    "newExecutionTitle": {
+        "message": "Nova execução",
+        "description": "Título da seção de nova execução"
+    },
+    "newExecutionSubtitle": {
+        "message": "Selecione uma função para executar no WhatsApp",
+        "description": "Subtítulo da seção de nova execução"
+    },
+    "selectFunctionLabel": {
+        "message": "Selecione a função",
+        "description": "Placeholder do seletor de função"
+    },
+    "executeButtonLabel": {
+        "message": "Executar",
+        "description": "Label do botão executar"
+    },
+    "quickExecutionsTitle": {
+        "message": "Execuções rápidas",
+        "description": "Título da seção de execuções rápidas"
+    },
+    "summaryTitle": {
+        "message": "Resumo",
+        "description": "Título da seção de resumo"
+    },
+    "latestExecutionsTitle": {
+        "message": "Últimas execuções",
+        "description": "Título da seção de últimas execuções"
+    },
+    "viewAllLabel": {
+        "message": "Ver todas",
+        "description": "Link para ver todas"
+    },
+    "whatsappConnectedLabel": {
+        "message": "WhatsApp conectado",
+        "description": "Label de status conectado"
+    },
+    "whatsappNeedsConnectionLabel": {
+        "message": "Verificar conexão do WhatsApp",
+        "description": "Label de status desconectado"
+    },
+    "checkConnectionLabel": {
+        "message": "Verificar conexão",
+        "description": "Label de atualizar conexão"
+    },
+    "contactsHelperLabel": {
+        "message": "Cole contatos separados por vírgula, ponto e vírgula ou quebra de linha.",
+        "description": "Texto de ajuda dos contatos"
+    },
+    "todaySentLabel": {
+        "message": "Enviadas hoje",
+        "description": "Métrica de envios de hoje"
+    },
+    "duplicatesTodayLabel": {
+        "message": "Duplicadas",
+        "description": "Métrica de duplicadas"
+    },
+    "completedThisMonthLabel": {
+        "message": "Concluídas",
+        "description": "Métrica de concluídas no mês"
+    },
+    "noRecentExecutionsLabel": {
+        "message": "Nenhuma execução recente ainda.",
+        "description": "Estado vazio de execuções recentes"
+    },
+    "noFunctionSelectedLabel": {
+        "message": "Escolha uma função antes de executar.",
+        "description": "Erro de função não selecionada"
+    },
+    "functionSendMessageLabel": {
+        "message": "Enviar mensagem",
+        "description": "Label da função enviar mensagem"
+    },
+    "functionArchiveChatsLabel": {
+        "message": "Arquivar chats",
+        "description": "Label da função arquivar chats"
+    },
+    "functionListChatsLabel": {
+        "message": "Listar chats",
+        "description": "Label da função listar chats"
+    },
+    "functionUnreadChatsLabel": {
+        "message": "Chats não lidos",
+        "description": "Label da função chats não lidos"
+    },
+    "functionVerifyNumberLabel": {
+        "message": "Verificar número",
+        "description": "Label da função verificar número"
+    },
+    "functionDiagnosticsLabel": {
+        "message": "Diagnóstico de conexão",
+        "description": "Label da função diagnóstico"
+    },
+    "functionActiveChatLabel": {
+        "message": "Chat ativo",
+        "description": "Label da função chat ativo"
+    },
+    "functionOpenChatLabel": {
+        "message": "Abrir chat",
+        "description": "Label da função abrir chat"
+    },
+    "functionMarkReadLabel": {
+        "message": "Marcar lido",
+        "description": "Label da função marcar lido"
+    },
+    "functionMarkUnreadLabel": {
+        "message": "Marcar não lido",
+        "description": "Label da função marcar não lido"
+    },
+    "functionPinChatLabel": {
+        "message": "Fixar chat",
+        "description": "Label da função fixar chat"
+    },
+    "functionMuteChatLabel": {
+        "message": "Silenciar chat",
+        "description": "Label da função silenciar chat"
+    },
+    "functionSendTextLabel": {
+        "message": "Enviar texto",
+        "description": "Label da função enviar texto"
+    },
+    "functionSendMessageDescription": {
+        "message": "Para contatos ou listas",
+        "description": "Descrição da ação rápida enviar mensagem"
+    },
+    "functionArchiveChatsDescription": {
+        "message": "Arquivar não arquivados",
+        "description": "Descrição da ação rápida arquivar chats"
+    },
+    "functionListChatsDescription": {
+        "message": "Inspecionar chats",
+        "description": "Descrição da ação rápida listar chats"
+    },
+    "functionVerifyNumberDescription": {
+        "message": "Checar existência",
+        "description": "Descrição da ação rápida verificar número"
+    },
+    "functionRequiresChatLabel": {
+        "message": "Chat ID ou telefone",
+        "description": "Label do campo de alvo do chat"
+    },
+    "functionRequiresContactLabel": {
+        "message": "Contato ID ou telefone",
+        "description": "Label do campo de alvo do contato"
+    },
+    "functionRequiresTextLabel": {
+        "message": "Texto da mensagem",
+        "description": "Label do campo de texto da ação"
     }
 }
