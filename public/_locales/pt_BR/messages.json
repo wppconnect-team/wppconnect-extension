@@ -353,6 +353,10 @@
         "message": "Abra o WhatsApp Web, mantenha a conta conectada e tente novamente.",
         "description": "Mensagem quando o WhatsApp Web não responde ao arquivamento"
     },
+    "whatsappConnectionHelpLabel": {
+        "message": "Abra ou recarregue o WhatsApp Web antes de enviar ou arquivar.",
+        "description": "Mensagem de ajuda quando a extensão não encontra a aba do WhatsApp Web"
+    },
     "archivedChatsLabel": {
         "message": "Arquivados",
         "description": "Label da métrica de chats arquivados"

@@ -375,12 +375,14 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.ARCHIVE_STATUS, () => getArc
 
 WebpageMessageManager.addHandler(ChromeMessageTypes.ARCHIVE_ALL_CHATS, async (payload) => {
     if (window.WPP.isReady) {
-        return archiveAllChats(payload);
+        void archiveAllChats(payload);
+        return true;
     } else {
         return new Promise((resolve, reject) => {
             window.WPP.webpack!.onReady(async () => {
                 try {
-                    resolve(await archiveAllChats(payload));
+                    void archiveAllChats(payload);
+                    resolve(true);
                 } catch (error) {
                     reject(error);
                 }

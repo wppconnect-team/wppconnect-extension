@@ -31,6 +31,7 @@ type PopupState = {
   archiveStatus?: ArchiveStatus,
   confirmed: boolean,
   archiveConfirmOpen: boolean,
+  connectionError?: string,
   activeOperation?: 'send' | 'archive'
 };
 
@@ -44,6 +45,7 @@ class Popup extends Component<{}, PopupState> {
       archiveStatus: undefined,
       confirmed: true,
       archiveConfirmOpen: false,
+      connectionError: undefined,
       activeOperation: undefined
     };
   }
@@ -82,6 +84,7 @@ class Popup extends Component<{}, PopupState> {
   archiveCancelledTitle = chrome.i18n.getMessage('archiveCancelledTitle') || 'Archiving cancelled';
   archiveErrorTitle = chrome.i18n.getMessage('archiveErrorTitle') || 'Unable to archive chats';
   archiveOpenWhatsAppLabel = chrome.i18n.getMessage('archiveOpenWhatsAppLabel') || 'Open WhatsApp Web, keep it connected, then try again.';
+  whatsappConnectionHelpLabel = chrome.i18n.getMessage('whatsappConnectionHelpLabel') || 'Open or reload WhatsApp Web before using send or archive actions.';
   archivedChatsLabel = chrome.i18n.getMessage('archivedChatsLabel') || 'Archived';
   archiveFailedLabel = chrome.i18n.getMessage('archiveFailedLabel') || 'Failed';
   archiveCurrentChatLabel = chrome.i18n.getMessage('archiveCurrentChatLabel') || 'Current chat';
@@ -104,13 +107,23 @@ class Popup extends Component<{}, PopupState> {
 
   updateStatus = () => {
     PopupMessageManager.sendMessage(ChromeMessageTypes.QUEUE_STATUS, undefined).then((status) => {
-      this.setState({ status });
+      this.setState({ status, connectionError: undefined });
+    }).catch((error) => {
+      this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel });
     });
   }
 
   updateArchiveStatus = () => {
     PopupMessageManager.sendMessage(ChromeMessageTypes.ARCHIVE_STATUS, undefined).then((archiveStatus) => {
-      this.setState({ archiveStatus });
+      this.setState({ archiveStatus, connectionError: undefined });
+    }).catch((error) => {
+      if (this.state.activeOperation === 'archive') {
+        this.setState({
+          archiveStatus: createLocalArchiveStatus('error', error instanceof Error ? error.message : this.archiveOpenWhatsAppLabel)
+        });
+      } else {
+        this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel });
+      }
     });
   }
 
@@ -178,7 +191,8 @@ class Popup extends Component<{}, PopupState> {
       if (contacts.length === 0) return;
 
       contacts.forEach(contact => {
-        PopupMessageManager.sendMessage(ChromeMessageTypes.SEND_MESSAGE, { contact, message: data.message, attachment: data.attachment, buttons: data.buttons, delay: data.delay });
+        PopupMessageManager.sendMessage(ChromeMessageTypes.SEND_MESSAGE, { contact, message: data.message, attachment: data.attachment, buttons: data.buttons, delay: data.delay })
+          .catch((error) => this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel }));
       });
       this.setState({ confirmed: false, activeOperation: 'send' });
     });
@@ -382,11 +396,21 @@ class Popup extends Component<{}, PopupState> {
     </div>;
   }
 
+  renderConnectionNotice() {
+    if (!this.state.connectionError) return null;
+
+    return <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-xs leading-5 text-cyan-900 dark:border-cyan-900/70 dark:bg-cyan-950/30 dark:text-cyan-100">
+      <div className="font-semibold">{this.whatsappConnectionHelpLabel}</div>
+      <div className="mt-1 font-mono text-[0.68rem] text-cyan-800 dark:text-cyan-200">{this.state.connectionError}</div>
+    </div>;
+  }
+
   renderForm() {
     const summary = this.getContactSummary();
 
     return <form onSubmit={this.handleSubmit}>
       <Box className="w-[26rem]" title={this.reviewContactsLabel} footer={this.prefixFooterNotePopup}>
+        {this.renderConnectionNotice()}
         <label className="flex min-h-[13rem] flex-col gap-2">
           <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{this.contactsLabel}</span>
           <ControlTextArea
