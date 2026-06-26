@@ -1,5 +1,6 @@
 import type { Message } from './types/Message';
 import type ArchiveStatus from './types/ArchiveStatus';
+import type { WaJsLabPayload, WaJsLabResponse } from './types/WaJsLab';
 import asyncQueue from './utils/AsyncEventQueue';
 import AsyncChromeMessageManager from './utils/AsyncChromeMessageManager';
 import storageManager, { AsyncStorageManager } from './utils/AsyncStorageManager';
@@ -106,6 +107,236 @@ const listArchiveCandidates = async () => {
 };
 
 const normalizeArchiveDelay = (delayMs: number) => Math.min(10000, Math.max(0, Number.isFinite(delayMs) ? delayMs : 500));
+
+const normalizeLimit = (limit?: number, fallback = 10) => Math.min(50, Math.max(1, Number.isFinite(limit || NaN) ? Number(limit) : fallback));
+const normalizeWid = (value?: string) => {
+    const raw = (value || '').trim();
+    if (!raw) return '';
+    if (raw.includes('@')) return raw;
+    const digits = raw.replace(/\D/g, '');
+    return digits ? `${digits}@c.us` : raw;
+};
+
+const stringifyWid = (value: any) => value?._serialized || value?.toString?.() || value || null;
+const getChatTitle = (chat: any) => getModelValue(chat, 'formattedTitle') || getModelValue(chat, 'name') || getModelValue(chat, 'pushname') || getChatId(chat);
+
+const summarizeChat = (chat: any) => ({
+    id: getChatId(chat),
+    title: getChatTitle(chat),
+    isGroup: Boolean(getModelValue(chat, 'isGroup')),
+    archive: Boolean(getModelValue(chat, 'archive')),
+    pin: Boolean(getModelValue(chat, 'pin')),
+    unreadCount: getModelValue(chat, 'unreadCount') || 0,
+    muteExpiration: getModelValue(chat, 'muteExpiration') || null,
+    lastReceivedKey: stringifyWid(getModelValue(chat, 'lastReceivedKey')),
+    t: getModelValue(chat, 't') || null
+});
+
+const summarizeContact = (contact: any) => ({
+    id: stringifyWid(getModelValue(contact, 'id') || contact?.wid || contact),
+    name: getModelValue(contact, 'name') || getModelValue(contact, 'pushname') || getModelValue(contact, 'shortName') || null,
+    isBusiness: Boolean(getModelValue(contact, 'isBusiness')),
+    isMyContact: Boolean(getModelValue(contact, 'isMyContact')),
+    isUser: Boolean(getModelValue(contact, 'isUser')),
+    isWAContact: Boolean(getModelValue(contact, 'isWAContact'))
+});
+
+const summarizeMessage = (message: any) => ({
+    id: stringifyWid(getModelValue(message, 'id') || message?.id),
+    type: getModelValue(message, 'type') || null,
+    from: stringifyWid(getModelValue(message, 'from')),
+    to: stringifyWid(getModelValue(message, 'to')),
+    body: getModelValue(message, 'body') || getModelValue(message, 'caption') || '',
+    t: getModelValue(message, 't') || null,
+    ack: getModelValue(message, 'ack') ?? null,
+    isNewMsg: Boolean(getModelValue(message, 'isNewMsg')),
+    isSentByMe: Boolean(getModelValue(message, 'isSentByMe'))
+});
+
+const compactValue = (value: any, depth = 0, seen = new WeakSet<object>()): any => {
+    if (value == null || typeof value !== 'object') return value;
+    if (seen.has(value)) return '[Circular]';
+    if (depth >= 3) return Array.isArray(value) ? `[Array(${value.length})]` : '[Object]';
+    seen.add(value);
+
+    if (Array.isArray(value)) {
+        return value.slice(0, 20).map(item => compactValue(item, depth + 1, seen));
+    }
+
+    if (getModelValue(value, 'id')) {
+        return {
+            id: stringifyWid(getModelValue(value, 'id')),
+            name: getModelValue(value, 'name') || getModelValue(value, 'formattedTitle') || getModelValue(value, 'pushname') || null
+        };
+    }
+
+    return Object.fromEntries(
+        Object.entries(value)
+            .filter(([, entryValue]) => typeof entryValue !== 'function')
+            .slice(0, 30)
+            .map(([key, entryValue]) => [key, compactValue(entryValue, depth + 1, seen)])
+    );
+};
+
+const makeLabResponse = (payload: WaJsLabPayload, startedAt: number, data?: unknown, error?: unknown): WaJsLabResponse => ({
+    ok: !error,
+    action: payload.action,
+    durationMs: Date.now() - startedAt,
+    timestamp: new Date().toISOString(),
+    data,
+    error: error instanceof Error ? error.message : error ? String(error) : undefined
+});
+
+const ensureWaJsReady = () => {
+    if (!window.WPP?.isReady || !window.WPP?.conn?.isAuthenticated?.()) {
+        throw new Error('Abra o WhatsApp Web, mantenha a conta conectada e tente novamente.');
+    }
+};
+
+async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse> {
+    const startedAt = Date.now();
+
+    try {
+        if (payload.action !== 'diagnostics') ensureWaJsReady();
+        const labWpp = window.WPP as any;
+        const chatId = normalizeWid(payload.chatId || payload.contactId);
+        const contactId = normalizeWid(payload.contactId || payload.chatId);
+        const limit = normalizeLimit(payload.limit);
+
+        switch (payload.action) {
+            case 'diagnostics': {
+                return makeLabResponse(payload, startedAt, {
+                    isReady: Boolean(window.WPP.isReady),
+                    isAuthenticated: labWpp.conn?.isAuthenticated?.(),
+                    isOnline: labWpp.conn?.isOnline?.(),
+                    isIdle: labWpp.conn?.isIdle?.(),
+                    isMainReady: labWpp.conn?.isMainReady?.(),
+                    needsUpdate: labWpp.conn?.needsUpdate?.(),
+                    platform: compactValue(labWpp.conn?.getPlatform?.()),
+                    theme: labWpp.conn?.getTheme?.(),
+                    myUserId: stringifyWid(labWpp.conn?.getMyUserId?.()),
+                    myUserWid: stringifyWid(labWpp.conn?.getMyUserWid?.()),
+                    myUserLid: stringifyWid(labWpp.conn?.getMyUserLid?.()),
+                    build: compactValue(labWpp.conn?.getBuildConstants?.())
+                });
+            }
+            case 'profile':
+                return makeLabResponse(payload, startedAt, {
+                    name: labWpp.profile?.getMyProfileName?.(),
+                    status: await labWpp.profile?.getMyStatus?.(),
+                    isBusiness: labWpp.profile?.isBusiness?.()
+                });
+            case 'listChats': {
+                const chats = await window.WPP.chat.list({ ignoreGroupMetadata: true });
+                return makeLabResponse(payload, startedAt, {
+                    count: chats.length,
+                    items: chats.slice(0, limit).map(summarizeChat)
+                });
+            }
+            case 'listUnreadChats': {
+                const chats = await window.WPP.chat.getUnreadChats(false);
+                return makeLabResponse(payload, startedAt, {
+                    count: chats.length,
+                    items: chats.slice(0, limit).map(summarizeChat)
+                });
+            }
+            case 'activeChat':
+                return makeLabResponse(payload, startedAt, summarizeChat(window.WPP.chat.getActiveChat()));
+            case 'chatMessages':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, {
+                    chatId,
+                    items: (await window.WPP.chat.getMessages(chatId, { count: limit })).map(summarizeMessage)
+                });
+            case 'queryContact':
+                if (!contactId) throw new Error('Informe um contato ou número.');
+                return makeLabResponse(payload, startedAt, {
+                    query: contactId,
+                    exists: compactValue(await labWpp.contact?.queryExists?.(contactId.replace('@c.us', ''))),
+                    widExists: compactValue(await window.WPP.contact.queryWidExists(contactId))
+                });
+            case 'contactStatus':
+                if (!contactId) throw new Error('Informe um contato ou número.');
+                return makeLabResponse(payload, startedAt, { contactId, status: await window.WPP.contact.getStatus(contactId) });
+            case 'profilePicture':
+                if (!contactId) throw new Error('Informe um contato ou número.');
+                return makeLabResponse(payload, startedAt, { contactId, url: await window.WPP.contact.getProfilePictureUrl(contactId, true) });
+            case 'businessProfile':
+                if (!contactId) throw new Error('Informe um contato ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.contact.getBusinessProfile(contactId)));
+            case 'commonGroups':
+                if (!contactId) throw new Error('Informe um contato ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.contact.getCommonGroups(contactId)));
+            case 'openChat':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, { chatId, opened: await window.WPP.chat.openChatBottom(chatId) });
+            case 'markRead':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.markIsRead(chatId)));
+            case 'markUnread':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.markIsUnread(chatId)));
+            case 'pinChat':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.pin(chatId)));
+            case 'unpinChat':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.unpin(chatId)));
+            case 'muteChat':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.mute(chatId, { duration: 3600 })));
+            case 'unmuteChat':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                await window.WPP.chat.unmute(chatId);
+                return makeLabResponse(payload, startedAt, { chatId, muted: false });
+            case 'archiveChat':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.archive(chatId)));
+            case 'unarchiveChat':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.unarchive(chatId)));
+            case 'typing':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                await window.WPP.chat.markIsComposing(chatId, 5000);
+                return makeLabResponse(payload, startedAt, { chatId, state: 'typing', duration: 5000 });
+            case 'recording':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                await window.WPP.chat.markIsRecording(chatId, 5000);
+                return makeLabResponse(payload, startedAt, { chatId, state: 'recording', duration: 5000 });
+            case 'pauseTyping':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                await window.WPP.chat.markIsPaused(chatId);
+                return makeLabResponse(payload, startedAt, { chatId, state: 'paused' });
+            case 'setInput':
+                await window.WPP.chat.setInputText(payload.text || '', chatId || undefined);
+                return makeLabResponse(payload, startedAt, { chatId: chatId || null, text: payload.text || '' });
+            case 'sendText':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendTextMessage(chatId, payload.text || 'Teste WA-JS Lab', { createChat: true, waitForAck: true })));
+            case 'sendPoll':
+                if (!chatId) throw new Error('Informe um chatId de grupo.');
+                return makeLabResponse(payload, startedAt, compactValue(await labWpp.chat?.sendCreatePollMessage?.(chatId, payload.text || 'Teste WA-JS Lab', ['Sim', 'Não'], { selectableCount: 1 })));
+            case 'sendLocation':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendLocationMessage(chatId, {
+                    lat: payload.latitude ?? -23.55052,
+                    lng: payload.longitude ?? -46.633308,
+                    name: 'WA-JS Lab',
+                    address: 'Localização de teste'
+                })));
+            case 'sendVCard':
+                if (!chatId || !contactId) throw new Error('Informe chatId e contactId.');
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendVCardContactMessage(chatId, {
+                    id: contactId,
+                    name: payload.text || 'Contato WA-JS Lab'
+                })));
+            default:
+                throw new Error(`Ação não suportada: ${payload.action}`);
+        }
+    } catch (error) {
+        return makeLabResponse(payload, startedAt, undefined, error);
+    }
+}
 
 async function archiveAllChats({ delayMs }: { delayMs: number }) {
     if (archiveStatus.isProcessing) return false;
@@ -389,6 +620,18 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.ARCHIVE_ALL_CHATS, async (pa
             });
         });
     }
+});
+
+WebpageMessageManager.addHandler(ChromeMessageTypes.WAJS_LAB_EXECUTE, async (payload) => {
+    if (window.WPP.isReady) {
+        return executeWaJsLab(payload);
+    }
+
+    return new Promise((resolve) => {
+        window.WPP.webpack!.onReady(async () => {
+            resolve(await executeWaJsLab(payload));
+        });
+    });
 });
 
 storageManager.clearDatabase();

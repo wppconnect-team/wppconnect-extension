@@ -368,5 +368,61 @@
     "archiveCurrentChatLabel": {
         "message": "Current chat",
         "description": "Current archive chat label"
+    },
+    "wajsLabTitle": {
+        "message": "WA-JS Lab",
+        "description": "WA-JS lab title"
+    },
+    "wajsLabSubtitle": {
+        "message": "Run diagnostics, lookups and controlled WA-JS actions on WhatsApp Web.",
+        "description": "WA-JS lab subtitle"
+    },
+    "wajsLabActionLabel": {
+        "message": "Action",
+        "description": "WA-JS action selector label"
+    },
+    "wajsLabChatLabel": {
+        "message": "Chat ID or phone",
+        "description": "WA-JS chat target label"
+    },
+    "wajsLabContactLabel": {
+        "message": "Contact ID or phone",
+        "description": "WA-JS contact label"
+    },
+    "wajsLabTextLabel": {
+        "message": "Text",
+        "description": "WA-JS text label"
+    },
+    "wajsLabRunLabel": {
+        "message": "Run action",
+        "description": "WA-JS run button label"
+    },
+    "wajsLabResultLabel": {
+        "message": "Result",
+        "description": "WA-JS result label"
+    },
+    "wajsLabSendModeLabel": {
+        "message": "Sending",
+        "description": "Popup sending mode label"
+    },
+    "wajsLabLabModeLabel": {
+        "message": "WA-JS Lab",
+        "description": "Popup WA-JS Lab mode label"
+    },
+    "wajsLabQuickChecksLabel": {
+        "message": "Quick checks",
+        "description": "WA-JS quick checks title"
+    },
+    "wajsLabChatActionsLabel": {
+        "message": "Chat actions",
+        "description": "WA-JS chat actions title"
+    },
+    "wajsLabMessageActionsLabel": {
+        "message": "Message tests",
+        "description": "WA-JS message tests title"
+    },
+    "wajsLabPlaceholderResult": {
+        "message": "Run an action to see the WA-JS response.",
+        "description": "WA-JS result placeholder"
     }
 }
