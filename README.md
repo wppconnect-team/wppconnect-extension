@@ -17,6 +17,13 @@ For now you can download the `extension.zip` file from the [latest release](http
 
 Note that this extension is intended for legitimate and ethical use cases only. Any misuse or abuse of the extension is not the responsibility of the developers.
 
+## Privacy Policy
+
+Wppconnect Extension processes WhatsApp Web data locally in the user's browser to provide its user-facing features. Read the full privacy policy here:
+
+- [Privacy Policy](./PRIVACY.md)
+- [Static privacy policy page](./docs/privacy-policy.html)
+
 ## Building from Source
 
 If you prefer to build the extension from the source code, follow these steps:
@@ -75,7 +82,6 @@ This project uses the following packages:
 - [postcss-loader](https://github.com/webpack-contrib/postcss-loader) (MIT License)
 - [rimraf](https://github.com/isaacs/rimraf) (ISC License)
 - [speed-measure-webpack-plugin](https://github.com/stephencookdev/speed-measure-webpack-plugin) (MIT License)
-- [style-loader](https://github.com/webpack-contrib/style-loader) (MIT License)
 - [tailwindcss](https://github.com/tailwindlabs/tailwindcss) (MIT License)
 - [ts-loader](https://github.com/TypeStrong/ts-loader) (MIT License)
 - [typescript](https://github.com/microsoft/TypeScript) (Apache License 2.0)
