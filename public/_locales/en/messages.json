@@ -313,6 +313,14 @@
         "message": "Archive all non-archived chats?",
         "description": "Archive chats confirmation"
     },
+    "archiveConfirmDescriptionLabel": {
+        "message": "The extension will search visible WhatsApp Web chats and archive only the ones that are not archived yet.",
+        "description": "Archive confirmation description"
+    },
+    "archiveConfirmSubmitLabel": {
+        "message": "Archive now",
+        "description": "Archive confirmation button label"
+    },
     "archiveProgressTitle": {
         "message": "Archiving chats",
         "description": "Archive progress title"
@@ -320,6 +328,30 @@
     "archiveFinishedTitle": {
         "message": "Archiving finished",
         "description": "Archive finished title"
+    },
+    "archiveStartingTitle": {
+        "message": "Preparing archiving",
+        "description": "Archive preparation title"
+    },
+    "archiveListingLabel": {
+        "message": "Searching chats...",
+        "description": "Archive chat listing label"
+    },
+    "archiveNoChatsLabel": {
+        "message": "No non-archived chats were found.",
+        "description": "Archive empty state"
+    },
+    "archiveCancelledTitle": {
+        "message": "Archiving cancelled",
+        "description": "Archive cancelled title"
+    },
+    "archiveErrorTitle": {
+        "message": "Unable to archive chats",
+        "description": "Archive error title"
+    },
+    "archiveOpenWhatsAppLabel": {
+        "message": "Open WhatsApp Web, keep the account connected, then try again.",
+        "description": "Archive WhatsApp Web not responding message"
     },
     "archivedChatsLabel": {
         "message": "Archived",

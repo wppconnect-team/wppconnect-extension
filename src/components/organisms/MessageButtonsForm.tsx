@@ -4,13 +4,20 @@ import { ControlInput, ControlSelect } from '../atoms/ControlFactory';
 import Box from '../molecules/Box';
 
 type ButtonRow = { id: number, type: string, value: string, text: string };
+type MessageButtonsFormState = {
+    buttons: ButtonRow[],
+    draggedIndex: number | null,
+    dropIndex: number | null,
+    pendingDeleteId: number | null
+};
 
-export default class MessageButtonsForm extends Component<{ className?: string }, { buttons: ButtonRow[], draggedIndex: number | null, dropIndex: number | null }>{
+export default class MessageButtonsForm extends Component<{ className?: string }, MessageButtonsFormState>{
     constructor(props: { className?: string }) {
         super(props);
         this.state = {
             draggedIndex: null,
             dropIndex: null,
+            pendingDeleteId: null,
             buttons: []
         };
     }
@@ -67,7 +74,7 @@ export default class MessageButtonsForm extends Component<{ className?: string }
         return true;
     }
 
-    componentDidUpdate(prevProps: Readonly<{ className?: string }>, prevState: Readonly<{ buttons: ButtonRow[]; }>, snapshot?: any) {
+    componentDidUpdate(prevProps: Readonly<{ className?: string }>, prevState: Readonly<MessageButtonsFormState>, snapshot?: any) {
         const { buttons } = this.state;
         if (!this.compareArrays(prevState.buttons, buttons)) {
             chrome.storage.local.set({
@@ -155,8 +162,14 @@ export default class MessageButtonsForm extends Component<{ className?: string }
     }
 
     handleDeleteButton = (id: number) => {
-        if (!window.confirm(this.deleteButtonConfirmLabel)) return;
-        this.setState({ buttons: this.state.buttons.filter(button => button.id !== id) });
+        this.setState({ pendingDeleteId: id });
+    }
+
+    confirmDeleteButton = (id: number) => {
+        this.setState({
+            buttons: this.state.buttons.filter(button => button.id !== id),
+            pendingDeleteId: null
+        });
     }
 
     handleAddButton = () => {
@@ -170,7 +183,7 @@ export default class MessageButtonsForm extends Component<{ className?: string }
     }
 
     render() {
-        const { buttons, draggedIndex, dropIndex } = this.state;
+        const { buttons, draggedIndex, dropIndex, pendingDeleteId } = this.state;
 
         return <Box
             className={this.props.className}
@@ -255,6 +268,17 @@ export default class MessageButtonsForm extends Component<{ className?: string }
                             >
                                 {this.deleteButtonLabel}
                             </Button>
+                            {pendingDeleteId === button.id && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-100 lg:col-span-5">
+                                <div className="font-semibold">{this.deleteButtonConfirmLabel}</div>
+                                <div className="mt-3 flex justify-end gap-2">
+                                    <Button variant="secondary" type="button" onClick={() => this.setState({ pendingDeleteId: null })}>
+                                        {chrome.i18n.getMessage('cancelButtonLabel') || 'Cancel'}
+                                    </Button>
+                                    <Button variant="danger" type="button" onClick={() => this.confirmDeleteButton(button.id)}>
+                                        {this.deleteButtonLabel}
+                                    </Button>
+                                </div>
+                            </div>}
                         </div>
                     ))}
                 </div>}
