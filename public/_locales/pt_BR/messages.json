@@ -313,6 +313,14 @@
         "message": "Arquivar todos os chats não arquivados?",
         "description": "Confirmação de arquivamento de chats"
     },
+    "archiveConfirmDescriptionLabel": {
+        "message": "A extensão vai buscar os chats visíveis no WhatsApp Web e arquivar somente os que ainda não estão arquivados.",
+        "description": "Descrição da confirmação de arquivamento"
+    },
+    "archiveConfirmSubmitLabel": {
+        "message": "Arquivar agora",
+        "description": "Label do botão de confirmação de arquivamento"
+    },
     "archiveProgressTitle": {
         "message": "Arquivando chats",
         "description": "Título do progresso de arquivamento"
@@ -320,6 +328,30 @@
     "archiveFinishedTitle": {
         "message": "Arquivamento finalizado",
         "description": "Título de arquivamento finalizado"
+    },
+    "archiveStartingTitle": {
+        "message": "Preparando arquivamento",
+        "description": "Título do preparo de arquivamento"
+    },
+    "archiveListingLabel": {
+        "message": "Buscando chats...",
+        "description": "Label da busca de chats para arquivar"
+    },
+    "archiveNoChatsLabel": {
+        "message": "Nenhum chat não arquivado foi encontrado.",
+        "description": "Estado vazio do arquivamento"
+    },
+    "archiveCancelledTitle": {
+        "message": "Arquivamento cancelado",
+        "description": "Título do arquivamento cancelado"
+    },
+    "archiveErrorTitle": {
+        "message": "Não foi possível arquivar",
+        "description": "Título de erro do arquivamento"
+    },
+    "archiveOpenWhatsAppLabel": {
+        "message": "Abra o WhatsApp Web, mantenha a conta conectada e tente novamente.",
+        "description": "Mensagem quando o WhatsApp Web não responde ao arquivamento"
     },
     "archivedChatsLabel": {
         "message": "Arquivados",
