@@ -2,6 +2,7 @@ import Log from "./Log";
 import { Message } from "./Message";
 import QueueStatus from "./QueueStatus";
 import ArchiveStatus from "./ArchiveStatus";
+import { WaJsLabPayload, WaJsLabResponse } from "./WaJsLab";
 import { ChromeMessageTypes } from "./ChromeMessageTypes";
 
 export default interface ChromeMessageContentTypes {
@@ -38,5 +39,9 @@ export default interface ChromeMessageContentTypes {
   [ChromeMessageTypes.ARCHIVE_STATUS]: {
     payload: undefined;
     response: ArchiveStatus;
+  };
+  [ChromeMessageTypes.WAJS_LAB_EXECUTE]: {
+    payload: WaJsLabPayload;
+    response: WaJsLabResponse;
   };
 }

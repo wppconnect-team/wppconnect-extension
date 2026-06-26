@@ -2,10 +2,11 @@ import React, { ChangeEvent, Component, FormEvent, MouseEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import Button from './components/atoms/Button';
-import { ControlTextArea } from './components/atoms/ControlFactory';
+import { ControlInput, ControlSelect, ControlTextArea } from './components/atoms/ControlFactory';
 import Box from './components/molecules/Box';
 import ArchiveStatus from './types/ArchiveStatus';
 import QueueStatus from './types/QueueStatus';
+import { WaJsLabAction, WaJsLabResponse } from './types/WaJsLab';
 import AsyncChromeMessageManager from './utils/AsyncChromeMessageManager';
 import { ChromeMessageTypes } from './types/ChromeMessageTypes';
 
@@ -32,6 +33,16 @@ type PopupState = {
   confirmed: boolean,
   archiveConfirmOpen: boolean,
   connectionError?: string,
+  mode: 'send' | 'lab',
+  labAction: WaJsLabAction,
+  labChatId: string,
+  labContactId: string,
+  labText: string,
+  labLimit: number,
+  labLatitude: string,
+  labLongitude: string,
+  labLoading: boolean,
+  labResult?: WaJsLabResponse,
   activeOperation?: 'send' | 'archive'
 };
 
@@ -46,6 +57,16 @@ class Popup extends Component<{}, PopupState> {
       confirmed: true,
       archiveConfirmOpen: false,
       connectionError: undefined,
+      mode: 'send',
+      labAction: 'diagnostics',
+      labChatId: '',
+      labContactId: '',
+      labText: 'Teste WA-JS Lab',
+      labLimit: 10,
+      labLatitude: '-23.55052',
+      labLongitude: '-46.633308',
+      labLoading: false,
+      labResult: undefined,
       activeOperation: undefined
     };
   }
@@ -88,6 +109,20 @@ class Popup extends Component<{}, PopupState> {
   archivedChatsLabel = chrome.i18n.getMessage('archivedChatsLabel') || 'Archived';
   archiveFailedLabel = chrome.i18n.getMessage('archiveFailedLabel') || 'Failed';
   archiveCurrentChatLabel = chrome.i18n.getMessage('archiveCurrentChatLabel') || 'Current chat';
+  wajsLabTitle = chrome.i18n.getMessage('wajsLabTitle') || 'WA-JS Lab';
+  wajsLabSubtitle = chrome.i18n.getMessage('wajsLabSubtitle') || 'Run safe WA-JS checks and controlled actions on WhatsApp Web.';
+  wajsLabActionLabel = chrome.i18n.getMessage('wajsLabActionLabel') || 'Action';
+  wajsLabChatLabel = chrome.i18n.getMessage('wajsLabChatLabel') || 'Chat ID or phone';
+  wajsLabContactLabel = chrome.i18n.getMessage('wajsLabContactLabel') || 'Contact ID or phone';
+  wajsLabTextLabel = chrome.i18n.getMessage('wajsLabTextLabel') || 'Text';
+  wajsLabRunLabel = chrome.i18n.getMessage('wajsLabRunLabel') || 'Run action';
+  wajsLabResultLabel = chrome.i18n.getMessage('wajsLabResultLabel') || 'Result';
+  wajsLabSendModeLabel = chrome.i18n.getMessage('wajsLabSendModeLabel') || 'Sending';
+  wajsLabLabModeLabel = chrome.i18n.getMessage('wajsLabLabModeLabel') || 'WA-JS Lab';
+  wajsLabQuickChecksLabel = chrome.i18n.getMessage('wajsLabQuickChecksLabel') || 'Quick checks';
+  wajsLabChatActionsLabel = chrome.i18n.getMessage('wajsLabChatActionsLabel') || 'Chat actions';
+  wajsLabMessageActionsLabel = chrome.i18n.getMessage('wajsLabMessageActionsLabel') || 'Message tests';
+  wajsLabPlaceholderResult = chrome.i18n.getMessage('wajsLabPlaceholderResult') || 'Run an action to see the WA-JS response.';
 
   queueStatusListener = 0;
   archiveStatusListener = 0;
@@ -235,6 +270,64 @@ class Popup extends Component<{}, PopupState> {
     } else {
       window.open(chrome.runtime.getURL('options.html'));
     }
+  }
+
+  labActions: Array<{ value: WaJsLabAction, label: string }> = [
+    { value: 'diagnostics', label: 'Diagnóstico de conexão' },
+    { value: 'profile', label: 'Meu perfil' },
+    { value: 'listChats', label: 'Listar chats' },
+    { value: 'listUnreadChats', label: 'Listar não lidos' },
+    { value: 'activeChat', label: 'Chat ativo' },
+    { value: 'chatMessages', label: 'Mensagens do chat' },
+    { value: 'queryContact', label: 'Consultar contato' },
+    { value: 'contactStatus', label: 'Status do contato' },
+    { value: 'profilePicture', label: 'Foto do contato' },
+    { value: 'businessProfile', label: 'Perfil comercial' },
+    { value: 'commonGroups', label: 'Grupos em comum' },
+    { value: 'openChat', label: 'Abrir chat' },
+    { value: 'markRead', label: 'Marcar lido' },
+    { value: 'markUnread', label: 'Marcar não lido' },
+    { value: 'pinChat', label: 'Fixar chat' },
+    { value: 'unpinChat', label: 'Desfixar chat' },
+    { value: 'muteChat', label: 'Silenciar 1h' },
+    { value: 'unmuteChat', label: 'Remover silêncio' },
+    { value: 'archiveChat', label: 'Arquivar chat' },
+    { value: 'unarchiveChat', label: 'Desarquivar chat' },
+    { value: 'typing', label: 'Typing 5s' },
+    { value: 'recording', label: 'Gravando 5s' },
+    { value: 'pauseTyping', label: 'Pausar typing' },
+    { value: 'setInput', label: 'Preencher input' },
+    { value: 'sendText', label: 'Enviar texto' },
+    { value: 'sendPoll', label: 'Enviar enquete' },
+    { value: 'sendLocation', label: 'Enviar localização' },
+    { value: 'sendVCard', label: 'Enviar vCard' }
+  ];
+
+  runLabAction = (action = this.state.labAction) => {
+    this.setState({ labLoading: true, labAction: action, labResult: undefined });
+    PopupMessageManager.sendMessage(ChromeMessageTypes.WAJS_LAB_EXECUTE, {
+      action,
+      chatId: this.state.labChatId,
+      contactId: this.state.labContactId,
+      text: this.state.labText,
+      limit: this.state.labLimit,
+      latitude: Number(this.state.labLatitude),
+      longitude: Number(this.state.labLongitude)
+    }).then((labResult) => {
+      this.setState({ labResult, labLoading: false, connectionError: undefined });
+    }).catch((error) => {
+      this.setState({
+        labLoading: false,
+        connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel,
+        labResult: {
+          ok: false,
+          action,
+          durationMs: 0,
+          timestamp: new Date().toISOString(),
+          error: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel
+        }
+      });
+    });
   }
 
   formatTime = (milliseconds: number) => {
@@ -405,11 +498,134 @@ class Popup extends Component<{}, PopupState> {
     </div>;
   }
 
+  renderModeSwitch() {
+    return <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
+      <Button
+        variant={this.state.mode === 'send' ? 'primary' : 'light'}
+        type="button"
+        onClick={() => this.setState({ mode: 'send' })}
+      >
+        {this.wajsLabSendModeLabel}
+      </Button>
+      <Button
+        variant={this.state.mode === 'lab' ? 'primary' : 'light'}
+        type="button"
+        onClick={() => this.setState({ mode: 'lab' })}
+      >
+        {this.wajsLabLabModeLabel}
+      </Button>
+    </div>;
+  }
+
+  renderLabButton(action: WaJsLabAction, label: string, variant: 'secondary' | 'info' | 'warning' = 'secondary') {
+    return <Button
+      variant={variant}
+      type="button"
+      disabled={this.state.labLoading}
+      onClick={() => this.runLabAction(action)}
+    >
+      {label}
+    </Button>;
+  }
+
+  renderLabSection(title: string, actions: Array<[WaJsLabAction, string, ('secondary' | 'info' | 'warning')?]>) {
+    return <div className="space-y-2">
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</div>
+      <div className="grid grid-cols-2 gap-2">
+        {actions.map(([action, label, variant]) => this.renderLabButton(action, label, variant || 'secondary'))}
+      </div>
+    </div>;
+  }
+
+  renderWaJsLab() {
+    const resultText = this.state.labResult ? JSON.stringify(this.state.labResult, null, 2) : this.wajsLabPlaceholderResult;
+
+    return <Box className="w-[34rem]" title={this.wajsLabTitle} footer={this.wajsLabSubtitle}>
+      {this.renderModeSwitch()}
+      {this.renderConnectionNotice()}
+      <div className="grid grid-cols-2 gap-3">
+        <label className="col-span-2 flex flex-col gap-1">
+          <span className="text-xs font-semibold text-slate-500">{this.wajsLabActionLabel}</span>
+          <ControlSelect
+            value={this.state.labAction}
+            onChange={(event) => this.setState({ labAction: event.target.value as WaJsLabAction })}
+          >
+            {this.labActions.map(action => <option key={action.value} value={action.value}>{action.label}</option>)}
+          </ControlSelect>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold text-slate-500">{this.wajsLabChatLabel}</span>
+          <ControlInput value={this.state.labChatId} placeholder="5511999999999 ou ...@g.us" onChange={(event) => this.setState({ labChatId: event.target.value })} />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold text-slate-500">{this.wajsLabContactLabel}</span>
+          <ControlInput value={this.state.labContactId} placeholder="5511999999999" onChange={(event) => this.setState({ labContactId: event.target.value })} />
+        </label>
+        <label className="col-span-2 flex flex-col gap-1">
+          <span className="text-xs font-semibold text-slate-500">{this.wajsLabTextLabel}</span>
+          <ControlInput value={this.state.labText} onChange={(event) => this.setState({ labText: event.target.value })} />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold text-slate-500">Limite</span>
+          <ControlInput type="number" min={1} max={50} value={this.state.labLimit} onChange={(event) => this.setState({ labLimit: +event.target.value })} />
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-slate-500">Lat</span>
+            <ControlInput value={this.state.labLatitude} onChange={(event) => this.setState({ labLatitude: event.target.value })} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-slate-500">Lng</span>
+            <ControlInput value={this.state.labLongitude} onChange={(event) => this.setState({ labLongitude: event.target.value })} />
+          </label>
+        </div>
+      </div>
+      <Button className="w-full" variant="primary" type="button" disabled={this.state.labLoading} onClick={() => this.runLabAction()}>
+        {this.state.labLoading ? this.sendingPopup : this.wajsLabRunLabel}
+      </Button>
+      {this.renderLabSection(this.wajsLabQuickChecksLabel, [
+        ['diagnostics', 'Diagnóstico', 'info'],
+        ['profile', 'Perfil', 'info'],
+        ['listChats', 'Chats', 'info'],
+        ['listUnreadChats', 'Não lidos', 'info'],
+        ['activeChat', 'Ativo', 'info'],
+        ['queryContact', 'Contato', 'info']
+      ])}
+      {this.renderLabSection(this.wajsLabChatActionsLabel, [
+        ['openChat', 'Abrir'],
+        ['chatMessages', 'Mensagens'],
+        ['markRead', 'Lido'],
+        ['markUnread', 'Não lido'],
+        ['pinChat', 'Fixar'],
+        ['unpinChat', 'Desfixar'],
+        ['muteChat', 'Silenciar', 'warning'],
+        ['unmuteChat', 'Som'],
+        ['archiveChat', 'Arquivar', 'warning'],
+        ['unarchiveChat', 'Desarquivar']
+      ])}
+      {this.renderLabSection(this.wajsLabMessageActionsLabel, [
+        ['typing', 'Typing'],
+        ['recording', 'Gravando'],
+        ['pauseTyping', 'Pausar'],
+        ['setInput', 'Input'],
+        ['sendText', 'Texto', 'warning'],
+        ['sendPoll', 'Enquete', 'warning'],
+        ['sendLocation', 'Local', 'warning'],
+        ['sendVCard', 'vCard', 'warning']
+      ])}
+      <div className="rounded-lg border border-slate-200 bg-slate-950 p-3 dark:border-slate-800">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{this.wajsLabResultLabel}</div>
+        <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-emerald-100">{resultText}</pre>
+      </div>
+    </Box>;
+  }
+
   renderForm() {
     const summary = this.getContactSummary();
 
     return <form onSubmit={this.handleSubmit}>
       <Box className="w-[26rem]" title={this.reviewContactsLabel} footer={this.prefixFooterNotePopup}>
+        {this.renderModeSwitch()}
         {this.renderConnectionNotice()}
         <label className="flex min-h-[13rem] flex-col gap-2">
           <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{this.contactsLabel}</span>
@@ -452,6 +668,7 @@ class Popup extends Component<{}, PopupState> {
   render() {
     if (this.state.activeOperation === 'archive') return this.renderArchiveProgress();
     if (this.state.activeOperation === 'send' || !this.state.confirmed) return this.renderProgress();
+    if (this.state.mode === 'lab') return this.renderWaJsLab();
     return this.state.confirmed ? this.renderForm() : this.renderProgress();
   }
 }

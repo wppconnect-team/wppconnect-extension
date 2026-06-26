@@ -368,5 +368,61 @@
     "archiveCurrentChatLabel": {
         "message": "Chat atual",
         "description": "Label do chat atual no arquivamento"
+    },
+    "wajsLabTitle": {
+        "message": "WA-JS Lab",
+        "description": "Título do laboratório WA-JS"
+    },
+    "wajsLabSubtitle": {
+        "message": "Execute diagnósticos, consultas e ações controladas da WA-JS no WhatsApp Web.",
+        "description": "Subtítulo do laboratório WA-JS"
+    },
+    "wajsLabActionLabel": {
+        "message": "Ação",
+        "description": "Label do seletor de ação WA-JS"
+    },
+    "wajsLabChatLabel": {
+        "message": "Chat ID ou telefone",
+        "description": "Label do alvo de chat WA-JS"
+    },
+    "wajsLabContactLabel": {
+        "message": "Contato ID ou telefone",
+        "description": "Label do contato WA-JS"
+    },
+    "wajsLabTextLabel": {
+        "message": "Texto",
+        "description": "Label do texto WA-JS"
+    },
+    "wajsLabRunLabel": {
+        "message": "Executar ação",
+        "description": "Label do botão executar WA-JS"
+    },
+    "wajsLabResultLabel": {
+        "message": "Resultado",
+        "description": "Label do resultado WA-JS"
+    },
+    "wajsLabSendModeLabel": {
+        "message": "Envio",
+        "description": "Label da aba de envio no popup"
+    },
+    "wajsLabLabModeLabel": {
+        "message": "WA-JS Lab",
+        "description": "Label da aba WA-JS Lab"
+    },
+    "wajsLabQuickChecksLabel": {
+        "message": "Consultas rápidas",
+        "description": "Título das consultas rápidas WA-JS"
+    },
+    "wajsLabChatActionsLabel": {
+        "message": "Ações de chat",
+        "description": "Título das ações de chat WA-JS"
+    },
+    "wajsLabMessageActionsLabel": {
+        "message": "Testes de mensagem",
+        "description": "Título dos testes de mensagem WA-JS"
+    },
+    "wajsLabPlaceholderResult": {
+        "message": "Execute uma ação para ver a resposta da WA-JS.",
+        "description": "Placeholder do resultado WA-JS"
     }
 }
