@@ -353,6 +353,10 @@
         "message": "Open WhatsApp Web, keep the account connected, then try again.",
         "description": "Archive WhatsApp Web not responding message"
     },
+    "whatsappConnectionHelpLabel": {
+        "message": "Open or reload WhatsApp Web before sending or archiving.",
+        "description": "Help message when the extension cannot find the WhatsApp Web tab"
+    },
     "archivedChatsLabel": {
         "message": "Archived",
         "description": "Archived chats metric label"
