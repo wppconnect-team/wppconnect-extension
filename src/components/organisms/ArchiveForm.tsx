@@ -49,9 +49,9 @@ export default class ArchiveForm extends Component<{ className?: string }, { arc
             footer={this.archiveFormFooter}>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_10rem]">
                 <label className="flex flex-col gap-2">
-                    <span className="flex items-center justify-between gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    <span className="flex items-center justify-between gap-2 text-sm font-semibold text-slate-300">
                         <span>{this.archiveDelayLabel}</span>
-                        <span className="rounded-full bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-100">{this.state.archiveDelayMs}ms</span>
+                        <span className="rounded-full bg-white/10 px-2 py-1 font-mono text-xs text-slate-100">{this.state.archiveDelayMs}ms</span>
                     </span>
                     <input
                         type="range"
@@ -60,12 +60,12 @@ export default class ArchiveForm extends Component<{ className?: string }, { arc
                         step={STEP_ARCHIVE_DELAY_MS}
                         value={this.state.archiveDelayMs}
                         onChange={this.handleDelayChange}
-                        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-emerald-600 outline-none dark:bg-slate-800"
+                        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-800 accent-emerald-500 outline-none"
                     />
-                    <span className="text-xs text-slate-500 dark:text-slate-400">{this.archiveDelayHelp}</span>
+                    <span className="text-xs text-slate-400">{this.archiveDelayHelp}</span>
                 </label>
                 <label className="flex flex-col gap-2">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">ms</span>
+                    <span className="text-sm font-semibold text-slate-300">ms</span>
                     <ControlInput
                         type="number"
                         min={MIN_ARCHIVE_DELAY_MS}

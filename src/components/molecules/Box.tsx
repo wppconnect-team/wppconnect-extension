@@ -15,31 +15,27 @@ export default class Box extends Component<BoxProps, {}> {
             'mx-auto',
             'flex',
             'flex-col',
-            'bg-white',
-            'dark:bg-slate-950',
-            'dark:text-slate-100',
+            'bg-slate-900/56',
+            'text-slate-100',
             'border',
-            'border-slate-200',
-            'dark:border-slate-800',
-            'shadow-sm',
-            'rounded-lg',
+            'border-white/10',
+            'shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_18px_60px_rgba(0,0,0,.18)]',
+            'backdrop-blur',
+            'rounded-2xl',
             'overflow-hidden',
             ...(this.props.className || '').split(' ')
         ].join(' ')}>
             {(title || headerButtons) && <div className={['p-4',
                 'border-b',
-                'border-slate-200',
-                'dark:border-slate-800',
+                'border-white/10',
                 'flex',
                 'gap-3',
                 'justify-between',
                 'items-center',
-                'bg-slate-50',
-                'dark:bg-slate-900'].join(' ')}>
+                'bg-white/5'].join(' ')}>
                 {title && <h1 className={['text-lg',
                     'font-semibold',
-                    'text-slate-800',
-                    'dark:text-slate-200'].join(' ')}>{title}</h1>}
+                    'text-white'].join(' ')}>{title}</h1>}
                 {headerButtons}
             </div>}
             <div className={[
@@ -55,13 +51,10 @@ export default class Box extends Component<BoxProps, {}> {
             {footer && <div className={['px-4',
                 'py-3',
                 'border-t',
-                'border-slate-200',
-                'dark:border-slate-800',
-                'bg-slate-50',
+                'border-white/10',
+                'bg-white/5',
                 'text-sm',
-                'text-slate-600',
-                'dark:bg-slate-900',
-                'dark:text-slate-300'].join(' ')}>
+                'text-slate-400'].join(' ')}>
                 {footer}
             </div>}
         </section>;

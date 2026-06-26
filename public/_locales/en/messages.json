@@ -424,5 +424,169 @@
     "wajsLabPlaceholderResult": {
         "message": "Run an action to see the WA-JS response.",
         "description": "WA-JS result placeholder"
+    },
+    "dashboardTitle": {
+        "message": "WA Executions",
+        "description": "Popup dashboard title"
+    },
+    "dashboardSubtitle": {
+        "message": "Automate WhatsApp functions",
+        "description": "Popup dashboard subtitle"
+    },
+    "executionsTabLabel": {
+        "message": "Executions",
+        "description": "Executions tab label"
+    },
+    "historyTabLabel": {
+        "message": "History",
+        "description": "History tab label"
+    },
+    "newExecutionTitle": {
+        "message": "New execution",
+        "description": "New execution section title"
+    },
+    "newExecutionSubtitle": {
+        "message": "Select a function to run on WhatsApp",
+        "description": "New execution section subtitle"
+    },
+    "selectFunctionLabel": {
+        "message": "Select function",
+        "description": "Function selector placeholder"
+    },
+    "executeButtonLabel": {
+        "message": "Execute",
+        "description": "Execute action button"
+    },
+    "quickExecutionsTitle": {
+        "message": "Quick executions",
+        "description": "Quick executions section title"
+    },
+    "summaryTitle": {
+        "message": "Summary",
+        "description": "Summary section title"
+    },
+    "latestExecutionsTitle": {
+        "message": "Latest executions",
+        "description": "Latest executions section title"
+    },
+    "viewAllLabel": {
+        "message": "View all",
+        "description": "View all link"
+    },
+    "whatsappConnectedLabel": {
+        "message": "WhatsApp connected",
+        "description": "Connected status label"
+    },
+    "whatsappNeedsConnectionLabel": {
+        "message": "Check WhatsApp connection",
+        "description": "Disconnected status label"
+    },
+    "checkConnectionLabel": {
+        "message": "Check connection",
+        "description": "Refresh connection label"
+    },
+    "contactsHelperLabel": {
+        "message": "Paste contacts separated by comma, semicolon or line break.",
+        "description": "Contacts helper text"
+    },
+    "todaySentLabel": {
+        "message": "Sent today",
+        "description": "Sent today summary metric"
+    },
+    "duplicatesTodayLabel": {
+        "message": "Duplicates",
+        "description": "Duplicate contacts summary metric"
+    },
+    "completedThisMonthLabel": {
+        "message": "Completed",
+        "description": "Completed this month summary metric"
+    },
+    "noRecentExecutionsLabel": {
+        "message": "No recent executions yet.",
+        "description": "Empty recent executions label"
+    },
+    "noFunctionSelectedLabel": {
+        "message": "Choose a function before running.",
+        "description": "No function selected error"
+    },
+    "functionSendMessageLabel": {
+        "message": "Send message",
+        "description": "Send message function label"
+    },
+    "functionArchiveChatsLabel": {
+        "message": "Archive chats",
+        "description": "Archive chats function label"
+    },
+    "functionListChatsLabel": {
+        "message": "List chats",
+        "description": "List chats function label"
+    },
+    "functionUnreadChatsLabel": {
+        "message": "Unread chats",
+        "description": "Unread chats function label"
+    },
+    "functionVerifyNumberLabel": {
+        "message": "Verify number",
+        "description": "Verify number function label"
+    },
+    "functionDiagnosticsLabel": {
+        "message": "Connection diagnostics",
+        "description": "Diagnostics function label"
+    },
+    "functionActiveChatLabel": {
+        "message": "Active chat",
+        "description": "Active chat function label"
+    },
+    "functionOpenChatLabel": {
+        "message": "Open chat",
+        "description": "Open chat function label"
+    },
+    "functionMarkReadLabel": {
+        "message": "Mark read",
+        "description": "Mark read function label"
+    },
+    "functionMarkUnreadLabel": {
+        "message": "Mark unread",
+        "description": "Mark unread function label"
+    },
+    "functionPinChatLabel": {
+        "message": "Pin chat",
+        "description": "Pin chat function label"
+    },
+    "functionMuteChatLabel": {
+        "message": "Mute chat",
+        "description": "Mute chat function label"
+    },
+    "functionSendTextLabel": {
+        "message": "Send text",
+        "description": "Send text function label"
+    },
+    "functionSendMessageDescription": {
+        "message": "For contacts or lists",
+        "description": "Send message quick action description"
+    },
+    "functionArchiveChatsDescription": {
+        "message": "Archive non-archived chats",
+        "description": "Archive chats quick action description"
+    },
+    "functionListChatsDescription": {
+        "message": "Inspect available chats",
+        "description": "List chats quick action description"
+    },
+    "functionVerifyNumberDescription": {
+        "message": "Check contact existence",
+        "description": "Verify number quick action description"
+    },
+    "functionRequiresChatLabel": {
+        "message": "Chat ID or phone",
+        "description": "Chat target field label"
+    },
+    "functionRequiresContactLabel": {
+        "message": "Contact ID or phone",
+        "description": "Contact target field label"
+    },
+    "functionRequiresTextLabel": {
+        "message": "Message text",
+        "description": "Action text field label"
     }
 }

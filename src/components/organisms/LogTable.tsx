@@ -39,9 +39,9 @@ export default class LogTable extends Component<{ className?: string }, { logs: 
 
     render() {
         const logLevelClass: { [key: number]: string } = {
-            1: 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-100',
-            2: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100',
-            3: 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100'
+            1: 'border-rose-400/30 bg-rose-500/10 text-rose-100',
+            2: 'border-amber-400/30 bg-amber-400/10 text-amber-100',
+            3: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100'
         };
 
         return <Box
@@ -59,7 +59,7 @@ export default class LogTable extends Component<{ className?: string }, { logs: 
                     onClick={this.handleClear}
                 >{this.cleanButtonLabel}</Button>
             </div>}>
-            {this.state.logs.length === 0 && <div className="rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            {this.state.logs.length === 0 && <div className="rounded-lg border border-dashed border-white/12 px-4 py-8 text-center text-sm text-slate-400">
                 {this.emptyLogsLabel}
             </div>}
             {this.state.logs.length > 0 && <div className="overflow-x-auto">

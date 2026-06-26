@@ -105,22 +105,19 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
                         'min-h-[2.75rem]',
                         'rounded-lg',
                         'border',
-                        'border-slate-300',
-                        'bg-white',
+                        'border-white/10',
+                        'bg-slate-950/35',
                         'px-3',
                         'py-2',
                         'text-left',
                         'text-sm',
-                        'text-slate-900',
-                        'shadow-sm',
+                        'text-slate-100',
+                        'shadow-[inset_0_1px_0_rgba(255,255,255,.04)]',
                         'transition',
-                        'hover:border-slate-400',
+                        'hover:border-emerald-400/40',
                         'focus:outline-none',
                         'focus:ring-2',
                         'focus:ring-emerald-500',
-                        'dark:border-slate-700',
-                        'dark:bg-slate-900',
-                        'dark:text-slate-100',
                     ].join(' ')}
                     type="button"
                     onClick={this.toggleOpen}
@@ -132,8 +129,8 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
                     </span>
                 </button>
                 {isOpen && (
-                    <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950">
-                        <div className="border-b border-slate-200 p-2 dark:border-slate-800">
+                    <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-lg border border-white/10 bg-slate-950 shadow-2xl">
+                        <div className="border-b border-white/10 p-2">
                             <ControlInput
                                 type="text"
                                 placeholder={this.searchPlaceholder}
@@ -146,7 +143,7 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
                                 filteredOptions.map((option) => (
                                     <li key={option.value}>
                                         <button
-                                            className={`w-full px-3 py-2 text-left text-sm transition hover:bg-emerald-50 dark:hover:bg-emerald-950 ${selectedValue === option ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-50' : 'text-slate-700 dark:text-slate-200'}`}
+                                            className={`w-full px-3 py-2 text-left text-sm transition hover:bg-emerald-400/10 ${selectedValue === option ? 'bg-emerald-400/15 text-emerald-100' : 'text-slate-200'}`}
                                             type="button"
                                             onClick={() => this.handleSelect(option)}
                                         >
