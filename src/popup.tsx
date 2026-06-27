@@ -2,7 +2,7 @@ import React, { ChangeEvent, Component, FormEvent, MouseEvent, ReactNode } from 
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import Button from './components/atoms/Button';
-import { ControlInput, ControlSelect, ControlTextArea } from './components/atoms/ControlFactory';
+import { ControlInput, ControlTextArea } from './components/atoms/ControlFactory';
 import ArchiveStatus from './types/ArchiveStatus';
 import Log from './types/Log';
 import QueueStatus from './types/QueueStatus';
@@ -39,7 +39,26 @@ type PopupAction =
   | 'markUnread'
   | 'pinChat'
   | 'muteChat'
-  | 'sendText';
+  | 'sendText'
+  | 'profile'
+  | 'contactStatus'
+  | 'profilePicture'
+  | 'businessProfile'
+  | 'commonGroups'
+  | 'unpinChat'
+  | 'unmuteChat'
+  | 'archiveChat'
+  | 'unarchiveChat'
+  | 'typing'
+  | 'recording'
+  | 'pauseTyping'
+  | 'setInput'
+  | 'sendPoll'
+  | 'sendLocation'
+  | 'sendVCard'
+  | 'allWaJsFunctions';
+
+type DeliveryMode = 'now' | 'scheduled';
 
 type PopupState = {
   contacts: string,
@@ -51,12 +70,18 @@ type PopupState = {
   connectionError?: string,
   activeTab: PopupTab,
   selectedAction: PopupAction | '',
+  actionMenuOpen: boolean,
   labChatId: string,
   labContactId: string,
   labText: string,
   labLimit: number,
   labLatitude: string,
   labLongitude: string,
+  advancedFunctionPath: string,
+  advancedArgsJson: string,
+  availableFunctions: string[],
+  deliveryMode: DeliveryMode,
+  scheduledAt: string,
   labLoading: boolean,
   labResult?: WaJsLabResponse,
   logs: Log[],
@@ -121,12 +146,18 @@ class Popup extends Component<{}, PopupState> {
       connectionError: undefined,
       activeTab: 'executions',
       selectedAction: '',
+      actionMenuOpen: false,
       labChatId: '',
       labContactId: '',
       labText: 'Teste WA-JS Lab',
       labLimit: 10,
       labLatitude: '-23.55052',
       labLongitude: '-46.633308',
+      advancedFunctionPath: '',
+      advancedArgsJson: '[]',
+      availableFunctions: [],
+      deliveryMode: 'now',
+      scheduledAt: '',
       labLoading: false,
       labResult: undefined,
       logs: [],
@@ -194,7 +225,7 @@ class Popup extends Component<{}, PopupState> {
   completedThisMonthLabel = chrome.i18n.getMessage('completedThisMonthLabel') || 'Completed';
   noRecentExecutionsLabel = chrome.i18n.getMessage('noRecentExecutionsLabel') || 'No recent executions yet.';
   noFunctionSelectedLabel = chrome.i18n.getMessage('noFunctionSelectedLabel') || 'Choose a function before running.';
-  functionSendMessageLabel = chrome.i18n.getMessage('functionSendMessageLabel') || 'Send message';
+  functionSendMessageLabel = chrome.i18n.getMessage('functionSendMessageLabel') || 'Bulk message';
   functionArchiveChatsLabel = chrome.i18n.getMessage('functionArchiveChatsLabel') || 'Archive chats';
   functionListChatsLabel = chrome.i18n.getMessage('functionListChatsLabel') || 'List chats';
   functionUnreadChatsLabel = chrome.i18n.getMessage('functionUnreadChatsLabel') || 'Unread chats';
@@ -214,6 +245,35 @@ class Popup extends Component<{}, PopupState> {
   functionRequiresChatLabel = chrome.i18n.getMessage('functionRequiresChatLabel') || 'Chat ID or phone';
   functionRequiresContactLabel = chrome.i18n.getMessage('functionRequiresContactLabel') || 'Contact ID or phone';
   functionRequiresTextLabel = chrome.i18n.getMessage('functionRequiresTextLabel') || 'Message text';
+  bulkCaptureTargetsLabel = chrome.i18n.getMessage('bulkCaptureTargetsLabel') || 'Capture chats/contacts';
+  bulkSpamWarningLabel = chrome.i18n.getMessage('bulkSpamWarningLabel') || 'WhatsApp is increasingly strict with exaggerated spam. Use conservative volumes, consented contacts and realistic delays.';
+  deliveryModeLabel = chrome.i18n.getMessage('deliveryModeLabel') || 'Delivery';
+  sendNowLabel = chrome.i18n.getMessage('sendNowLabel') || 'Send now';
+  scheduleMessageLabel = chrome.i18n.getMessage('scheduleMessageLabel') || 'Schedule';
+  scheduleDateLabel = chrome.i18n.getMessage('scheduleDateLabel') || 'Date and time';
+  scheduledQueueLabel = chrome.i18n.getMessage('scheduledQueueLabel') || 'Scheduled in the WhatsApp Web tab. Keep it open and connected.';
+  allWaJsFunctionsLabel = chrome.i18n.getMessage('allWaJsFunctionsLabel') || 'All WA-JS functions';
+  allWaJsFunctionsDescription = chrome.i18n.getMessage('allWaJsFunctionsDescription') || 'Select any runtime WPP function';
+  refreshFunctionsLabel = chrome.i18n.getMessage('refreshFunctionsLabel') || 'Load functions';
+  functionPathLabel = chrome.i18n.getMessage('functionPathLabel') || 'Function path';
+  functionArgsLabel = chrome.i18n.getMessage('functionArgsLabel') || 'Arguments JSON array';
+  functionArgsHelpLabel = chrome.i18n.getMessage('functionArgsHelpLabel') || 'Example: [\"5511999999999@c.us\", {\"count\": 10}]';
+  functionProfileLabel = chrome.i18n.getMessage('functionProfileLabel') || 'Profile';
+  functionContactStatusLabel = chrome.i18n.getMessage('functionContactStatusLabel') || 'Contact status';
+  functionProfilePictureLabel = chrome.i18n.getMessage('functionProfilePictureLabel') || 'Contact picture';
+  functionBusinessProfileLabel = chrome.i18n.getMessage('functionBusinessProfileLabel') || 'Business profile';
+  functionCommonGroupsLabel = chrome.i18n.getMessage('functionCommonGroupsLabel') || 'Common groups';
+  functionUnpinChatLabel = chrome.i18n.getMessage('functionUnpinChatLabel') || 'Unpin chat';
+  functionUnmuteChatLabel = chrome.i18n.getMessage('functionUnmuteChatLabel') || 'Unmute chat';
+  functionArchiveChatLabel = chrome.i18n.getMessage('functionArchiveChatLabel') || 'Archive chat';
+  functionUnarchiveChatLabel = chrome.i18n.getMessage('functionUnarchiveChatLabel') || 'Unarchive chat';
+  functionTypingLabel = chrome.i18n.getMessage('functionTypingLabel') || 'Typing 5s';
+  functionRecordingLabel = chrome.i18n.getMessage('functionRecordingLabel') || 'Recording 5s';
+  functionPauseTypingLabel = chrome.i18n.getMessage('functionPauseTypingLabel') || 'Pause typing';
+  functionSetInputLabel = chrome.i18n.getMessage('functionSetInputLabel') || 'Fill input';
+  functionSendPollLabel = chrome.i18n.getMessage('functionSendPollLabel') || 'Send poll';
+  functionSendLocationLabel = chrome.i18n.getMessage('functionSendLocationLabel') || 'Send location';
+  functionSendVCardLabel = chrome.i18n.getMessage('functionSendVCardLabel') || 'Send vCard';
 
   queueStatusListener = 0;
   archiveStatusListener = 0;
@@ -223,16 +283,33 @@ class Popup extends Component<{}, PopupState> {
     { value: 'sendMessage', label: this.functionSendMessageLabel, icon: 'send' },
     { value: 'archiveChats', label: this.functionArchiveChatsLabel, icon: 'archive' },
     { value: 'diagnostics', label: this.functionDiagnosticsLabel, icon: 'zap', labAction: 'diagnostics' },
+    { value: 'profile', label: this.functionProfileLabel, icon: 'user', labAction: 'profile' },
     { value: 'listChats', label: this.functionListChatsLabel, icon: 'list', labAction: 'listChats' },
     { value: 'listUnreadChats', label: this.functionUnreadChatsLabel, icon: 'message', labAction: 'listUnreadChats' },
     { value: 'activeChat', label: this.functionActiveChatLabel, icon: 'check', labAction: 'activeChat' },
     { value: 'queryContact', label: this.functionVerifyNumberLabel, icon: 'search', labAction: 'queryContact', needsContact: true },
+    { value: 'contactStatus', label: this.functionContactStatusLabel, icon: 'message', labAction: 'contactStatus', needsContact: true },
+    { value: 'profilePicture', label: this.functionProfilePictureLabel, icon: 'user', labAction: 'profilePicture', needsContact: true },
+    { value: 'businessProfile', label: this.functionBusinessProfileLabel, icon: 'user', labAction: 'businessProfile', needsContact: true },
+    { value: 'commonGroups', label: this.functionCommonGroupsLabel, icon: 'list', labAction: 'commonGroups', needsContact: true },
     { value: 'openChat', label: this.functionOpenChatLabel, icon: 'user', labAction: 'openChat', needsChat: true },
     { value: 'markRead', label: this.functionMarkReadLabel, icon: 'check', labAction: 'markRead', needsChat: true },
     { value: 'markUnread', label: this.functionMarkUnreadLabel, icon: 'message', labAction: 'markUnread', needsChat: true },
     { value: 'pinChat', label: this.functionPinChatLabel, icon: 'pin', labAction: 'pinChat', needsChat: true },
+    { value: 'unpinChat', label: this.functionUnpinChatLabel, icon: 'pin', labAction: 'unpinChat', needsChat: true },
     { value: 'muteChat', label: this.functionMuteChatLabel, icon: 'clock', labAction: 'muteChat', needsChat: true },
-    { value: 'sendText', label: this.functionSendTextLabel, icon: 'send', labAction: 'sendText', needsChat: true, needsText: true }
+    { value: 'unmuteChat', label: this.functionUnmuteChatLabel, icon: 'clock', labAction: 'unmuteChat', needsChat: true },
+    { value: 'archiveChat', label: this.functionArchiveChatLabel, icon: 'archive', labAction: 'archiveChat', needsChat: true },
+    { value: 'unarchiveChat', label: this.functionUnarchiveChatLabel, icon: 'archive', labAction: 'unarchiveChat', needsChat: true },
+    { value: 'typing', label: this.functionTypingLabel, icon: 'message', labAction: 'typing', needsChat: true },
+    { value: 'recording', label: this.functionRecordingLabel, icon: 'message', labAction: 'recording', needsChat: true },
+    { value: 'pauseTyping', label: this.functionPauseTypingLabel, icon: 'message', labAction: 'pauseTyping', needsChat: true },
+    { value: 'setInput', label: this.functionSetInputLabel, icon: 'message', labAction: 'setInput', needsText: true },
+    { value: 'sendText', label: this.functionSendTextLabel, icon: 'send', labAction: 'sendText', needsChat: true, needsText: true },
+    { value: 'sendPoll', label: this.functionSendPollLabel, icon: 'send', labAction: 'sendPoll', needsChat: true, needsText: true },
+    { value: 'sendLocation', label: this.functionSendLocationLabel, icon: 'send', labAction: 'sendLocation', needsChat: true },
+    { value: 'sendVCard', label: this.functionSendVCardLabel, icon: 'send', labAction: 'sendVCard', needsChat: true, needsContact: true, needsText: true },
+    { value: 'allWaJsFunctions', label: this.allWaJsFunctionsLabel, icon: 'zap', labAction: 'executeFunction' }
   ];
 
   componentDidMount() {
@@ -338,9 +415,12 @@ class Popup extends Component<{}, PopupState> {
     chrome.storage.local.get({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, async data => {
       const contacts = this.parseContacts(data.prefix);
       if (contacts.length === 0) return;
+      const scheduledAt = this.state.deliveryMode === 'scheduled' && this.state.scheduledAt
+        ? new Date(this.state.scheduledAt).getTime()
+        : undefined;
 
       contacts.forEach(contact => {
-        PopupMessageManager.sendMessage(ChromeMessageTypes.SEND_MESSAGE, { contact, message: data.message, attachment: data.attachment, buttons: data.buttons, delay: data.delay })
+        PopupMessageManager.sendMessage(ChromeMessageTypes.SEND_MESSAGE, { contact, message: data.message, attachment: data.attachment, buttons: data.buttons, delay: data.delay, scheduledAt })
           .catch((error) => this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel }));
       });
       this.setState({ confirmed: false, activeOperation: 'send' });
@@ -408,6 +488,11 @@ class Popup extends Component<{}, PopupState> {
       return;
     }
 
+    if (selectedAction.value === 'allWaJsFunctions') {
+      this.runLabAction('executeFunction');
+      return;
+    }
+
     if (selectedAction.labAction) this.runLabAction(selectedAction.labAction);
   }
 
@@ -420,7 +505,9 @@ class Popup extends Component<{}, PopupState> {
       text: this.state.labText,
       limit: this.state.labLimit,
       latitude: Number(this.state.labLatitude),
-      longitude: Number(this.state.labLongitude)
+      longitude: Number(this.state.labLongitude),
+      functionPath: this.state.advancedFunctionPath,
+      argsJson: this.state.advancedArgsJson
     }).then((labResult) => {
       this.setState({ labResult, labLoading: false, connectionError: undefined, activeTab: 'history' });
     }).catch((error) => {
@@ -436,6 +523,43 @@ class Popup extends Component<{}, PopupState> {
         }
       });
     });
+  }
+
+  loadAvailableFunctions = () => {
+    this.setState({ labLoading: true, connectionError: undefined });
+    PopupMessageManager.sendMessage(ChromeMessageTypes.WAJS_LAB_EXECUTE, {
+      action: 'listFunctions',
+      limit: 50
+    }).then((labResult) => {
+      const data = labResult.data as { items?: string[] } | undefined;
+      this.setState({
+        labResult,
+        labLoading: false,
+        activeTab: 'executions',
+        availableFunctions: data?.items || []
+      });
+    }).catch((error) => this.setState({
+      labLoading: false,
+      connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel
+    }));
+  }
+
+  captureBulkTargets = () => {
+    this.setState({ labLoading: true, connectionError: undefined });
+    PopupMessageManager.sendMessage(ChromeMessageTypes.WAJS_LAB_EXECUTE, {
+      action: 'captureBulkTargets',
+      limit: 10000
+    }).then((labResult) => {
+      const data = labResult.data as { contactsText?: string } | undefined;
+      this.setState({
+        labResult,
+        labLoading: false,
+        contacts: data?.contactsText || this.state.contacts
+      });
+    }).catch((error) => this.setState({
+      labLoading: false,
+      connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel
+    }));
   }
 
   selectQuickAction = (action: PopupAction) => {
@@ -631,6 +755,10 @@ class Popup extends Component<{}, PopupState> {
 
     if (selectedAction.value === 'sendMessage') {
       return <form onSubmit={this.handleSubmit} className="mt-4 space-y-3">
+        <div className="flex gap-3 rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
+          <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+          <span>{this.bulkSpamWarningLabel}</span>
+        </div>
         <label className="flex flex-col gap-2">
           <span className="text-sm font-semibold text-slate-300">{this.contactsLabel}</span>
           <ControlTextArea
@@ -641,6 +769,28 @@ class Popup extends Component<{}, PopupState> {
             required
           />
         </label>
+        <Button
+          type="button"
+          variant="glass"
+          className="w-full"
+          disabled={this.state.labLoading}
+          onClick={this.captureBulkTargets}
+          icon={<Icon name="list" className="h-4 w-4" />}
+        >
+          {this.bulkCaptureTargetsLabel}
+        </Button>
+        <div className="rounded-xl border border-white/10 bg-slate-950/35 p-3">
+          <div className="mb-3 text-sm font-semibold text-slate-300">{this.deliveryModeLabel}</div>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => this.setState({ deliveryMode: 'now' })} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${this.state.deliveryMode === 'now' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.sendNowLabel}</button>
+            <button type="button" onClick={() => this.setState({ deliveryMode: 'scheduled' })} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${this.state.deliveryMode === 'scheduled' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.scheduleMessageLabel}</button>
+          </div>
+          {this.state.deliveryMode === 'scheduled' && <label className="mt-3 flex flex-col gap-2">
+            <span className="text-xs font-bold uppercase text-slate-500">{this.scheduleDateLabel}</span>
+            <ControlInput type="datetime-local" value={this.state.scheduledAt} onChange={(event) => this.setState({ scheduledAt: event.target.value })} />
+            <span className="text-xs leading-5 text-slate-500">{this.scheduledQueueLabel}</span>
+          </label>}
+        </div>
         <div className="grid grid-cols-3 gap-2">
           {this.renderMiniMetric(this.totalContactsLabel, summary.total)}
           {this.renderMiniMetric(this.uniqueContactsLabel, summary.unique)}
@@ -648,6 +798,37 @@ class Popup extends Component<{}, PopupState> {
         </div>
         <p className="text-xs leading-5 text-slate-500">{this.prefixFooterNotePopup}</p>
       </form>;
+    }
+
+    if (selectedAction.value === 'allWaJsFunctions') {
+      return <div className="mt-4 space-y-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-semibold text-slate-300">{this.functionPathLabel}</span>
+            <ControlInput
+              list="wajs-functions"
+              value={this.state.advancedFunctionPath}
+              placeholder="WPP.chat.list"
+              onChange={(event) => this.setState({ advancedFunctionPath: event.target.value })}
+            />
+            <datalist id="wajs-functions">
+              {this.state.availableFunctions.map(path => <option key={path} value={path} />)}
+            </datalist>
+          </label>
+          <Button className="self-end" variant="glass" type="button" disabled={this.state.labLoading} onClick={this.loadAvailableFunctions}>
+            {this.refreshFunctionsLabel}
+          </Button>
+        </div>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-300">{this.functionArgsLabel}</span>
+          <ControlTextArea
+            className="min-h-[6rem] resize-y font-mono text-xs"
+            value={this.state.advancedArgsJson}
+            onChange={(event) => this.setState({ advancedArgsJson: event.target.value })}
+          />
+          <span className="text-xs leading-5 text-slate-500">{this.functionArgsHelpLabel}</span>
+        </label>
+      </div>;
     }
 
     return <div className="mt-4 grid grid-cols-2 gap-3">
@@ -663,6 +844,45 @@ class Popup extends Component<{}, PopupState> {
         <span className="text-sm font-semibold text-slate-300">{this.functionRequiresTextLabel}</span>
         <ControlInput value={this.state.labText} onChange={(event) => this.setState({ labText: event.target.value })} />
       </label>}
+    </div>;
+  }
+
+  renderActionSelector() {
+    const selectedAction = this.getSelectedAction();
+
+    return <div className="relative">
+      <button
+        type="button"
+        onClick={() => this.setState({ actionMenuOpen: !this.state.actionMenuOpen })}
+        className="flex min-h-[2.9rem] w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-4 py-2 text-left text-sm text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,.04)] outline-none transition hover:border-emerald-400/35 focus-visible:border-emerald-400 focus-visible:ring-2 focus-visible:ring-emerald-500"
+      >
+        <span className="flex min-w-0 items-center gap-3">
+          <Icon name={selectedAction?.icon || 'list'} className="h-5 w-5 shrink-0 text-slate-500" />
+          <span className={selectedAction ? 'truncate text-slate-100' : 'truncate text-slate-400'}>{selectedAction?.label || this.selectFunctionLabel}</span>
+        </span>
+        <span className={`text-slate-500 transition ${this.state.actionMenuOpen ? 'rotate-180' : ''}`}>v</span>
+      </button>
+      {this.state.actionMenuOpen && <div className="absolute z-30 mt-2 max-h-80 w-full overflow-auto rounded-xl border border-white/10 bg-slate-950 p-1 shadow-2xl">
+        <button
+          type="button"
+          onClick={() => this.setState({ selectedAction: '', actionMenuOpen: false })}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-slate-400 transition hover:bg-white/10 hover:text-white"
+        >
+          <Icon name="list" className="h-4 w-4" />
+          {this.selectFunctionLabel}
+        </button>
+        {this.actions.map(action => (
+          <button
+            type="button"
+            key={action.value}
+            onClick={() => this.setState({ selectedAction: action.value, actionMenuOpen: false, archiveConfirmOpen: false, connectionError: undefined })}
+            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${this.state.selectedAction === action.value ? 'bg-emerald-500/15 text-emerald-100' : 'text-slate-200 hover:bg-white/10 hover:text-white'}`}
+          >
+            <Icon name={action.icon} className="h-4 w-4 shrink-0 text-emerald-300" />
+            <span className="truncate">{action.label}</span>
+          </button>
+        ))}
+      </div>}
     </div>;
   }
 
@@ -697,7 +917,7 @@ class Popup extends Component<{}, PopupState> {
 
   renderNewExecution() {
     const summary = this.getContactSummary();
-    const sendDisabled = this.state.selectedAction === 'sendMessage' && summary.unique === 0;
+    const sendDisabled = this.state.selectedAction === 'sendMessage' && (summary.unique === 0 || (this.state.deliveryMode === 'scheduled' && !this.state.scheduledAt));
 
     return this.renderPanel(<>
       <div>
@@ -706,18 +926,7 @@ class Popup extends Component<{}, PopupState> {
       </div>
       <div className="mt-5">
         <label className="sr-only" htmlFor="popup-action">{this.selectFunctionLabel}</label>
-        <div className="relative">
-          <Icon name={this.getSelectedAction()?.icon || 'list'} className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
-          <ControlSelect
-            id="popup-action"
-            className="pl-12"
-            value={this.state.selectedAction}
-            onChange={(event) => this.setState({ selectedAction: event.target.value as PopupAction | '', archiveConfirmOpen: false, connectionError: undefined })}
-          >
-            <option value="">{this.selectFunctionLabel}</option>
-            {this.actions.map(action => <option key={action.value} value={action.value}>{action.label}</option>)}
-          </ControlSelect>
-        </div>
+        {this.renderActionSelector()}
         {this.renderActionFields()}
         {this.renderArchiveConfirmation()}
         {this.renderConnectionNotice()}
@@ -735,16 +944,17 @@ class Popup extends Component<{}, PopupState> {
     </>);
   }
 
-  renderQuickAction(action: PopupAction, title: string, description: string, icon: UiIcon) {
+  renderQuickAction(action: PopupAction, title: string, description: string, icon: UiIcon, className = '') {
     const active = this.state.selectedAction === action;
     return <button
       type="button"
       onClick={() => this.selectQuickAction(action)}
       className={[
         'group flex min-h-[8.25rem] flex-col items-center justify-center rounded-xl border p-4 text-center transition',
+        className,
         active
           ? 'border-emerald-400/50 bg-emerald-400/10 shadow-[0_18px_38px_rgba(16,185,129,.12)]'
-          : 'border-white/10 bg-slate-950/22 hover:border-emerald-400/35 hover:bg-white/6'
+          : 'border-white/10 bg-slate-950/22 hover:border-emerald-400/35 hover:bg-white/10'
       ].join(' ')}
     >
       <Icon name={icon} className="h-9 w-9 text-emerald-300 transition group-hover:scale-105" />
@@ -761,6 +971,7 @@ class Popup extends Component<{}, PopupState> {
         {this.renderQuickAction('archiveChats', this.functionArchiveChatsLabel, this.functionArchiveChatsDescription, 'archive')}
         {this.renderQuickAction('listChats', this.functionListChatsLabel, this.functionListChatsDescription, 'list')}
         {this.renderQuickAction('queryContact', this.functionVerifyNumberLabel, this.functionVerifyNumberDescription, 'search')}
+        {this.renderQuickAction('allWaJsFunctions', this.allWaJsFunctionsLabel, this.allWaJsFunctionsDescription, 'zap', 'col-span-4 min-h-[6rem] flex-row gap-4 text-left')}
       </div>
     </>);
   }

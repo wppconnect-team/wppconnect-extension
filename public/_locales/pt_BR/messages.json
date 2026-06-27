@@ -510,7 +510,7 @@
         "description": "Erro de função não selecionada"
     },
     "functionSendMessageLabel": {
-        "message": "Enviar mensagem",
+        "message": "Enviar mensagem em massa",
         "description": "Label da função enviar mensagem"
     },
     "functionArchiveChatsLabel": {
@@ -588,5 +588,141 @@
     "functionRequiresTextLabel": {
         "message": "Texto da mensagem",
         "description": "Label do campo de texto da ação"
+    },
+    "bulkCaptureTargetsLabel": {
+        "message": "Capturar chats/contatos",
+        "description": "Botão para capturar alvos de envio em massa do WhatsApp"
+    },
+    "bulkSpamWarningLabel": {
+        "message": "O WhatsApp está banindo com facilidade envios exagerados de spam. Use volumes conservadores, contatos com consentimento e delays realistas.",
+        "description": "Aviso de spam no envio em massa"
+    },
+    "deliveryModeLabel": {
+        "message": "Envio",
+        "description": "Label do modo de envio"
+    },
+    "sendNowLabel": {
+        "message": "Enviar agora",
+        "description": "Opção enviar agora"
+    },
+    "scheduleMessageLabel": {
+        "message": "Agendar",
+        "description": "Opção agendar mensagem"
+    },
+    "scheduleDateLabel": {
+        "message": "Data e horário",
+        "description": "Label da data de agendamento"
+    },
+    "scheduledQueueLabel": {
+        "message": "Agendado na aba do WhatsApp Web. Mantenha a aba aberta e conectada.",
+        "description": "Aviso de runtime do agendamento"
+    },
+    "allWaJsFunctionsLabel": {
+        "message": "Todas as funções WA-JS",
+        "description": "Label do executor avançado WA-JS"
+    },
+    "allWaJsFunctionsDescription": {
+        "message": "Selecione qualquer função WPP do runtime",
+        "description": "Descrição do executor avançado WA-JS"
+    },
+    "refreshFunctionsLabel": {
+        "message": "Carregar funções",
+        "description": "Botão de carregar funções WA-JS"
+    },
+    "functionPathLabel": {
+        "message": "Caminho da função",
+        "description": "Campo de caminho da função WA-JS"
+    },
+    "functionArgsLabel": {
+        "message": "Argumentos em JSON array",
+        "description": "Campo de argumentos da função WA-JS"
+    },
+    "functionArgsHelpLabel": {
+        "message": "Exemplo: [\"5511999999999@c.us\", {\"count\": 10}]",
+        "description": "Ajuda de argumentos da função WA-JS"
+    },
+    "functionProfileLabel": {
+        "message": "Perfil",
+        "description": "Label da função de perfil WA-JS"
+    },
+    "functionContactStatusLabel": {
+        "message": "Status do contato",
+        "description": "Label da função de status do contato WA-JS"
+    },
+    "functionProfilePictureLabel": {
+        "message": "Foto do contato",
+        "description": "Label da função de foto do contato WA-JS"
+    },
+    "functionBusinessProfileLabel": {
+        "message": "Perfil comercial",
+        "description": "Label da função de perfil comercial WA-JS"
+    },
+    "functionCommonGroupsLabel": {
+        "message": "Grupos em comum",
+        "description": "Label da função de grupos em comum WA-JS"
+    },
+    "functionUnpinChatLabel": {
+        "message": "Desfixar chat",
+        "description": "Label da função desfixar chat WA-JS"
+    },
+    "functionUnmuteChatLabel": {
+        "message": "Remover silêncio",
+        "description": "Label da função remover silêncio WA-JS"
+    },
+    "functionArchiveChatLabel": {
+        "message": "Arquivar chat",
+        "description": "Label da função arquivar chat WA-JS"
+    },
+    "functionUnarchiveChatLabel": {
+        "message": "Desarquivar chat",
+        "description": "Label da função desarquivar chat WA-JS"
+    },
+    "functionTypingLabel": {
+        "message": "Digitando 5s",
+        "description": "Label da função digitando WA-JS"
+    },
+    "functionRecordingLabel": {
+        "message": "Gravando 5s",
+        "description": "Label da função gravando WA-JS"
+    },
+    "functionPauseTypingLabel": {
+        "message": "Pausar digitação",
+        "description": "Label da função pausar digitação WA-JS"
+    },
+    "functionSetInputLabel": {
+        "message": "Preencher input",
+        "description": "Label da função preencher input WA-JS"
+    },
+    "functionSendPollLabel": {
+        "message": "Enviar enquete",
+        "description": "Label da função enviar enquete WA-JS"
+    },
+    "functionSendLocationLabel": {
+        "message": "Enviar localização",
+        "description": "Label da função enviar localização WA-JS"
+    },
+    "functionSendVCardLabel": {
+        "message": "Enviar vCard",
+        "description": "Label da função enviar vCard WA-JS"
+    },
+    "languageSettingsTitle": {
+        "message": "Idioma",
+        "description": "Título da seção de idioma"
+    },
+    "languageSettingsHelp": {
+        "message": "O padrão segue o idioma do navegador. Altere aqui para telas da extensão que respeitam preferência manual de idioma.",
+        "description": "Ajuda da configuração de idioma"
+    },
+    "languageAutoLabel": {
+        "message": "Automático",
+        "description": "Opção de idioma automático"
+    },
+    "languageEnglishLabel": {
+        "message": "Inglês",
+        "description": "Opção de idioma inglês"
+    },
+    "languagePortugueseLabel": {
+        "message": "Português (Brasil)",
+        "description": "Opção de idioma português"
     }
 }

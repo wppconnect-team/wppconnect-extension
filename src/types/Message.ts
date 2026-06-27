@@ -6,5 +6,6 @@ export type Message = {
     message: string,
     attachment: Attachment,
     buttons: MessageButtonsTypes[],
-    delay?: number
+    delay?: number,
+    scheduledAt?: number
 }

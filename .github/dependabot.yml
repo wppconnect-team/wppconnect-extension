@@ -31,9 +31,11 @@ updates:
       - dependency-name: "style-loader"
       - dependency-name: "rimraf"
     groups:
-      runtime:
+      wa-js:
         patterns:
           - "@wppconnect/wa-js"
+      runtime:
+        patterns:
           - "react"
           - "react-dom"
       react-types:
