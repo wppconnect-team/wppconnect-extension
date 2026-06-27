@@ -769,6 +769,66 @@
         "message": "Cancelar",
         "description": "Botão de cancelar execução agendada"
     },
+    "schedulingLoadingLabel": {
+        "message": "Agendando...",
+        "description": "Texto do botão principal ao criar uma execução agendada"
+    },
+    "executingLoadingLabel": {
+        "message": "Executando...",
+        "description": "Texto do botão principal ao executar uma função"
+    },
+    "scheduledExecutionDetailsLabel": {
+        "message": "Detalhes",
+        "description": "Botão de detalhes da execução agendada"
+    },
+    "scheduledDetailsTitle": {
+        "message": "Detalhes do agendamento",
+        "description": "Título do painel de detalhe de execução agendada"
+    },
+    "scheduledDetailsEmptyLabel": {
+        "message": "Selecione uma execução agendada para inspecionar.",
+        "description": "Estado vazio do detalhe de execução agendada"
+    },
+    "scheduledDetailsFunctionLabel": {
+        "message": "Função",
+        "description": "Label de detalhe da função agendada"
+    },
+    "scheduledDetailsTargetLabel": {
+        "message": "Destino",
+        "description": "Label de detalhe do destino agendado"
+    },
+    "scheduledDetailsStatusLabel": {
+        "message": "Status",
+        "description": "Label de detalhe do status agendado"
+    },
+    "scheduledDetailsScheduledForLabel": {
+        "message": "Agendada para",
+        "description": "Label de detalhe da data agendada"
+    },
+    "scheduledDetailsCreatedAtLabel": {
+        "message": "Criada em",
+        "description": "Label de detalhe da criação do agendamento"
+    },
+    "scheduledDetailsUpdatedAtLabel": {
+        "message": "Atualizada em",
+        "description": "Label de detalhe da atualização do agendamento"
+    },
+    "scheduledDetailsPayloadLabel": {
+        "message": "Payload",
+        "description": "Label de detalhe do payload agendado"
+    },
+    "scheduledDetailsResultLabel": {
+        "message": "Resultado",
+        "description": "Label de detalhe do resultado agendado"
+    },
+    "scheduledDetailsErrorLabel": {
+        "message": "Erro",
+        "description": "Label de detalhe do erro agendado"
+    },
+    "scheduledDetailsCloseLabel": {
+        "message": "Fechar detalhes",
+        "description": "Botão de fechar detalhes da execução agendada"
+    },
     "languageSettingsTitle": {
         "message": "Idioma",
         "description": "Título da seção de idioma"

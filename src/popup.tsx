@@ -92,9 +92,11 @@ type PopupState = {
   scheduledAt: string,
   scheduledExecutions: ScheduledExecution[],
   labLoading: boolean,
+  operationMode?: 'scheduling' | 'executing',
   labResult?: WaJsLabResponse,
   logs: Log[],
-  activeOperation?: 'send' | 'archive'
+  activeOperation?: 'send' | 'archive',
+  selectedScheduledExecutionId?: string
 };
 
 type UiIcon =
@@ -180,9 +182,11 @@ class Popup extends Component<{}, PopupState> {
       scheduledAt: '',
       scheduledExecutions: [],
       labLoading: false,
+      operationMode: undefined,
       labResult: undefined,
       logs: [],
-      activeOperation: undefined
+      activeOperation: undefined,
+      selectedScheduledExecutionId: undefined
     };
   }
 
@@ -289,6 +293,21 @@ class Popup extends Component<{}, PopupState> {
   scheduledExecutionFailedLabel = chrome.i18n.getMessage('scheduledExecutionFailedLabel') || 'Failed';
   scheduledExecutionCancelledLabel = chrome.i18n.getMessage('scheduledExecutionCancelledLabel') || 'Cancelled';
   cancelScheduledExecutionLabel = chrome.i18n.getMessage('cancelScheduledExecutionLabel') || 'Cancel';
+  schedulingLoadingLabel = chrome.i18n.getMessage('schedulingLoadingLabel') || 'Scheduling...';
+  executingLoadingLabel = chrome.i18n.getMessage('executingLoadingLabel') || 'Executing...';
+  scheduledExecutionDetailsLabel = chrome.i18n.getMessage('scheduledExecutionDetailsLabel') || 'Details';
+  scheduledDetailsTitle = chrome.i18n.getMessage('scheduledDetailsTitle') || 'Schedule details';
+  scheduledDetailsEmptyLabel = chrome.i18n.getMessage('scheduledDetailsEmptyLabel') || 'Select a scheduled execution to inspect it.';
+  scheduledDetailsFunctionLabel = chrome.i18n.getMessage('scheduledDetailsFunctionLabel') || 'Function';
+  scheduledDetailsTargetLabel = chrome.i18n.getMessage('scheduledDetailsTargetLabel') || 'Target';
+  scheduledDetailsStatusLabel = chrome.i18n.getMessage('scheduledDetailsStatusLabel') || 'Status';
+  scheduledDetailsScheduledForLabel = chrome.i18n.getMessage('scheduledDetailsScheduledForLabel') || 'Scheduled for';
+  scheduledDetailsCreatedAtLabel = chrome.i18n.getMessage('scheduledDetailsCreatedAtLabel') || 'Created at';
+  scheduledDetailsUpdatedAtLabel = chrome.i18n.getMessage('scheduledDetailsUpdatedAtLabel') || 'Updated at';
+  scheduledDetailsPayloadLabel = chrome.i18n.getMessage('scheduledDetailsPayloadLabel') || 'Payload';
+  scheduledDetailsResultLabel = chrome.i18n.getMessage('scheduledDetailsResultLabel') || 'Result';
+  scheduledDetailsErrorLabel = chrome.i18n.getMessage('scheduledDetailsErrorLabel') || 'Error';
+  scheduledDetailsCloseLabel = chrome.i18n.getMessage('scheduledDetailsCloseLabel') || 'Close details';
   allWaJsFunctionsLabel = chrome.i18n.getMessage('allWaJsFunctionsLabel') || 'All WA-JS functions';
   allWaJsFunctionsDescription = chrome.i18n.getMessage('allWaJsFunctionsDescription') || 'Select any runtime WPP function';
   refreshFunctionsLabel = chrome.i18n.getMessage('refreshFunctionsLabel') || 'Load functions';
@@ -501,17 +520,55 @@ class Popup extends Component<{}, PopupState> {
     return contacts;
   }
 
+  resetSchedulingDefaults = () => ({
+    deliveryMode: 'now' as DeliveryMode,
+    scheduledAt: ''
+  })
+
+  beginOperation = (operationMode: NonNullable<PopupState['operationMode']>) => {
+    this.setState({ labLoading: true, operationMode, labResult: undefined, connectionError: undefined });
+  }
+
+  finishOperationState = <K extends keyof PopupState = never>(patch?: Pick<PopupState, K>): Pick<PopupState, K | 'deliveryMode' | 'scheduledAt' | 'labLoading' | 'operationMode'> => ({
+    ...patch,
+    ...this.resetSchedulingDefaults(),
+    labLoading: false,
+    operationMode: undefined
+  }) as Pick<PopupState, K | 'deliveryMode' | 'scheduledAt' | 'labLoading' | 'operationMode'>
+
+  handleScheduledExecutionSaved = <K extends keyof PopupState = never>(scheduledExecution: ScheduledExecution, patch?: Pick<PopupState, K>) => {
+    this.setState(prevState => this.finishOperationState({
+      ...patch,
+      scheduledExecutions: [
+        ...prevState.scheduledExecutions.filter(item => item.id !== scheduledExecution.id),
+        scheduledExecution
+      ],
+      selectedScheduledExecutionId: scheduledExecution.id,
+      connectionError: undefined
+    }));
+  }
+
+  handleOperationError = (error: unknown, fallback = this.whatsappConnectionHelpLabel) => {
+    this.setState(this.finishOperationState({
+      connectionError: error instanceof Error ? error.message : fallback
+    }));
+  }
+
   startSendMessages = () => {
+    this.beginOperation('executing');
     const language = getActiveLanguage();
     chrome.storage.local.get({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, async data => {
       const contacts = this.parseContacts(data.prefix);
-      if (contacts.length === 0) return;
+      if (contacts.length === 0) {
+        this.setState(this.finishOperationState());
+        return;
+      }
 
       contacts.forEach(contact => {
         PopupMessageManager.sendMessage(ChromeMessageTypes.SEND_MESSAGE, { contact, message: data.message, attachment: data.attachment, buttons: data.buttons, delay: data.delay })
           .catch((error) => this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel }));
       });
-      this.setState({ confirmed: false, activeOperation: 'send' });
+      this.setState(this.finishOperationState({ confirmed: false, activeOperation: 'send' }));
     });
   }
 
@@ -521,6 +578,7 @@ class Popup extends Component<{}, PopupState> {
   }
 
   confirmArchiveChats = () => {
+    this.beginOperation('executing');
     this.setState({
       archiveConfirmOpen: false,
       confirmed: false,
@@ -538,11 +596,14 @@ class Popup extends Component<{}, PopupState> {
 
     chrome.storage.local.get({ archiveDelayMs: 500 }, data => {
       PopupMessageManager.sendMessage(ChromeMessageTypes.ARCHIVE_ALL_CHATS, { delayMs: data.archiveDelayMs })
-        .then(() => this.updateArchiveStatus())
+        .then(() => {
+          this.setState(this.finishOperationState());
+          this.updateArchiveStatus();
+        })
         .catch((error) => {
-          this.setState({
+          this.setState(this.finishOperationState({
             archiveStatus: createLocalArchiveStatus('error', error instanceof Error ? error.message : this.archiveOpenWhatsAppLabel)
-          });
+          }));
         });
     });
   }
@@ -611,11 +672,16 @@ class Popup extends Component<{}, PopupState> {
   scheduleSelectedAction = (selectedAction: ReturnType<Popup['getSelectedAction']>) => {
     if (!selectedAction || !this.state.scheduledAt) return;
 
+    this.beginOperation('scheduling');
+
     if (selectedAction.value === 'sendMessage') {
       const language = getActiveLanguage();
       chrome.storage.local.get({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, data => {
         const contacts = this.parseContacts(data.prefix);
-        if (contacts.length === 0) return;
+        if (contacts.length === 0) {
+          this.setState(this.finishOperationState());
+          return;
+        }
 
         const execution = this.createScheduledExecution(selectedAction.label, `${contacts.length} contato(s)`, {
           kind: 'bulkSend',
@@ -627,10 +693,8 @@ class Popup extends Component<{}, PopupState> {
         });
 
         PopupMessageManager.sendMessage(ChromeMessageTypes.SCHEDULE_EXECUTION, execution)
-          .then((scheduledExecution) => {
-            this.setState({ scheduledExecutions: [...this.state.scheduledExecutions.filter(item => item.id !== scheduledExecution.id), scheduledExecution], connectionError: undefined });
-          })
-          .catch((error) => this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel }));
+          .then((scheduledExecution) => this.handleScheduledExecutionSaved(scheduledExecution))
+          .catch((error) => this.handleOperationError(error));
       });
       return;
     }
@@ -643,16 +707,17 @@ class Popup extends Component<{}, PopupState> {
         });
 
         PopupMessageManager.sendMessage(ChromeMessageTypes.SCHEDULE_EXECUTION, execution)
-          .then((scheduledExecution) => {
-            this.setState({ scheduledExecutions: [...this.state.scheduledExecutions.filter(item => item.id !== scheduledExecution.id), scheduledExecution], archiveConfirmOpen: false, connectionError: undefined });
-          })
-          .catch((error) => this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel }));
+          .then((scheduledExecution) => this.handleScheduledExecutionSaved(scheduledExecution, { archiveConfirmOpen: false }))
+          .catch((error) => this.handleOperationError(error));
       });
       return;
     }
 
     const action = selectedAction.value === 'allWaJsFunctions' ? 'executeFunction' : selectedAction.labAction;
-    if (!action) return;
+    if (!action) {
+      this.setState(this.finishOperationState());
+      return;
+    }
 
     const execution = this.createScheduledExecution(selectedAction.label, this.getActionHistoryTarget(action), {
       kind: 'wajs',
@@ -660,10 +725,8 @@ class Popup extends Component<{}, PopupState> {
     });
 
     PopupMessageManager.sendMessage(ChromeMessageTypes.SCHEDULE_EXECUTION, execution)
-      .then((scheduledExecution) => {
-        this.setState({ scheduledExecutions: [...this.state.scheduledExecutions.filter(item => item.id !== scheduledExecution.id), scheduledExecution], connectionError: undefined });
-      })
-      .catch((error) => this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel }));
+      .then((scheduledExecution) => this.handleScheduledExecutionSaved(scheduledExecution))
+      .catch((error) => this.handleOperationError(error));
   }
 
   cancelScheduledExecution = (id: string) => {
@@ -713,7 +776,7 @@ class Popup extends Component<{}, PopupState> {
   }
 
   runLabAction = (action: WaJsLabAction) => {
-    this.setState({ labLoading: true, labResult: undefined, connectionError: undefined });
+    this.beginOperation('executing');
     PopupMessageManager.sendMessage(ChromeMessageTypes.WAJS_LAB_EXECUTE, this.getLabPayload(action)).then((labResult) => {
       this.addLocalLog({
         level: labResult.ok ? 3 : 1,
@@ -721,7 +784,7 @@ class Popup extends Component<{}, PopupState> {
         attachment: false,
         contact: this.getActionHistoryTarget(action)
       });
-      this.setState({ labResult, labLoading: false, connectionError: undefined, activeTab: 'history' });
+      this.setState(this.finishOperationState({ labResult, connectionError: undefined, activeTab: 'history' }));
     }).catch((error) => {
       const message = error instanceof Error ? error.message : this.whatsappConnectionHelpLabel;
       this.addLocalLog({
@@ -730,8 +793,7 @@ class Popup extends Component<{}, PopupState> {
         attachment: false,
         contact: this.getActionHistoryTarget(action)
       });
-      this.setState({
-        labLoading: false,
+      this.setState(this.finishOperationState({
         connectionError: message,
         activeTab: 'history',
         labResult: {
@@ -741,7 +803,7 @@ class Popup extends Component<{}, PopupState> {
           timestamp: new Date().toISOString(),
           error: message
         }
-      });
+      }));
     });
   }
 
@@ -820,6 +882,42 @@ class Popup extends Component<{}, PopupState> {
     const total = this.state.archiveStatus?.totalItems || 0;
 
     return total === 0 ? 0 : Math.round(((processed + failed) / total) * 100);
+  }
+
+  getPrimaryButtonLabel = () => {
+    if (this.state.operationMode === 'scheduling') return this.schedulingLoadingLabel;
+    if (this.state.operationMode === 'executing') return this.executingLoadingLabel;
+    if (this.state.labLoading) return this.sendingPopup;
+    return this.state.deliveryMode === 'scheduled' ? this.scheduleMessageLabel : this.executeButtonLabel;
+  }
+
+  formatDateTime = (timestamp?: number) => {
+    if (!timestamp) return '-';
+    return new Date(timestamp).toLocaleString();
+  }
+
+  sanitizeDetailsValue = (value: unknown): unknown => {
+    if (!value || typeof value !== 'object') return value;
+    if (Array.isArray(value)) return value.map(item => this.sanitizeDetailsValue(item));
+
+    const source = value as Record<string, unknown>;
+    const output: Record<string, unknown> = {};
+    Object.entries(source).forEach(([key, entry]) => {
+      if (key === 'url') {
+        output[key] = typeof entry === 'string' ? `[${entry.length} chars]` : '[binary data]';
+        return;
+      }
+      output[key] = this.sanitizeDetailsValue(entry);
+    });
+    return output;
+  }
+
+  formatDetailsJson = (value: unknown) => {
+    try {
+      return JSON.stringify(this.sanitizeDetailsValue(value), null, 2);
+    } catch (error) {
+      return String(value ?? '-');
+    }
   }
 
   getArchiveTitle = () => {
@@ -1074,12 +1172,12 @@ class Popup extends Component<{}, PopupState> {
     return <div className="mt-4 rounded-xl border border-white/10 bg-slate-950/35 p-3">
       <div className="mb-3 text-sm font-semibold text-slate-300">{this.deliveryModeLabel}</div>
       <div className="grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => this.setState({ deliveryMode: 'now' })} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${this.state.deliveryMode === 'now' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.sendNowLabel}</button>
-        <button type="button" onClick={() => this.setState({ deliveryMode: 'scheduled' })} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${this.state.deliveryMode === 'scheduled' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.scheduleMessageLabel}</button>
+        <button type="button" disabled={this.state.labLoading} onClick={() => this.setState({ deliveryMode: 'now' })} className={`rounded-lg px-3 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${this.state.deliveryMode === 'now' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.sendNowLabel}</button>
+        <button type="button" disabled={this.state.labLoading} onClick={() => this.setState({ deliveryMode: 'scheduled' })} className={`rounded-lg px-3 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${this.state.deliveryMode === 'scheduled' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.scheduleMessageLabel}</button>
       </div>
       {this.state.deliveryMode === 'scheduled' && <label className="mt-3 flex flex-col gap-2">
         <span className="text-xs font-bold uppercase text-slate-500">{this.scheduleDateLabel}</span>
-        <ControlInput type="datetime-local" value={this.state.scheduledAt} onChange={(event) => this.setState({ scheduledAt: event.target.value })} />
+        <ControlInput disabled={this.state.labLoading} type="datetime-local" value={this.state.scheduledAt} onChange={(event) => this.setState({ scheduledAt: event.target.value })} />
         <span className="text-xs leading-5 text-slate-500">{this.scheduledQueueLabel}</span>
       </label>}
     </div>;
@@ -1174,9 +1272,9 @@ class Popup extends Component<{}, PopupState> {
           type="button"
           disabled={this.state.labLoading || executeDisabled}
           onClick={this.executeSelectedAction}
-          icon={<Icon name="play" className="h-5 w-5" />}
+          icon={<Icon name={this.state.labLoading ? 'clock' : 'play'} className={`h-5 w-5 ${this.state.labLoading ? 'animate-spin' : ''}`} />}
         >
-          {this.state.labLoading ? this.sendingPopup : this.state.deliveryMode === 'scheduled' ? this.scheduleMessageLabel : this.executeButtonLabel}
+          {this.getPrimaryButtonLabel()}
         </Button>
       </div>
     </>);
@@ -1242,11 +1340,56 @@ class Popup extends Component<{}, PopupState> {
     }
   }
 
+  renderScheduledDetailField(label: string, value: ReactNode) {
+    return <div className="rounded-lg border border-white/10 bg-slate-950/35 p-3">
+      <div className="truncate text-[0.68rem] font-bold uppercase text-slate-500">{label}</div>
+      <div className="mt-1 break-words text-sm font-semibold text-slate-100">{value || '-'}</div>
+    </div>;
+  }
+
+  renderScheduledExecutionDetails(execution?: ScheduledExecution) {
+    return <div className="mb-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.04] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-extrabold text-white">{this.scheduledDetailsTitle}</h3>
+          {!execution && <p className="mt-1 text-xs leading-5 text-slate-400">{this.scheduledDetailsEmptyLabel}</p>}
+        </div>
+        {execution && <button type="button" onClick={() => this.setState({ selectedScheduledExecutionId: undefined })} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-emerald-400/35 hover:text-emerald-100">
+          {this.scheduledDetailsCloseLabel}
+        </button>}
+      </div>
+      {execution && <>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {this.renderScheduledDetailField(this.scheduledDetailsFunctionLabel, execution.label)}
+          {this.renderScheduledDetailField(this.scheduledDetailsStatusLabel, this.getScheduledStatusLabel(execution.status))}
+          {this.renderScheduledDetailField(this.scheduledDetailsTargetLabel, execution.target || '-')}
+          {this.renderScheduledDetailField(this.scheduledDetailsScheduledForLabel, this.formatDateTime(execution.scheduledAt))}
+          {this.renderScheduledDetailField(this.scheduledDetailsCreatedAtLabel, this.formatDateTime(execution.createdAt))}
+          {this.renderScheduledDetailField(this.scheduledDetailsUpdatedAtLabel, this.formatDateTime(execution.updatedAt))}
+        </div>
+        {execution.error && <div className="mt-3 rounded-lg border border-rose-400/25 bg-rose-400/10 p-3 text-xs leading-5 text-rose-100">
+          <div className="font-extrabold text-rose-200">{this.scheduledDetailsErrorLabel}</div>
+          <div className="mt-1 break-words">{execution.error}</div>
+        </div>}
+        <div className="mt-3 grid gap-3">
+          <div>
+            <div className="mb-2 text-[0.68rem] font-bold uppercase text-slate-500">{this.scheduledDetailsPayloadLabel}</div>
+            <pre className="max-h-48 overflow-auto rounded-lg border border-white/10 bg-slate-950/60 p-3 text-xs leading-5 text-slate-200">{this.formatDetailsJson(execution.payload)}</pre>
+          </div>
+          {execution.result !== undefined && <div>
+            <div className="mb-2 text-[0.68rem] font-bold uppercase text-slate-500">{this.scheduledDetailsResultLabel}</div>
+            <pre className="max-h-48 overflow-auto rounded-lg border border-white/10 bg-slate-950/60 p-3 text-xs leading-5 text-slate-200">{this.formatDetailsJson(execution.result)}</pre>
+          </div>}
+        </div>
+      </>}
+    </div>;
+  }
+
   renderScheduledExecutions() {
     const executions = this.state.scheduledExecutions
       .slice()
-      .sort((a, b) => b.createdAt - a.createdAt)
-      .slice(0, 8);
+      .sort((a, b) => b.createdAt - a.createdAt);
+    const selectedExecution = executions.find(execution => execution.id === this.state.selectedScheduledExecutionId);
 
     return this.renderPanel(<>
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -1255,7 +1398,8 @@ class Popup extends Component<{}, PopupState> {
           {chrome.i18n.getMessage('updateButtonLabel') || 'Update'}
         </Button>
       </div>
-      <div className="space-y-2">
+      {(executions.length > 0 || this.state.selectedScheduledExecutionId) && this.renderScheduledExecutionDetails(selectedExecution)}
+      <div className="max-h-[28rem] space-y-2 overflow-auto pr-1">
         {executions.length === 0 && <div className="rounded-xl border border-dashed border-white/12 bg-slate-900/32 p-5 text-center text-sm text-slate-400">{this.scheduledExecutionsEmptyLabel}</div>}
         {executions.map(execution => {
           const isPending = execution.status === 'scheduled';
@@ -1279,6 +1423,9 @@ class Popup extends Component<{}, PopupState> {
             </div>
             <div className="flex items-center gap-2">
               <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass}`}>{this.getScheduledStatusLabel(execution.status)}</span>
+              <button type="button" onClick={() => this.setState({ selectedScheduledExecutionId: execution.id })} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-emerald-400/40 hover:text-emerald-100">
+                {this.scheduledExecutionDetailsLabel}
+              </button>
               {isPending && <button type="button" onClick={() => this.cancelScheduledExecution(execution.id)} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-rose-400/40 hover:text-rose-200">
                 {this.cancelScheduledExecutionLabel}
               </button>}
