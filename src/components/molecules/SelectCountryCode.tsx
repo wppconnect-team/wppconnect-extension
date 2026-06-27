@@ -1,19 +1,19 @@
 import React, { ChangeEvent, Component, createRef } from 'react';
 import { ControlInput } from '../atoms/ControlFactory';
+import { getActiveLanguage } from '../../utils/i18n';
 
 interface CountryCode {
     value: number;
     label: string;
 }
 
-const language = chrome.i18n.getUILanguage().substring(0, 2);
-let countryCodes: CountryCode[] = [];
-try {
-    countryCodes = require(`../../countryCodes.${language}.json`);
-} catch (e) {
-    console.log(e);
-    countryCodes = require('../../countryCodes.en.json');
-}
+const countryCodesByLanguage: Record<string, CountryCode[]> = {
+    en: require('../../countryCodes.en.json'),
+    pt_BR: require('../../countryCodes.pt.json')
+};
+
+const countryCodes = () => countryCodesByLanguage[getActiveLanguage()] || countryCodesByLanguage.en;
+const defaultPrefix = () => getActiveLanguage() === 'pt_BR' ? 55 : 0;
 
 export default class SelectCountryCode extends Component<{ options?: CountryCode[] }, {
     isOpen: boolean,
@@ -27,12 +27,12 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
         this.defaultLabelSelectCountryCode = chrome.i18n.getMessage('defaultLabelSelectCountryCode');
         this.searchPlaceholder = chrome.i18n.getMessage('countryCodeSearchPlaceholder') || 'Search';
         this.emptyLabel = chrome.i18n.getMessage('countryCodeEmptyLabel') || 'No prefix found';
-        const defaultOptions = [{ value: 0, label: this.defaultLabelSelectCountryCode }, ...countryCodes];
+        const defaultOptions = [{ value: 0, label: this.defaultLabelSelectCountryCode }, ...countryCodes()];
         const { options = defaultOptions } = props;
         this.state = {
             isOpen: false,
             searchValue: '',
-            selectedValue: chrome.i18n.getUILanguage() === 'pt_BR' ? options.find(option => option.value === 55) : options.find(option => option.value === 0),
+            selectedValue: options.find(option => option.value === defaultPrefix()),
             options,
             filteredOptions: options,
         };
@@ -72,7 +72,7 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
     componentDidMount() {
         document.addEventListener('mousedown', this.handleClickOutside);
         chrome.storage.local.get(
-            { prefix: chrome.i18n.getUILanguage() === 'pt_BR' ? 55 : 0 },
+            { prefix: defaultPrefix() },
             data => {
                 this.setState({ selectedValue: this.state.options.find(option => option.value === data.prefix) });
             });

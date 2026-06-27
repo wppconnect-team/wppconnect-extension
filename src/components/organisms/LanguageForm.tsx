@@ -1,32 +1,33 @@
 import React, { ChangeEvent, Component } from 'react';
 import Box from '../molecules/Box';
+import { AppLanguage, detectBrowserLanguage, getActiveLanguage, normalizeLanguage, setLanguagePreference } from '../../utils/i18n';
 
-type Language = 'auto' | 'en' | 'pt_BR';
-
-const browserLanguage = (): Language => chrome.i18n.getUILanguage() === 'pt_BR' ? 'pt_BR' : 'en';
-
-export default class LanguageForm extends Component<{}, { language: Language }>{
+export default class LanguageForm extends Component<{}, { language: AppLanguage }>{
     constructor(props: {}) {
         super(props);
         this.state = {
-            language: 'auto'
+            language: getActiveLanguage()
         };
     }
 
     title = chrome.i18n.getMessage('languageSettingsTitle') || 'Language';
-    help = chrome.i18n.getMessage('languageSettingsHelp') || 'The default follows the browser language. Change it here for extension screens that support manual language preference.';
-    autoLabel = `${chrome.i18n.getMessage('languageAutoLabel') || 'Automatic'} (${browserLanguage()})`;
+    help = chrome.i18n.getMessage('languageSettingsHelp') || 'The extension uses the browser language as the initial value. This choice controls extension screens from now on.';
     englishLabel = chrome.i18n.getMessage('languageEnglishLabel') || 'English';
     portugueseLabel = chrome.i18n.getMessage('languagePortugueseLabel') || 'Portuguese (Brazil)';
 
     componentDidMount() {
-        chrome.storage.local.get({ language: 'auto' }, data => this.setState({ language: data.language || 'auto' }));
+        const browserLanguage = detectBrowserLanguage();
+        chrome.storage.local.get({ language: browserLanguage }, data => {
+            const language = data.language === 'auto' ? browserLanguage : normalizeLanguage(data.language);
+            if (data.language !== language) void setLanguagePreference(language);
+            this.setState({ language });
+        });
     }
 
     handleLanguageChange = (event: ChangeEvent<HTMLSelectElement>) => {
-        const language = event.target.value as Language;
+        const language = normalizeLanguage(event.target.value);
         this.setState({ language });
-        chrome.storage.local.set({ language, resolvedLanguage: language === 'auto' ? browserLanguage() : language });
+        void setLanguagePreference(language).then(() => window.location.reload());
     }
 
     render() {
@@ -38,7 +39,6 @@ export default class LanguageForm extends Component<{}, { language: Language }>{
                     onChange={this.handleLanguageChange}
                     className="min-h-[2.75rem] rounded-lg border border-white/10 bg-slate-950/35 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500"
                 >
-                    <option value="auto">{this.autoLabel}</option>
                     <option value="en">{this.englishLabel}</option>
                     <option value="pt_BR">{this.portugueseLabel}</option>
                 </select>

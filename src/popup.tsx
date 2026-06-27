@@ -11,6 +11,7 @@ import type { ScheduledExecution } from './types/ScheduledExecution';
 import { WaJsLabAction, WaJsLabMediaType, WaJsLabPayload, WaJsLabResponse } from './types/WaJsLab';
 import AsyncChromeMessageManager from './utils/AsyncChromeMessageManager';
 import { ChromeMessageTypes } from './types/ChromeMessageTypes';
+import { getActiveLanguage, initI18n } from './utils/i18n';
 
 const PopupMessageManager = new AsyncChromeMessageManager('popup');
 
@@ -501,7 +502,7 @@ class Popup extends Component<{}, PopupState> {
   }
 
   startSendMessages = () => {
-    const language = chrome.i18n.getUILanguage();
+    const language = getActiveLanguage();
     chrome.storage.local.get({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, async data => {
       const contacts = this.parseContacts(data.prefix);
       if (contacts.length === 0) return;
@@ -611,7 +612,7 @@ class Popup extends Component<{}, PopupState> {
     if (!selectedAction || !this.state.scheduledAt) return;
 
     if (selectedAction.value === 'sendMessage') {
-      const language = chrome.i18n.getUILanguage();
+      const language = getActiveLanguage();
       chrome.storage.local.get({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, data => {
         const contacts = this.parseContacts(data.prefix);
         if (contacts.length === 0) return;
@@ -1446,5 +1447,7 @@ class Popup extends Component<{}, PopupState> {
   }
 }
 
-createRoot(document.getElementById('root')!)
-  .render(<Popup />);
+void initI18n().then(() => {
+  createRoot(document.getElementById('root')!)
+    .render(<Popup />);
+});
