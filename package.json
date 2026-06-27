@@ -1,6 +1,6 @@
 {
   "name": "wppconnect",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "Wppconnect Chrome Extension that allows you to send messages in bulk via WhatsApp™ Web",
   "main": "index.js",
   "scripts": {
