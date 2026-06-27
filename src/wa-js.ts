@@ -415,18 +415,13 @@ function prepareButtonsForRawMessage(rawMessage: any, buttons: Message['buttons'
 
 async function sendRawPreparedMessage(targetChatId: string, rawMessage: any) {
     const rawOptions = { createChat: true, waitForAck: false };
-    let prepared = rawMessage;
 
     try {
-        const chat = window.WPP.chat.get?.(targetChatId);
-        if (chat && typeof (window.WPP as any).chat?.prepareRawMessage === 'function') {
-            prepared = await (window.WPP as any).chat.prepareRawMessage(chat, rawMessage, rawOptions);
-        }
+        return await window.WPP.chat.sendRawMessage(targetChatId, rawMessage, rawOptions);
     } catch (error) {
-        prepared = rawMessage;
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`Falha no sendRawMessage para ${targetChatId}: ${message}`);
     }
-
-    return window.WPP.chat.sendRawMessage(targetChatId, prepared, rawOptions);
 }
 
 async function sendRawTextMessage(chatId: string, text: string, buttons: Message['buttons'] = []) {
