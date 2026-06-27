@@ -40,15 +40,29 @@ if (!fs.existsSync(target)) {
   throw new Error(`WA-JS bundle not found: ${target}`);
 }
 
-const source = fs.readFileSync(target, 'utf8');
-if (source.includes(marker)) {
-  process.exit(0);
-}
+let source = fs.readFileSync(target, 'utf8');
 
 const needle = 't.fallbackModules={};';
-if (!source.includes(needle)) {
+if (!source.includes(marker) && !source.includes(needle)) {
   throw new Error('WA-JS loader fallbackModules initializer was not found');
 }
 
-fs.writeFileSync(target, source.replace(needle, fallbackPatch), 'utf8');
-console.log('Patched @wppconnect/wa-js runtime fallbacks');
+if (!source.includes(marker)) {
+  source = source.replace(needle, fallbackPatch);
+  console.log('Patched @wppconnect/wa-js runtime fallbacks');
+}
+
+const lidSendMarker = 'wppconnect_extension_lid_send_resolver';
+const sendRawNeedle = 'const o=await(0,i.assertFindChat)(e);';
+const sendRawPatch = `const o=await(0,i.assertFindChat)(await async function(e){/* ${lidSendMarker} */try{const t=(0,i.assertWid)(e);if(!t.isLid())return e;const r=await globalThis.WPP?.contact?.getPnLidEntry?.(t);return r?.phoneNumber?._serialized||e}catch(t){return e}}(e));`;
+
+if (!source.includes(lidSendMarker) && !source.includes(sendRawNeedle)) {
+  throw new Error('WA-JS sendRawMessage assertFindChat call was not found');
+}
+
+if (!source.includes(lidSendMarker)) {
+  source = source.replace(sendRawNeedle, sendRawPatch);
+  console.log('Patched @wppconnect/wa-js LID send resolver');
+}
+
+fs.writeFileSync(target, source, 'utf8');

@@ -176,8 +176,8 @@ const pickSendWidCandidate = (candidates: string[]) => {
 };
 
 const pickRawSendWidCandidate = (candidates: string[]) => {
-    return candidates.find(isLidWid)
-        || candidates.find(isPnWid)
+    return candidates.find(isPnWid)
+        || candidates.find(isLidWid)
         || candidates.find(candidate => !isGroupWid(candidate))
         || '';
 };
@@ -233,13 +233,12 @@ async function resolvePreferredSendWid(value?: string) {
 async function resolveRawSendWid(value?: string) {
     const normalized = normalizeWid(value);
     if (!normalized) return '';
-    if (isGroupWid(normalized) || isLidWid(normalized)) return normalized;
+    if (isGroupWid(normalized)) return normalized;
 
     const queryCandidates = await queryExistsCandidates(normalized);
-    if (queryCandidates.length === 0) return normalized;
-
     const pnLidCandidates = await getPnLidEntryCandidates(normalized);
-    return pickRawSendWidCandidate([...pnLidCandidates, ...queryCandidates]) || normalized;
+    const resolved = pickRawSendWidCandidate([...pnLidCandidates, ...queryCandidates]);
+    return resolved || normalized;
 }
 
 const summarizeChat = (chat: any) => ({
