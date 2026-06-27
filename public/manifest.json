@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Wppconnect Extension",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "action": {
     "default_icon": {
       "16": "icons/wppconnect16.png",
