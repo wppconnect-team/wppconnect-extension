@@ -269,6 +269,26 @@ const makeLabResponse = (payload: WaJsLabPayload, startedAt: number, data?: unkn
     error: error instanceof Error ? error.message : error ? String(error) : undefined
 });
 
+async function attachmentToFile(payload: WaJsLabPayload) {
+    if (!payload.attachment) throw new Error('Selecione um arquivo para enviar.');
+
+    const response = await fetch(payload.attachment.url.toString());
+    const data = await response.blob();
+    return new File([data], payload.attachment.name, {
+        type: payload.attachment.type,
+        lastModified: payload.attachment.lastModified
+    });
+}
+
+async function sendLabFileMessage(chatId: string, payload: WaJsLabPayload, type: 'image' | 'audio' | 'video' | 'document') {
+    return window.WPP.chat.sendFileMessage(chatId, await attachmentToFile(payload), {
+        type,
+        caption: payload.text || undefined,
+        createChat: true,
+        waitForAck: true
+    });
+}
+
 const safeIsAuthenticated = () => {
     const connIsAuthenticated = window.WPP?.conn?.isAuthenticated;
     if (typeof connIsAuthenticated === 'function') {
@@ -430,6 +450,18 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
             case 'sendText':
                 if (!chatId) throw new Error('Informe um chatId ou número.');
                 return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendTextMessage(chatId, payload.text || 'Teste WA-JS Lab', { createChat: true, waitForAck: true })));
+            case 'sendImage':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await sendLabFileMessage(chatId, payload, 'image')));
+            case 'sendAudio':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await sendLabFileMessage(chatId, payload, 'audio')));
+            case 'sendVideo':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await sendLabFileMessage(chatId, payload, 'video')));
+            case 'sendDocument':
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                return makeLabResponse(payload, startedAt, compactValue(await sendLabFileMessage(chatId, payload, 'document')));
             case 'sendPoll':
                 if (!chatId) throw new Error('Informe um chatId de grupo.');
                 return makeLabResponse(payload, startedAt, compactValue(await labWpp.chat?.sendCreatePollMessage?.(chatId, payload.text || 'Teste WA-JS Lab', ['Sim', 'Não'], { selectableCount: 1 })));

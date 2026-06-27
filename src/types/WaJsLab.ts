@@ -1,3 +1,7 @@
+import type { Attachment } from './Attachment';
+
+export type WaJsLabMediaType = 'image' | 'audio' | 'video' | 'document';
+
 export type WaJsLabAction =
   | 'diagnostics'
   | 'profile'
@@ -24,6 +28,10 @@ export type WaJsLabAction =
   | 'pauseTyping'
   | 'setInput'
   | 'sendText'
+  | 'sendImage'
+  | 'sendAudio'
+  | 'sendVideo'
+  | 'sendDocument'
   | 'sendPoll'
   | 'sendLocation'
   | 'sendVCard'
@@ -41,6 +49,8 @@ export interface WaJsLabPayload {
   longitude?: number;
   functionPath?: string;
   argsJson?: string;
+  attachment?: Attachment;
+  mediaType?: WaJsLabMediaType;
 }
 
 export interface WaJsLabResponse {

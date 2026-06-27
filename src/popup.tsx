@@ -6,7 +6,9 @@ import { ControlInput, ControlTextArea } from './components/atoms/ControlFactory
 import ArchiveStatus from './types/ArchiveStatus';
 import Log from './types/Log';
 import QueueStatus from './types/QueueStatus';
-import { WaJsLabAction, WaJsLabResponse } from './types/WaJsLab';
+import type { Attachment } from './types/Attachment';
+import type { ScheduledExecution } from './types/ScheduledExecution';
+import { WaJsLabAction, WaJsLabMediaType, WaJsLabPayload, WaJsLabResponse } from './types/WaJsLab';
 import AsyncChromeMessageManager from './utils/AsyncChromeMessageManager';
 import { ChromeMessageTypes } from './types/ChromeMessageTypes';
 
@@ -40,6 +42,10 @@ type PopupAction =
   | 'pinChat'
   | 'muteChat'
   | 'sendText'
+  | 'sendImage'
+  | 'sendAudio'
+  | 'sendVideo'
+  | 'sendDocument'
   | 'profile'
   | 'contactStatus'
   | 'profilePicture'
@@ -80,8 +86,10 @@ type PopupState = {
   advancedFunctionPath: string,
   advancedArgsJson: string,
   availableFunctions: string[],
+  labAttachment: Attachment,
   deliveryMode: DeliveryMode,
   scheduledAt: string,
+  scheduledExecutions: ScheduledExecution[],
   labLoading: boolean,
   labResult?: WaJsLabResponse,
   logs: Log[],
@@ -102,7 +110,12 @@ type UiIcon =
   | 'refresh'
   | 'alert'
   | 'message'
-  | 'pin';
+  | 'pin'
+  | 'image'
+  | 'audio'
+  | 'video'
+  | 'file'
+  | 'trash';
 
 const Icon = ({ name, className = 'h-5 w-5' }: { name: UiIcon, className?: string }) => {
   const common = {
@@ -127,7 +140,12 @@ const Icon = ({ name, className = 'h-5 w-5' }: { name: UiIcon, className?: strin
     refresh: <><path d="M21 12a9 9 0 0 1-14.8 6.9" /><path d="M3 12A9 9 0 0 1 17.8 5.1" /><path d="M7 19H3v-4" /><path d="M17 5h4v4" /></>,
     alert: <><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /></>,
     message: <><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" /></>,
-    pin: <><path d="m15 4 5 5-4 1-4 6-2-2-5 5 5-5-2-2 6-4 1-4Z" /></>
+    pin: <><path d="m15 4 5 5-4 1-4 6-2-2-5 5 5-5-2-2 6-4 1-4Z" /></>,
+    image: <><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" /><path d="m3 16 5-5 4 4 2-2 7 7" /><path d="M14 8h.01" /></>,
+    audio: <><path d="M9 18V5l12-2v13" /><path d="M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><path d="M18 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /></>,
+    video: <><path d="M4 6h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" /><path d="m17 10 5-3v10l-5-3" /></>,
+    file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M8 13h8" /><path d="M8 17h5" /></>,
+    trash: <><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="m19 6-1 14H6L5 6" /><path d="M10 11v5" /><path d="M14 11v5" /></>
   };
 
   return <svg className={className} viewBox="0 0 24 24" aria-hidden="true" {...common}>{paths[name]}</svg>;
@@ -156,8 +174,10 @@ class Popup extends Component<{}, PopupState> {
       advancedFunctionPath: '',
       advancedArgsJson: '[]',
       availableFunctions: [],
+      labAttachment: null,
       deliveryMode: 'now',
       scheduledAt: '',
+      scheduledExecutions: [],
       labLoading: false,
       labResult: undefined,
       logs: [],
@@ -238,6 +258,10 @@ class Popup extends Component<{}, PopupState> {
   functionPinChatLabel = chrome.i18n.getMessage('functionPinChatLabel') || 'Pin chat';
   functionMuteChatLabel = chrome.i18n.getMessage('functionMuteChatLabel') || 'Mute chat';
   functionSendTextLabel = chrome.i18n.getMessage('functionSendTextLabel') || 'Send text';
+  functionSendImageLabel = chrome.i18n.getMessage('functionSendImageLabel') || 'Send image';
+  functionSendAudioLabel = chrome.i18n.getMessage('functionSendAudioLabel') || 'Send audio';
+  functionSendVideoLabel = chrome.i18n.getMessage('functionSendVideoLabel') || 'Send video';
+  functionSendDocumentLabel = chrome.i18n.getMessage('functionSendDocumentLabel') || 'Send document';
   functionSendMessageDescription = chrome.i18n.getMessage('functionSendMessageDescription') || 'For contacts or lists';
   functionArchiveChatsDescription = chrome.i18n.getMessage('functionArchiveChatsDescription') || 'Archive non-archived chats';
   functionListChatsDescription = chrome.i18n.getMessage('functionListChatsDescription') || 'Inspect available chats';
@@ -245,6 +269,10 @@ class Popup extends Component<{}, PopupState> {
   functionRequiresChatLabel = chrome.i18n.getMessage('functionRequiresChatLabel') || 'Chat ID or phone';
   functionRequiresContactLabel = chrome.i18n.getMessage('functionRequiresContactLabel') || 'Contact ID or phone';
   functionRequiresTextLabel = chrome.i18n.getMessage('functionRequiresTextLabel') || 'Message text';
+  optionalFieldLabel = chrome.i18n.getMessage('optionalFieldLabel') || 'optional';
+  functionRequiresAttachmentLabel = chrome.i18n.getMessage('functionRequiresAttachmentLabel') || 'File';
+  functionAttachmentHelpLabel = chrome.i18n.getMessage('functionAttachmentHelpLabel') || 'Choose the media file for this execution.';
+  removeAttachmentLabel = chrome.i18n.getMessage('removeAttachmentLabel') || 'Remove';
   bulkCaptureTargetsLabel = chrome.i18n.getMessage('bulkCaptureTargetsLabel') || 'Capture chats/contacts';
   bulkSpamWarningLabel = chrome.i18n.getMessage('bulkSpamWarningLabel') || 'WhatsApp is increasingly strict with exaggerated spam. Use conservative volumes, consented contacts and realistic delays.';
   deliveryModeLabel = chrome.i18n.getMessage('deliveryModeLabel') || 'Delivery';
@@ -252,6 +280,14 @@ class Popup extends Component<{}, PopupState> {
   scheduleMessageLabel = chrome.i18n.getMessage('scheduleMessageLabel') || 'Schedule';
   scheduleDateLabel = chrome.i18n.getMessage('scheduleDateLabel') || 'Date and time';
   scheduledQueueLabel = chrome.i18n.getMessage('scheduledQueueLabel') || 'Scheduled in the WhatsApp Web tab. Keep it open and connected.';
+  scheduledExecutionsTitle = chrome.i18n.getMessage('scheduledExecutionsTitle') || 'Scheduled executions';
+  scheduledExecutionsEmptyLabel = chrome.i18n.getMessage('scheduledExecutionsEmptyLabel') || 'No scheduled executions yet.';
+  scheduledExecutionPendingLabel = chrome.i18n.getMessage('scheduledExecutionPendingLabel') || 'Scheduled';
+  scheduledExecutionRunningLabel = chrome.i18n.getMessage('scheduledExecutionRunningLabel') || 'Running';
+  scheduledExecutionCompletedLabel = chrome.i18n.getMessage('scheduledExecutionCompletedLabel') || 'Completed';
+  scheduledExecutionFailedLabel = chrome.i18n.getMessage('scheduledExecutionFailedLabel') || 'Failed';
+  scheduledExecutionCancelledLabel = chrome.i18n.getMessage('scheduledExecutionCancelledLabel') || 'Cancelled';
+  cancelScheduledExecutionLabel = chrome.i18n.getMessage('cancelScheduledExecutionLabel') || 'Cancel';
   allWaJsFunctionsLabel = chrome.i18n.getMessage('allWaJsFunctionsLabel') || 'All WA-JS functions';
   allWaJsFunctionsDescription = chrome.i18n.getMessage('allWaJsFunctionsDescription') || 'Select any runtime WPP function';
   refreshFunctionsLabel = chrome.i18n.getMessage('refreshFunctionsLabel') || 'Load functions';
@@ -278,8 +314,9 @@ class Popup extends Component<{}, PopupState> {
   queueStatusListener = 0;
   archiveStatusListener = 0;
   logListener = 0;
+  scheduledStatusListener = 0;
 
-  actions: Array<{ value: PopupAction, label: string, icon: UiIcon, labAction?: WaJsLabAction, needsChat?: boolean, needsContact?: boolean, needsText?: boolean }> = [
+  actions: Array<{ value: PopupAction, label: string, icon: UiIcon, labAction?: WaJsLabAction, needsChat?: boolean, needsContact?: boolean, needsText?: boolean, optionalText?: boolean, needsAttachment?: boolean, mediaType?: WaJsLabMediaType }> = [
     { value: 'sendMessage', label: this.functionSendMessageLabel, icon: 'send' },
     { value: 'archiveChats', label: this.functionArchiveChatsLabel, icon: 'archive' },
     { value: 'diagnostics', label: this.functionDiagnosticsLabel, icon: 'zap', labAction: 'diagnostics' },
@@ -306,6 +343,10 @@ class Popup extends Component<{}, PopupState> {
     { value: 'pauseTyping', label: this.functionPauseTypingLabel, icon: 'message', labAction: 'pauseTyping', needsChat: true },
     { value: 'setInput', label: this.functionSetInputLabel, icon: 'message', labAction: 'setInput', needsText: true },
     { value: 'sendText', label: this.functionSendTextLabel, icon: 'send', labAction: 'sendText', needsChat: true, needsText: true },
+    { value: 'sendImage', label: this.functionSendImageLabel, icon: 'image', labAction: 'sendImage', needsChat: true, optionalText: true, needsAttachment: true, mediaType: 'image' },
+    { value: 'sendAudio', label: this.functionSendAudioLabel, icon: 'audio', labAction: 'sendAudio', needsChat: true, needsAttachment: true, mediaType: 'audio' },
+    { value: 'sendVideo', label: this.functionSendVideoLabel, icon: 'video', labAction: 'sendVideo', needsChat: true, optionalText: true, needsAttachment: true, mediaType: 'video' },
+    { value: 'sendDocument', label: this.functionSendDocumentLabel, icon: 'file', labAction: 'sendDocument', needsChat: true, optionalText: true, needsAttachment: true, mediaType: 'document' },
     { value: 'sendPoll', label: this.functionSendPollLabel, icon: 'send', labAction: 'sendPoll', needsChat: true, needsText: true },
     { value: 'sendLocation', label: this.functionSendLocationLabel, icon: 'send', labAction: 'sendLocation', needsChat: true },
     { value: 'sendVCard', label: this.functionSendVCardLabel, icon: 'send', labAction: 'sendVCard', needsChat: true, needsContact: true, needsText: true },
@@ -322,15 +363,18 @@ class Popup extends Component<{}, PopupState> {
     this.updateStatus();
     this.updateArchiveStatus();
     this.updateLogs();
+    this.updateScheduledExecutions();
     this.queueStatusListener = window.setInterval(this.updateStatus, 500);
     this.archiveStatusListener = window.setInterval(this.updateArchiveStatus, 500);
     this.logListener = window.setInterval(this.updateLogs, 2500);
+    this.scheduledStatusListener = window.setInterval(this.updateScheduledExecutions, 1500);
   }
 
   componentWillUnmount() {
     clearInterval(this.queueStatusListener);
     clearInterval(this.archiveStatusListener);
     clearInterval(this.logListener);
+    clearInterval(this.scheduledStatusListener);
   }
 
   componentDidUpdate(prevProps: Readonly<{}>, prevState: Readonly<PopupState>) {
@@ -368,6 +412,14 @@ class Popup extends Component<{}, PopupState> {
     chrome.storage.local.get({ logs: [] }, data => this.setState({ logs: data.logs || [] }));
   }
 
+  updateScheduledExecutions = () => {
+    PopupMessageManager.sendMessage(ChromeMessageTypes.LIST_SCHEDULED_EXECUTIONS, undefined)
+      .then((scheduledExecutions) => this.setState({ scheduledExecutions, connectionError: undefined }))
+      .catch(() => {
+        chrome.storage.local.get({ scheduledExecutions: [] }, data => this.setState({ scheduledExecutions: data.scheduledExecutions || [] }));
+      });
+  }
+
   addLocalLog = (log: Omit<Log, 'date'>) => {
     chrome.storage.local.get({ logs: [] }, data => {
       const logs = [
@@ -383,6 +435,31 @@ class Popup extends Component<{}, PopupState> {
 
   handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     this.setState({ contacts: event.target.value.replace(/[^\d\n\t,;]*/g, '') });
+  }
+
+  handleLabAttachmentChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      this.setState({ labAttachment: null });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.setState({
+        labAttachment: {
+          name: file.name,
+          type: file.type,
+          lastModified: file.lastModified,
+          url: reader.result || ''
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  clearLabAttachment = () => {
+    this.setState({ labAttachment: null });
   }
 
   getContactList = () => {
@@ -428,12 +505,9 @@ class Popup extends Component<{}, PopupState> {
     chrome.storage.local.get({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, async data => {
       const contacts = this.parseContacts(data.prefix);
       if (contacts.length === 0) return;
-      const scheduledAt = this.state.deliveryMode === 'scheduled' && this.state.scheduledAt
-        ? new Date(this.state.scheduledAt).getTime()
-        : undefined;
 
       contacts.forEach(contact => {
-        PopupMessageManager.sendMessage(ChromeMessageTypes.SEND_MESSAGE, { contact, message: data.message, attachment: data.attachment, buttons: data.buttons, delay: data.delay, scheduledAt })
+        PopupMessageManager.sendMessage(ChromeMessageTypes.SEND_MESSAGE, { contact, message: data.message, attachment: data.attachment, buttons: data.buttons, delay: data.delay })
           .catch((error) => this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel }));
       });
       this.setState({ confirmed: false, activeOperation: 'send' });
@@ -442,7 +516,7 @@ class Popup extends Component<{}, PopupState> {
 
   handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    this.startSendMessages();
+    this.executeSelectedAction();
   }
 
   confirmArchiveChats = () => {
@@ -484,10 +558,128 @@ class Popup extends Component<{}, PopupState> {
     return this.actions.find(action => action.value === this.state.selectedAction);
   }
 
+  getLabPayload = (action: WaJsLabAction): WaJsLabPayload => {
+    const selectedAction = this.getSelectedAction();
+    return {
+      action,
+      chatId: this.state.labChatId,
+      contactId: this.state.labContactId,
+      text: this.state.labText,
+      limit: this.state.labLimit,
+      latitude: Number(this.state.labLatitude),
+      longitude: Number(this.state.labLongitude),
+      functionPath: this.state.advancedFunctionPath,
+      argsJson: this.state.advancedArgsJson,
+      attachment: this.state.labAttachment,
+      mediaType: selectedAction?.mediaType
+    };
+  }
+
+  isScheduleInvalid = () => {
+    if (this.state.deliveryMode !== 'scheduled') return false;
+    if (!this.state.scheduledAt) return true;
+    return new Date(this.state.scheduledAt).getTime() <= Date.now();
+  }
+
+  isSelectedActionInvalid = () => {
+    const selectedAction = this.getSelectedAction();
+    if (!selectedAction) return true;
+    if (this.isScheduleInvalid()) return true;
+
+    if (selectedAction.value === 'sendMessage') return this.getContactSummary().unique === 0;
+    if (selectedAction.value === 'allWaJsFunctions') return !this.state.advancedFunctionPath.trim();
+    if (selectedAction.needsChat && !this.state.labChatId.trim()) return true;
+    if (selectedAction.needsContact && !this.state.labContactId.trim()) return true;
+    if (selectedAction.needsText && !this.state.labText.trim()) return true;
+    if (selectedAction.needsAttachment && !this.state.labAttachment) return true;
+
+    return false;
+  }
+
+  createScheduledExecution = (label: string, target: string, payload: ScheduledExecution['payload']): ScheduledExecution => ({
+    id: `scheduled-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    label,
+    target,
+    payload,
+    scheduledAt: new Date(this.state.scheduledAt).getTime(),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    status: 'scheduled'
+  })
+
+  scheduleSelectedAction = (selectedAction: ReturnType<Popup['getSelectedAction']>) => {
+    if (!selectedAction || !this.state.scheduledAt) return;
+
+    if (selectedAction.value === 'sendMessage') {
+      const language = chrome.i18n.getUILanguage();
+      chrome.storage.local.get({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, data => {
+        const contacts = this.parseContacts(data.prefix);
+        if (contacts.length === 0) return;
+
+        const execution = this.createScheduledExecution(selectedAction.label, `${contacts.length} contato(s)`, {
+          kind: 'bulkSend',
+          contacts,
+          message: data.message,
+          attachment: data.attachment,
+          buttons: data.buttons,
+          delay: data.delay
+        });
+
+        PopupMessageManager.sendMessage(ChromeMessageTypes.SCHEDULE_EXECUTION, execution)
+          .then((scheduledExecution) => {
+            this.setState({ scheduledExecutions: [...this.state.scheduledExecutions.filter(item => item.id !== scheduledExecution.id), scheduledExecution], connectionError: undefined });
+          })
+          .catch((error) => this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel }));
+      });
+      return;
+    }
+
+    if (selectedAction.value === 'archiveChats') {
+      chrome.storage.local.get({ archiveDelayMs: 500 }, data => {
+        const execution = this.createScheduledExecution(selectedAction.label, '-', {
+          kind: 'archiveChats',
+          delayMs: data.archiveDelayMs
+        });
+
+        PopupMessageManager.sendMessage(ChromeMessageTypes.SCHEDULE_EXECUTION, execution)
+          .then((scheduledExecution) => {
+            this.setState({ scheduledExecutions: [...this.state.scheduledExecutions.filter(item => item.id !== scheduledExecution.id), scheduledExecution], archiveConfirmOpen: false, connectionError: undefined });
+          })
+          .catch((error) => this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel }));
+      });
+      return;
+    }
+
+    const action = selectedAction.value === 'allWaJsFunctions' ? 'executeFunction' : selectedAction.labAction;
+    if (!action) return;
+
+    const execution = this.createScheduledExecution(selectedAction.label, this.getActionHistoryTarget(action), {
+      kind: 'wajs',
+      labPayload: this.getLabPayload(action)
+    });
+
+    PopupMessageManager.sendMessage(ChromeMessageTypes.SCHEDULE_EXECUTION, execution)
+      .then((scheduledExecution) => {
+        this.setState({ scheduledExecutions: [...this.state.scheduledExecutions.filter(item => item.id !== scheduledExecution.id), scheduledExecution], connectionError: undefined });
+      })
+      .catch((error) => this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel }));
+  }
+
+  cancelScheduledExecution = (id: string) => {
+    PopupMessageManager.sendMessage(ChromeMessageTypes.CANCEL_SCHEDULED_EXECUTION, { id })
+      .then((scheduledExecutions) => this.setState({ scheduledExecutions, connectionError: undefined }))
+      .catch((error) => this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel }));
+  }
+
   executeSelectedAction = () => {
     const selectedAction = this.getSelectedAction();
     if (!selectedAction) {
       this.setState({ connectionError: this.noFunctionSelectedLabel });
+      return;
+    }
+
+    if (this.state.deliveryMode === 'scheduled') {
+      this.scheduleSelectedAction(selectedAction);
       return;
     }
 
@@ -521,17 +713,7 @@ class Popup extends Component<{}, PopupState> {
 
   runLabAction = (action: WaJsLabAction) => {
     this.setState({ labLoading: true, labResult: undefined, connectionError: undefined });
-    PopupMessageManager.sendMessage(ChromeMessageTypes.WAJS_LAB_EXECUTE, {
-      action,
-      chatId: this.state.labChatId,
-      contactId: this.state.labContactId,
-      text: this.state.labText,
-      limit: this.state.labLimit,
-      latitude: Number(this.state.labLatitude),
-      longitude: Number(this.state.labLongitude),
-      functionPath: this.state.advancedFunctionPath,
-      argsJson: this.state.advancedArgsJson
-    }).then((labResult) => {
+    PopupMessageManager.sendMessage(ChromeMessageTypes.WAJS_LAB_EXECUTE, this.getLabPayload(action)).then((labResult) => {
       this.addLocalLog({
         level: labResult.ok ? 3 : 1,
         message: `${this.getActionHistoryLabel(action)}: ${labResult.ok ? 'OK' : labResult.error || 'Erro'}`,
@@ -816,18 +998,6 @@ class Popup extends Component<{}, PopupState> {
         >
           {this.bulkCaptureTargetsLabel}
         </Button>
-        <div className="rounded-xl border border-white/10 bg-slate-950/35 p-3">
-          <div className="mb-3 text-sm font-semibold text-slate-300">{this.deliveryModeLabel}</div>
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => this.setState({ deliveryMode: 'now' })} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${this.state.deliveryMode === 'now' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.sendNowLabel}</button>
-            <button type="button" onClick={() => this.setState({ deliveryMode: 'scheduled' })} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${this.state.deliveryMode === 'scheduled' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.scheduleMessageLabel}</button>
-          </div>
-          {this.state.deliveryMode === 'scheduled' && <label className="mt-3 flex flex-col gap-2">
-            <span className="text-xs font-bold uppercase text-slate-500">{this.scheduleDateLabel}</span>
-            <ControlInput type="datetime-local" value={this.state.scheduledAt} onChange={(event) => this.setState({ scheduledAt: event.target.value })} />
-            <span className="text-xs leading-5 text-slate-500">{this.scheduledQueueLabel}</span>
-          </label>}
-        </div>
         <div className="grid grid-cols-3 gap-2">
           {this.renderMiniMetric(this.totalContactsLabel, summary.total)}
           {this.renderMiniMetric(this.uniqueContactsLabel, summary.unique)}
@@ -877,9 +1047,39 @@ class Popup extends Component<{}, PopupState> {
         <span className="text-sm font-semibold text-slate-300">{this.functionRequiresContactLabel}</span>
         <ControlInput value={this.state.labContactId} placeholder="5511999999999" onChange={(event) => this.setState({ labContactId: event.target.value })} />
       </label>}
-      {selectedAction.needsText && <label className="col-span-2 flex flex-col gap-2">
-        <span className="text-sm font-semibold text-slate-300">{this.functionRequiresTextLabel}</span>
+      {(selectedAction.needsText || selectedAction.optionalText) && <label className="col-span-2 flex flex-col gap-2">
+        <span className="text-sm font-semibold text-slate-300">{selectedAction.optionalText ? `${this.functionRequiresTextLabel} (${this.optionalFieldLabel})` : this.functionRequiresTextLabel}</span>
         <ControlInput value={this.state.labText} onChange={(event) => this.setState({ labText: event.target.value })} />
+      </label>}
+      {selectedAction.needsAttachment && <label className="col-span-2 flex flex-col gap-2">
+        <span className="text-sm font-semibold text-slate-300">{this.functionRequiresAttachmentLabel}</span>
+        <ControlInput
+          type="file"
+          accept={selectedAction.mediaType === 'image' ? 'image/*' : selectedAction.mediaType === 'audio' ? 'audio/*' : selectedAction.mediaType === 'video' ? 'video/*' : undefined}
+          onChange={this.handleLabAttachmentChange}
+        />
+        <span className="text-xs leading-5 text-slate-500">{this.state.labAttachment ? this.state.labAttachment.name : this.functionAttachmentHelpLabel}</span>
+        {this.state.labAttachment && <button type="button" onClick={this.clearLabAttachment} className="inline-flex w-max items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-rose-400/40 hover:text-rose-200">
+          <Icon name="trash" className="h-4 w-4" />
+          {this.removeAttachmentLabel}
+        </button>}
+      </label>}
+    </div>;
+  }
+
+  renderScheduleControls() {
+    if (!this.state.selectedAction) return null;
+
+    return <div className="mt-4 rounded-xl border border-white/10 bg-slate-950/35 p-3">
+      <div className="mb-3 text-sm font-semibold text-slate-300">{this.deliveryModeLabel}</div>
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => this.setState({ deliveryMode: 'now' })} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${this.state.deliveryMode === 'now' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.sendNowLabel}</button>
+        <button type="button" onClick={() => this.setState({ deliveryMode: 'scheduled' })} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${this.state.deliveryMode === 'scheduled' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.scheduleMessageLabel}</button>
+      </div>
+      {this.state.deliveryMode === 'scheduled' && <label className="mt-3 flex flex-col gap-2">
+        <span className="text-xs font-bold uppercase text-slate-500">{this.scheduleDateLabel}</span>
+        <ControlInput type="datetime-local" value={this.state.scheduledAt} onChange={(event) => this.setState({ scheduledAt: event.target.value })} />
+        <span className="text-xs leading-5 text-slate-500">{this.scheduledQueueLabel}</span>
       </label>}
     </div>;
   }
@@ -953,8 +1153,7 @@ class Popup extends Component<{}, PopupState> {
   }
 
   renderNewExecution() {
-    const summary = this.getContactSummary();
-    const sendDisabled = this.state.selectedAction === 'sendMessage' && (summary.unique === 0 || (this.state.deliveryMode === 'scheduled' && !this.state.scheduledAt));
+    const executeDisabled = this.isSelectedActionInvalid();
 
     return this.renderPanel(<>
       <div>
@@ -965,17 +1164,18 @@ class Popup extends Component<{}, PopupState> {
         <label className="sr-only" htmlFor="popup-action">{this.selectFunctionLabel}</label>
         {this.renderActionSelector()}
         {this.renderActionFields()}
+        {this.renderScheduleControls()}
         {this.renderArchiveConfirmation()}
         {this.renderConnectionNotice()}
         <Button
           className="mt-4 w-full"
           variant="primary"
           type="button"
-          disabled={this.state.labLoading || sendDisabled}
+          disabled={this.state.labLoading || executeDisabled}
           onClick={this.executeSelectedAction}
           icon={<Icon name="play" className="h-5 w-5" />}
         >
-          {this.state.labLoading ? this.sendingPopup : this.executeButtonLabel}
+          {this.state.labLoading ? this.sendingPopup : this.state.deliveryMode === 'scheduled' ? this.scheduleMessageLabel : this.executeButtonLabel}
         </Button>
       </div>
     </>);
@@ -1026,6 +1226,68 @@ class Popup extends Component<{}, PopupState> {
     </>);
   }
 
+  getScheduledStatusLabel(status: ScheduledExecution['status']) {
+    switch (status) {
+      case 'running':
+        return this.scheduledExecutionRunningLabel;
+      case 'completed':
+        return this.scheduledExecutionCompletedLabel;
+      case 'failed':
+        return this.scheduledExecutionFailedLabel;
+      case 'cancelled':
+        return this.scheduledExecutionCancelledLabel;
+      default:
+        return this.scheduledExecutionPendingLabel;
+    }
+  }
+
+  renderScheduledExecutions() {
+    const executions = this.state.scheduledExecutions
+      .slice()
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 8);
+
+    return this.renderPanel(<>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-extrabold text-white">{this.scheduledExecutionsTitle}</h2>
+        <Button variant="ghost" type="button" onClick={this.updateScheduledExecutions} icon={<Icon name="refresh" className="h-4 w-4" />}>
+          {chrome.i18n.getMessage('updateButtonLabel') || 'Update'}
+        </Button>
+      </div>
+      <div className="space-y-2">
+        {executions.length === 0 && <div className="rounded-xl border border-dashed border-white/12 bg-slate-900/32 p-5 text-center text-sm text-slate-400">{this.scheduledExecutionsEmptyLabel}</div>}
+        {executions.map(execution => {
+          const isPending = execution.status === 'scheduled';
+          const isFailed = execution.status === 'failed';
+          const statusClass = isFailed
+            ? 'bg-rose-400/12 text-rose-300'
+            : execution.status === 'completed'
+              ? 'bg-emerald-400/12 text-emerald-300'
+              : execution.status === 'cancelled'
+                ? 'bg-slate-400/12 text-slate-300'
+                : 'bg-amber-400/12 text-amber-300';
+
+          return <div key={execution.id} className="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-white/10 bg-slate-800/42 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-400/25">
+              <Icon name="clock" className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-extrabold text-white">{execution.label}</div>
+              <div className="truncate text-xs text-slate-400">{execution.target || '-'} · {new Date(execution.scheduledAt).toLocaleString()}</div>
+              {execution.error && <div className="mt-1 truncate text-xs text-rose-300">{execution.error}</div>}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass}`}>{this.getScheduledStatusLabel(execution.status)}</span>
+              {isPending && <button type="button" onClick={() => this.cancelScheduledExecution(execution.id)} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-rose-400/40 hover:text-rose-200">
+                {this.cancelScheduledExecutionLabel}
+              </button>}
+            </div>
+          </div>;
+        })}
+      </div>
+    </>);
+  }
+
   renderLatestExecutions(limit = 3) {
     const logs = this.state.logs.slice(-limit).reverse();
 
@@ -1069,6 +1331,7 @@ class Popup extends Component<{}, PopupState> {
     return <div className="space-y-5 px-7 pb-6">
       {this.renderNewExecution()}
       {this.renderQuickExecutions()}
+      {this.renderScheduledExecutions()}
       {this.renderSummary()}
       {this.renderLatestExecutions()}
       {this.state.labResult && this.renderLabResult()}

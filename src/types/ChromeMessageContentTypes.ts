@@ -4,6 +4,7 @@ import QueueStatus from "./QueueStatus";
 import ArchiveStatus from "./ArchiveStatus";
 import { WaJsLabPayload, WaJsLabResponse } from "./WaJsLab";
 import { ChromeMessageTypes } from "./ChromeMessageTypes";
+import type { ScheduledExecution } from "./ScheduledExecution";
 
 export default interface ChromeMessageContentTypes {
   [ChromeMessageTypes.QUEUE_STATUS]: {
@@ -43,5 +44,19 @@ export default interface ChromeMessageContentTypes {
   [ChromeMessageTypes.WAJS_LAB_EXECUTE]: {
     payload: WaJsLabPayload;
     response: WaJsLabResponse;
+  };
+  [ChromeMessageTypes.SCHEDULE_EXECUTION]: {
+    payload: ScheduledExecution;
+    response: ScheduledExecution;
+  };
+  [ChromeMessageTypes.LIST_SCHEDULED_EXECUTIONS]: {
+    payload: undefined;
+    response: ScheduledExecution[];
+  };
+  [ChromeMessageTypes.CANCEL_SCHEDULED_EXECUTION]: {
+    payload: {
+      id: string;
+    };
+    response: ScheduledExecution[];
   };
 }
