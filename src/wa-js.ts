@@ -8,11 +8,13 @@ import { ChromeMessageTypes } from './types/ChromeMessageTypes';
 import WPP from '@wppconnect/wa-js';
 
 type WPPWithWebpack = typeof WPP & {
-    webpack?: {
+    loader?: {
         onReady(callback: () => void): void;
         onInjected(callback: () => void): void;
         injectLoader(): void;
-    }
+        injectFallbackModule?(moduleId: number | string, content: any): void;
+    };
+    webpack?: WPPWithWebpack['loader'];
 };
 
 const WPPRuntime = WPP as WPPWithWebpack;
@@ -267,11 +269,31 @@ const makeLabResponse = (payload: WaJsLabPayload, startedAt: number, data?: unkn
     error: error instanceof Error ? error.message : error ? String(error) : undefined
 });
 
+const safeIsAuthenticated = () => {
+    const connIsAuthenticated = window.WPP?.conn?.isAuthenticated;
+    if (typeof connIsAuthenticated === 'function') {
+        try {
+            return Boolean(connIsAuthenticated.call(window.WPP.conn));
+        } catch (error) {
+            return false;
+        }
+    }
+
+    return Boolean(document.querySelector([
+        '[data-testid="chat-list"]',
+        '[aria-label="Chat list"]',
+        '[data-icon="new-chat-outline"]',
+        '[data-icon="menu"]'
+    ].join(',')));
+};
+
 const ensureWaJsReady = () => {
-    if (!window.WPP?.isReady || !window.WPP?.conn?.isAuthenticated?.()) {
+    if (!window.WPP?.isReady || !safeIsAuthenticated()) {
         throw new Error('Abra o WhatsApp Web, mantenha a conta conectada e tente novamente.');
     }
 };
+
+const getWppLoader = () => window.WPP?.loader ?? window.WPP?.webpack ?? WPPRuntime.loader ?? WPPRuntime.webpack;
 
 async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse> {
     const startedAt = Date.now();
@@ -287,7 +309,7 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
             case 'diagnostics': {
                 return makeLabResponse(payload, startedAt, {
                     isReady: Boolean(window.WPP.isReady),
-                    isAuthenticated: labWpp.conn?.isAuthenticated?.(),
+                    isAuthenticated: safeIsAuthenticated(),
                     isOnline: labWpp.conn?.isOnline?.(),
                     isIdle: labWpp.conn?.isIdle?.(),
                     isMainReady: labWpp.conn?.isMainReady?.(),
@@ -448,7 +470,7 @@ async function archiveAllChats({ delayMs }: { delayMs: number }) {
     };
 
     try {
-        if (!window.WPP?.conn?.isAuthenticated?.()) {
+        if (!safeIsAuthenticated()) {
             throw new Error('Abra o WhatsApp Web e conecte-se primeiro.');
         }
 
@@ -603,7 +625,7 @@ async function sendWPPMessage({ contact, message, attachment, buttons = [] }: Me
 }
 
 async function sendMessage({ contact, hash, scheduledAt }: { contact: string, hash: number, scheduledAt?: number }) {
-    if (!window.WPP?.conn?.isAuthenticated?.()) {
+    if (!safeIsAuthenticated()) {
         const errorMsg = 'Abra o WhatsApp Web e conecte-se primeiro.';
         WebpageMessageManager.sendMessage(ChromeMessageTypes.ADD_LOG, { level: 1, message: errorMsg, attachment: false, contact });
         throw new Error(errorMsg);
@@ -689,7 +711,7 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.SEND_MESSAGE, async (message
         return addToQueue(message);
     } else {
         return new Promise((resolve, reject) => {
-            window.WPP.webpack!.onReady(async () => {
+            getWppLoader()!.onReady(async () => {
                 try {
                     resolve(await addToQueue(message));
                 } catch (error) {
@@ -709,7 +731,7 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.ARCHIVE_ALL_CHATS, async (pa
         return true;
     } else {
         return new Promise((resolve, reject) => {
-            window.WPP.webpack!.onReady(async () => {
+            getWppLoader()!.onReady(async () => {
                 try {
                     void archiveAllChats(payload);
                     resolve(true);
@@ -727,7 +749,7 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.WAJS_LAB_EXECUTE, async (pay
     }
 
     return new Promise((resolve) => {
-        window.WPP.webpack!.onReady(async () => {
+        getWppLoader()!.onReady(async () => {
             resolve(await executeWaJsLab(payload));
         });
     });
@@ -735,8 +757,40 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.WAJS_LAB_EXECUTE, async (pay
 
 storageManager.clearDatabase();
 
-WPPRuntime.webpack?.onInjected(() => {
+const registerWaJsRuntimeFallbacks = () => {
+    const injectFallbackModule = getWppLoader()?.injectFallbackModule;
+    if (typeof injectFallbackModule !== 'function') return;
+
+    const isLoggedIn = () => safeIsAuthenticated();
+    const emptyCollection = {
+        models: [],
+        _models: [],
+        on: () => emptyCollection,
+        off: () => emptyCollection,
+        once: () => emptyCollection,
+        add: () => emptyCollection,
+        remove: () => emptyCollection,
+        trigger: () => emptyCollection,
+        get: () => undefined,
+        find: () => undefined,
+        findFirst: () => undefined,
+        getModelsArray: () => [],
+        toArray: () => []
+    };
+
+    injectFallbackModule('wppconnect-extension-is-authenticated', {
+        isLoggedIn,
+        Z: isLoggedIn
+    });
+    injectFallbackModule('wppconnect-extension-chat-store', {
+        ChatCollection: emptyCollection
+    });
+};
+
+registerWaJsRuntimeFallbacks();
+
+getWppLoader()?.onInjected(() => {
     console.log('Wppconnect: Loader injected!');
 });
 
-WPPRuntime.webpack?.injectLoader();
+getWppLoader()?.injectLoader();
