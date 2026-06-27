@@ -769,6 +769,66 @@
         "message": "Cancel",
         "description": "Cancel scheduled execution button"
     },
+    "schedulingLoadingLabel": {
+        "message": "Scheduling...",
+        "description": "Primary button label while creating a scheduled execution"
+    },
+    "executingLoadingLabel": {
+        "message": "Executing...",
+        "description": "Primary button label while running an execution"
+    },
+    "scheduledExecutionDetailsLabel": {
+        "message": "Details",
+        "description": "Scheduled execution details button"
+    },
+    "scheduledDetailsTitle": {
+        "message": "Schedule details",
+        "description": "Scheduled execution detail panel title"
+    },
+    "scheduledDetailsEmptyLabel": {
+        "message": "Select a scheduled execution to inspect it.",
+        "description": "Scheduled execution detail empty state"
+    },
+    "scheduledDetailsFunctionLabel": {
+        "message": "Function",
+        "description": "Scheduled execution function detail label"
+    },
+    "scheduledDetailsTargetLabel": {
+        "message": "Target",
+        "description": "Scheduled execution target detail label"
+    },
+    "scheduledDetailsStatusLabel": {
+        "message": "Status",
+        "description": "Scheduled execution status detail label"
+    },
+    "scheduledDetailsScheduledForLabel": {
+        "message": "Scheduled for",
+        "description": "Scheduled execution date detail label"
+    },
+    "scheduledDetailsCreatedAtLabel": {
+        "message": "Created at",
+        "description": "Scheduled execution creation date detail label"
+    },
+    "scheduledDetailsUpdatedAtLabel": {
+        "message": "Updated at",
+        "description": "Scheduled execution update date detail label"
+    },
+    "scheduledDetailsPayloadLabel": {
+        "message": "Payload",
+        "description": "Scheduled execution payload detail label"
+    },
+    "scheduledDetailsResultLabel": {
+        "message": "Result",
+        "description": "Scheduled execution result detail label"
+    },
+    "scheduledDetailsErrorLabel": {
+        "message": "Error",
+        "description": "Scheduled execution error detail label"
+    },
+    "scheduledDetailsCloseLabel": {
+        "message": "Close details",
+        "description": "Scheduled execution close details button"
+    },
     "languageSettingsTitle": {
         "message": "Language",
         "description": "Language settings section title"
