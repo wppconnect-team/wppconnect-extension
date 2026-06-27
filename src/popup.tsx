@@ -850,7 +850,7 @@ class Popup extends Component<{}, PopupState> {
   renderActionSelector() {
     const selectedAction = this.getSelectedAction();
 
-    return <div className="relative">
+    return <div>
       <button
         type="button"
         onClick={() => this.setState({ actionMenuOpen: !this.state.actionMenuOpen })}
@@ -862,7 +862,7 @@ class Popup extends Component<{}, PopupState> {
         </span>
         <span className={`text-slate-500 transition ${this.state.actionMenuOpen ? 'rotate-180' : ''}`}>v</span>
       </button>
-      {this.state.actionMenuOpen && <div className="absolute z-30 mt-2 max-h-80 w-full overflow-auto rounded-xl border border-white/10 bg-slate-950 p-1 shadow-2xl">
+      {this.state.actionMenuOpen && <div className="mt-2 max-h-80 w-full overflow-auto rounded-xl border border-white/10 bg-slate-950 p-1 shadow-2xl">
         <button
           type="button"
           onClick={() => this.setState({ selectedAction: '', actionMenuOpen: false })}
