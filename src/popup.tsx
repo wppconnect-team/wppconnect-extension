@@ -1,4 +1,4 @@
-import React, { ChangeEvent, Component, FormEvent, MouseEvent, ReactNode } from 'react';
+import React, { ChangeEvent, Component, FormEvent, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import Button from './components/atoms/Button';
@@ -12,6 +12,10 @@ import { WaJsLabAction, WaJsLabMediaType, WaJsLabPayload, WaJsLabResponse } from
 import AsyncChromeMessageManager from './utils/AsyncChromeMessageManager';
 import { ChromeMessageTypes } from './types/ChromeMessageTypes';
 import { getActiveLanguage, initI18n } from './utils/i18n';
+import ArchiveForm from './components/organisms/ArchiveForm';
+import LanguageForm from './components/organisms/LanguageForm';
+import MessageButtonsForm from './components/organisms/MessageButtonsForm';
+import MessageForm from './components/organisms/MessageForm';
 
 const PopupMessageManager = new AsyncChromeMessageManager('popup');
 
@@ -28,7 +32,7 @@ const createLocalArchiveStatus = (phase: ArchiveStatus['phase'], error?: string)
   error
 });
 
-type PopupTab = 'executions' | 'history';
+type PopupTab = 'executions' | 'history' | 'settings';
 type PopupAction =
   | 'sendMessage'
   | 'archiveChats'
@@ -66,6 +70,13 @@ type PopupAction =
   | 'allWaJsFunctions';
 
 type DeliveryMode = 'now' | 'scheduled';
+type BulkDraft = {
+  message: string,
+  attachment: Attachment,
+  buttons: unknown[],
+  delay: number,
+  prefix: number
+};
 
 type PopupState = {
   contacts: string,
@@ -96,7 +107,8 @@ type PopupState = {
   labResult?: WaJsLabResponse,
   logs: Log[],
   activeOperation?: 'send' | 'archive',
-  selectedHistoryLogKey?: string
+  selectedHistoryLogKey?: string,
+  bulkDraft: BulkDraft
 };
 
 type UiIcon =
@@ -186,7 +198,14 @@ class Popup extends Component<{}, PopupState> {
       labResult: undefined,
       logs: [],
       activeOperation: undefined,
-      selectedHistoryLogKey: undefined
+      selectedHistoryLogKey: undefined,
+      bulkDraft: {
+        message: chrome.i18n.getMessage('defaultMessage') || '',
+        attachment: null,
+        buttons: [],
+        delay: 0,
+        prefix: getActiveLanguage() === 'pt_BR' ? 55 : 0
+      }
     };
   }
 
@@ -329,6 +348,16 @@ class Popup extends Component<{}, PopupState> {
   functionSendPollLabel = chrome.i18n.getMessage('functionSendPollLabel') || 'Send poll';
   functionSendLocationLabel = chrome.i18n.getMessage('functionSendLocationLabel') || 'Send location';
   functionSendVCardLabel = chrome.i18n.getMessage('functionSendVCardLabel') || 'Send vCard';
+  settingsBackLabel = chrome.i18n.getMessage('settingsBackLabel') || 'Back';
+  optionsPageTitle = chrome.i18n.getMessage('optionsPageTitle') || 'Wppconnect settings';
+  optionsPageSubtitle = chrome.i18n.getMessage('optionsPageSubtitle') || 'Prepare the message, delivery controls and send logs.';
+  bulkMessagePreviewTitle = chrome.i18n.getMessage('bulkMessagePreviewTitle') || 'Message that will be sent';
+  bulkChangeMessageLabel = chrome.i18n.getMessage('bulkChangeMessageLabel') || 'Edit message';
+  bulkNoAttachmentLabel = chrome.i18n.getMessage('bulkNoAttachmentLabel') || 'No file selected';
+  bulkButtonsCountLabel = chrome.i18n.getMessage('bulkButtonsCountLabel') || 'Buttons';
+  bulkDelayPreviewLabel = chrome.i18n.getMessage('bulkDelayPreviewLabel') || 'Delay';
+  bulkPrefixPreviewLabel = chrome.i18n.getMessage('bulkPrefixPreviewLabel') || 'Prefix';
+  selectedAttachmentLabel = chrome.i18n.getMessage('selectedAttachmentLabel') || 'Selected file';
 
   queueStatusListener = 0;
   archiveStatusListener = 0;
@@ -383,6 +412,8 @@ class Popup extends Component<{}, PopupState> {
     this.updateArchiveStatus();
     this.updateLogs();
     this.updateScheduledExecutions();
+    this.updateBulkDraft();
+    chrome.storage.onChanged.addListener(this.handleStorageChange);
     this.queueStatusListener = window.setInterval(this.updateStatus, 500);
     this.archiveStatusListener = window.setInterval(this.updateArchiveStatus, 500);
     this.logListener = window.setInterval(this.updateLogs, 2500);
@@ -394,6 +425,7 @@ class Popup extends Component<{}, PopupState> {
     clearInterval(this.archiveStatusListener);
     clearInterval(this.logListener);
     clearInterval(this.scheduledStatusListener);
+    chrome.storage.onChanged.removeListener(this.handleStorageChange);
   }
 
   componentDidUpdate(prevProps: Readonly<{}>, prevState: Readonly<PopupState>) {
@@ -437,6 +469,34 @@ class Popup extends Component<{}, PopupState> {
       .catch(() => {
         chrome.storage.local.get({ scheduledExecutions: [] }, data => this.setState({ scheduledExecutions: data.scheduledExecutions || [] }));
       });
+  }
+
+  updateBulkDraft = () => {
+    const language = getActiveLanguage();
+    chrome.storage.local.get({
+      message: this.defaultMessage,
+      attachment: null,
+      buttons: [],
+      delay: 0,
+      prefix: language === 'pt_BR' ? 55 : 0
+    }, data => {
+      this.setState({
+        bulkDraft: {
+          message: data.message,
+          attachment: data.attachment,
+          buttons: Array.isArray(data.buttons) ? data.buttons : [],
+          delay: Number(data.delay) || 0,
+          prefix: Number(data.prefix) || 0
+        }
+      });
+    });
+  }
+
+  handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+    if (areaName !== 'local') return;
+    if (['message', 'attachment', 'buttons', 'delay', 'prefix'].some(key => key in changes)) {
+      this.updateBulkDraft();
+    }
   }
 
   addLocalLog = (log: Omit<Log, 'date'>) => {
@@ -607,12 +667,13 @@ class Popup extends Component<{}, PopupState> {
     });
   }
 
-  handleOptions = (event?: MouseEvent<HTMLButtonElement>) => {
-    if (chrome.runtime.openOptionsPage) {
-      chrome.runtime.openOptionsPage();
-    } else {
-      window.open(chrome.runtime.getURL('options.html'));
-    }
+  handleOptions = () => {
+    this.setState(prevState => ({
+      activeTab: prevState.activeTab === 'settings' ? 'executions' : 'settings',
+      actionMenuOpen: false,
+      archiveConfirmOpen: false,
+      connectionError: undefined
+    }));
   }
 
   getSelectedAction = () => {
@@ -1013,9 +1074,9 @@ class Popup extends Component<{}, PopupState> {
           variant="glass"
           className="shrink-0"
           onClick={this.handleOptions}
-          icon={<Icon name="settings" className="h-5 w-5" />}
+          icon={<Icon name={this.state.activeTab === 'settings' ? 'list' : 'settings'} className="h-5 w-5" />}
         >
-          {this.optionsButtonLabel}
+          {this.state.activeTab === 'settings' ? this.settingsBackLabel : this.optionsButtonLabel}
         </Button>
       </div>
       <div className="mt-6 grid grid-cols-2 gap-3 rounded-[1.15rem] bg-slate-950/28 p-2 ring-1 ring-white/7">
@@ -1099,6 +1160,7 @@ class Popup extends Component<{}, PopupState> {
           <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
           <span>{this.bulkSpamWarningLabel}</span>
         </div>
+        {this.renderBulkMessagePreview()}
         <label className="flex flex-col gap-2">
           <span className="text-sm font-semibold text-slate-300">{this.contactsLabel}</span>
           <ControlTextArea
@@ -1188,6 +1250,42 @@ class Popup extends Component<{}, PopupState> {
     </div>;
   }
 
+  renderBulkMessagePreview() {
+    const draft = this.state.bulkDraft;
+    const attachmentName = draft.attachment?.name || this.bulkNoAttachmentLabel;
+    const prefix = draft.prefix === 0 ? chrome.i18n.getMessage('defaultLabelSelectCountryCode') || 'No prefix' : `+${draft.prefix}`;
+    const message = draft.message?.trim() || this.defaultMessage || '-';
+
+    return <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2 text-sm font-extrabold text-white">
+          <Icon name="message" className="h-4 w-4 shrink-0 text-emerald-300" />
+          <span className="truncate">{this.bulkMessagePreviewTitle}</span>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          className="min-h-[2.1rem] shrink-0 px-3 py-1 text-xs"
+          onClick={() => this.setState({ activeTab: 'settings', actionMenuOpen: false, archiveConfirmOpen: false })}
+          icon={<Icon name="settings" className="h-4 w-4" />}
+        >
+          {this.bulkChangeMessageLabel}
+        </Button>
+      </div>
+      <div className="max-h-28 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-white/10 bg-slate-950/45 p-3 text-sm leading-5 text-slate-100">
+        {message}
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {this.renderMiniMetric(this.selectedAttachmentLabel, attachmentName)}
+        {this.renderMiniMetric(this.bulkButtonsCountLabel, draft.buttons.length)}
+        {this.renderMiniMetric(this.bulkDelayPreviewLabel, `${draft.delay.toFixed(1)}s`)}
+      </div>
+      <div className="mt-2 rounded-lg border border-white/10 bg-slate-950/35 px-3 py-2 text-xs text-slate-400">
+        <span className="font-bold text-slate-300">{this.bulkPrefixPreviewLabel}: </span>{prefix}
+      </div>
+    </div>;
+  }
+
   renderScheduleControls() {
     if (!this.state.selectedAction) return null;
 
@@ -1247,7 +1345,7 @@ class Popup extends Component<{}, PopupState> {
   renderMiniMetric(label: string, value: string | number) {
     return <div className="rounded-xl border border-white/10 bg-slate-950/36 p-3">
       <div className="truncate text-[0.68rem] font-bold uppercase text-slate-500">{label}</div>
-      <div className="mt-1 text-lg font-extrabold text-white">{value}</div>
+      <div className="mt-1 break-words text-lg font-extrabold leading-6 text-white">{value}</div>
     </div>;
   }
 
@@ -1546,6 +1644,30 @@ class Popup extends Component<{}, PopupState> {
     </div>;
   }
 
+  renderSettings() {
+    return <div className="space-y-5 px-7 pb-6">
+      {this.renderPanel(<div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-extrabold text-white">{this.optionsPageTitle}</h2>
+          <p className="mt-1 text-sm leading-5 text-slate-400">{this.optionsPageSubtitle}</p>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          className="shrink-0"
+          onClick={() => this.setState({ activeTab: 'executions' })}
+          icon={<Icon name="list" className="h-4 w-4" />}
+        >
+          {this.settingsBackLabel}
+        </Button>
+      </div>)}
+      <MessageForm />
+      <MessageButtonsForm />
+      <ArchiveForm />
+      <LanguageForm />
+    </div>;
+  }
+
   renderLabResult() {
     const resultText = this.state.labResult ? JSON.stringify(this.state.labResult, null, 2) : this.wajsLabPlaceholderResult;
 
@@ -1632,7 +1754,13 @@ class Popup extends Component<{}, PopupState> {
     if (this.state.activeOperation === 'archive') return this.renderArchiveProgress();
     if (this.state.activeOperation === 'send' || !this.state.confirmed) return this.renderSendProgress();
 
-    return this.renderShell(this.state.activeTab === 'executions' ? this.renderExecutions() : this.renderHistory());
+    return this.renderShell(
+      this.state.activeTab === 'settings'
+        ? this.renderSettings()
+        : this.state.activeTab === 'executions'
+          ? this.renderExecutions()
+          : this.renderHistory()
+    );
   }
 }
 

@@ -844,5 +844,33 @@
     "languagePortugueseLabel": {
         "message": "Portuguese (Brazil)",
         "description": "Portuguese language option"
+    },
+    "settingsBackLabel": {
+        "message": "Back",
+        "description": "Button to return from settings to executions"
+    },
+    "bulkMessagePreviewTitle": {
+        "message": "Message that will be sent",
+        "description": "Bulk send message preview title"
+    },
+    "bulkChangeMessageLabel": {
+        "message": "Edit message",
+        "description": "Button to edit the bulk send message"
+    },
+    "bulkNoAttachmentLabel": {
+        "message": "No file selected",
+        "description": "Bulk send attachment empty state"
+    },
+    "bulkButtonsCountLabel": {
+        "message": "Buttons",
+        "description": "Bulk send buttons count label"
+    },
+    "bulkDelayPreviewLabel": {
+        "message": "Delay",
+        "description": "Bulk send delay preview label"
+    },
+    "bulkPrefixPreviewLabel": {
+        "message": "Prefix",
+        "description": "Bulk send prefix preview label"
     }
 }

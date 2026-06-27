@@ -844,5 +844,33 @@
     "languagePortugueseLabel": {
         "message": "Português (Brasil)",
         "description": "Opção de idioma português"
+    },
+    "settingsBackLabel": {
+        "message": "Voltar",
+        "description": "Botão para voltar das configurações para execuções"
+    },
+    "bulkMessagePreviewTitle": {
+        "message": "Mensagem que será enviada",
+        "description": "Título do preview da mensagem de envio em massa"
+    },
+    "bulkChangeMessageLabel": {
+        "message": "Alterar mensagem",
+        "description": "Botão para alterar a mensagem de envio em massa"
+    },
+    "bulkNoAttachmentLabel": {
+        "message": "Nenhum arquivo selecionado",
+        "description": "Estado vazio do anexo de envio em massa"
+    },
+    "bulkButtonsCountLabel": {
+        "message": "Botões",
+        "description": "Label da quantidade de botões do envio em massa"
+    },
+    "bulkDelayPreviewLabel": {
+        "message": "Delay",
+        "description": "Label do delay do envio em massa"
+    },
+    "bulkPrefixPreviewLabel": {
+        "message": "Prefixo",
+        "description": "Label do prefixo do envio em massa"
     }
 }
