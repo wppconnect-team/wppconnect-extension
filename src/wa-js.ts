@@ -118,6 +118,7 @@ const normalizeWid = (value?: string) => {
 };
 
 const stringifyWid = (value: any) => value?._serialized || value?.toString?.() || value || null;
+const stripWidSuffix = (value: any) => String(stringifyWid(value) || '').replace(/@(c|g)\.us$/, '').replace(/@lid$/, '');
 const getChatTitle = (chat: any) => getModelValue(chat, 'formattedTitle') || getModelValue(chat, 'name') || getModelValue(chat, 'pushname') || getChatId(chat);
 
 const summarizeChat = (chat: any) => ({
@@ -178,6 +179,85 @@ const compactValue = (value: any, depth = 0, seen = new WeakSet<object>()): any 
     );
 };
 
+const listRuntimeFunctions = (root = window.WPP as any, prefix = 'WPP', depth = 0, seen = new WeakSet<object>()): string[] => {
+    if (!root || typeof root !== 'object' || seen.has(root) || depth > 4) return [];
+    seen.add(root);
+
+    return Object.keys(root)
+        .filter(key => !key.startsWith('_') && key !== 'default')
+        .flatMap(key => {
+            let value: any;
+            try {
+                value = root[key];
+            } catch (error) {
+                return [];
+            }
+
+            const path = `${prefix}.${key}`;
+            if (typeof value === 'function') return [path];
+            if (value && typeof value === 'object') return listRuntimeFunctions(value, path, depth + 1, seen);
+            return [];
+        })
+        .sort();
+};
+
+const resolveRuntimeFunction = (path: string) => {
+    const parts = path.replace(/^WPP\./, '').split('.').filter(Boolean);
+    let context: any = window.WPP;
+    for (const part of parts.slice(0, -1)) {
+        context = context?.[part];
+    }
+    const name = parts[parts.length - 1];
+    const fn = context?.[name];
+    if (typeof fn !== 'function') throw new Error(`Função não encontrada: ${path}`);
+    return { context, fn };
+};
+
+const parseFunctionArgs = (argsJson?: string): unknown[] => {
+    if (!argsJson?.trim()) return [];
+    const parsed = JSON.parse(argsJson);
+    return Array.isArray(parsed) ? parsed : [parsed];
+};
+
+const captureBulkTargets = async (limit: number) => {
+    const targets = new Map<string, { id: string; title: string | null; source: string }>();
+    const addTarget = (id: any, title: string | null, source: string) => {
+        const serialized = stripWidSuffix(id);
+        if (!serialized || /\D/.test(serialized)) return;
+        targets.set(serialized, { id: serialized, title, source });
+    };
+
+    try {
+        const chats = await window.WPP.chat.list({ ignoreGroupMetadata: true });
+        chats.forEach(chat => {
+            const chatId = getChatId(chat);
+            if (String(chatId || '').includes('@c.us')) addTarget(chatId, getChatTitle(chat), 'chat');
+        });
+    } catch (error) {
+        // Keep contact fallback below.
+    }
+
+    try {
+        const contacts = await (window.WPP as any).contact?.list?.({ onlyMyContacts: true });
+        if (Array.isArray(contacts)) {
+            contacts.forEach(contact => {
+                const id = stringifyWid(getModelValue(contact, 'id') || contact?.wid || contact);
+                if (String(id || '').includes('@c.us')) addTarget(id, getModelValue(contact, 'name') || getModelValue(contact, 'pushname') || null, 'contact');
+            });
+        }
+    } catch (error) {
+        // Some WhatsApp Web versions do not expose contact.list reliably.
+    }
+
+    const items = Array.from(targets.values()).slice(0, limit);
+    return {
+        count: targets.size,
+        returned: items.length,
+        items,
+        contactsText: items.map(item => item.id).join('\n')
+    };
+};
+
 const makeLabResponse = (payload: WaJsLabPayload, startedAt: number, data?: unknown, error?: unknown): WaJsLabResponse => ({
     ok: !error,
     action: payload.action,
@@ -232,6 +312,21 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
                     count: chats.length,
                     items: chats.slice(0, limit).map(summarizeChat)
                 });
+            }
+            case 'captureBulkTargets':
+                return makeLabResponse(payload, startedAt, await captureBulkTargets(Math.min(10000, Math.max(1, Number(payload.limit) || 10000))));
+            case 'listFunctions': {
+                const functions = listRuntimeFunctions();
+                return makeLabResponse(payload, startedAt, {
+                    count: functions.length,
+                    items: functions
+                });
+            }
+            case 'executeFunction': {
+                if (!payload.functionPath) throw new Error('Informe o caminho da função, por exemplo WPP.chat.list.');
+                const { context, fn } = resolveRuntimeFunction(payload.functionPath);
+                const args = parseFunctionArgs(payload.argsJson);
+                return makeLabResponse(payload, startedAt, compactValue(await fn.apply(context, args)));
             }
             case 'listUnreadChats': {
                 const chats = await window.WPP.chat.getUnreadChats(false);
@@ -507,13 +602,17 @@ async function sendWPPMessage({ contact, message, attachment, buttons = [] }: Me
     }
 }
 
-async function sendMessage({ contact, hash }: { contact: string, hash: number }) {
+async function sendMessage({ contact, hash, scheduledAt }: { contact: string, hash: number, scheduledAt?: number }) {
     if (!window.WPP?.conn?.isAuthenticated?.()) {
         const errorMsg = 'Abra o WhatsApp Web e conecte-se primeiro.';
         WebpageMessageManager.sendMessage(ChromeMessageTypes.ADD_LOG, { level: 1, message: errorMsg, attachment: false, contact });
         throw new Error(errorMsg);
     }
     const { message } = await storageManager.retrieveMessage(hash);
+
+    if (scheduledAt && scheduledAt > Date.now()) {
+        await wait(scheduledAt - Date.now());
+    }
 
     let findContact = await window.WPP.contact.queryExists(contact);
     if (!findContact) {
@@ -547,7 +646,7 @@ async function addToQueue(message: Message) {
     try {
         const messageHash = AsyncStorageManager.calculateMessageHash(message);
         await storageManager.storeMessage(message, messageHash);
-        await asyncQueue.add({ eventHandler: sendMessage, detail: { contact: message.contact, hash: messageHash, delay: message.delay } });
+        await asyncQueue.add({ eventHandler: sendMessage, detail: { contact: message.contact, hash: messageHash, delay: message.delay, scheduledAt: message.scheduledAt } });
         return true;
     } catch (error) {
         if (error instanceof Error) {

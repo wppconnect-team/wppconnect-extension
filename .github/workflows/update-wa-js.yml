@@ -1,0 +1,59 @@
+name: Update WA-JS
+
+on:
+  schedule:
+    - cron: "30 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: Keep WA-JS current
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.15.0
+
+      - name: Update WA-JS package range
+        run: npx npm-check-updates --upgrade --target latest --filter "@wppconnect/wa-js"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Validate locale JSON
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('public/_locales/en/messages.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('public/_locales/pt_BR/messages.json','utf8'))"
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Remove ignored lockfile
+        run: rm -f package-lock.json
+
+      - name: Create WA-JS update pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update wa-js"
+          title: "chore: update wa-js"
+          body: |
+            ## Summary
+            - Updates @wppconnect/wa-js to the latest available version.
+            - Validates locale JSON and production build after the update.
+
+            ## Validation
+            - npm install
+            - locale JSON parse check
+            - npm run build
+          branch: chore/update-wa-js
+          delete-branch: true
+          labels: dependencies,wa-js

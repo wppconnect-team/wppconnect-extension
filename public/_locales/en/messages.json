@@ -510,7 +510,7 @@
         "description": "No function selected error"
     },
     "functionSendMessageLabel": {
-        "message": "Send message",
+        "message": "Bulk message",
         "description": "Send message function label"
     },
     "functionArchiveChatsLabel": {
@@ -588,5 +588,141 @@
     "functionRequiresTextLabel": {
         "message": "Message text",
         "description": "Action text field label"
+    },
+    "bulkCaptureTargetsLabel": {
+        "message": "Capture chats/contacts",
+        "description": "Button to capture bulk targets from WhatsApp"
+    },
+    "bulkSpamWarningLabel": {
+        "message": "WhatsApp is increasingly strict with exaggerated spam. Use conservative volumes, consented contacts and realistic delays.",
+        "description": "Bulk sending spam warning"
+    },
+    "deliveryModeLabel": {
+        "message": "Delivery",
+        "description": "Delivery mode label"
+    },
+    "sendNowLabel": {
+        "message": "Send now",
+        "description": "Send now option"
+    },
+    "scheduleMessageLabel": {
+        "message": "Schedule",
+        "description": "Schedule message option"
+    },
+    "scheduleDateLabel": {
+        "message": "Date and time",
+        "description": "Schedule date label"
+    },
+    "scheduledQueueLabel": {
+        "message": "Scheduled in the WhatsApp Web tab. Keep it open and connected.",
+        "description": "Schedule runtime warning"
+    },
+    "allWaJsFunctionsLabel": {
+        "message": "All WA-JS functions",
+        "description": "Advanced WA-JS function executor label"
+    },
+    "allWaJsFunctionsDescription": {
+        "message": "Select any runtime WPP function",
+        "description": "Advanced WA-JS function executor description"
+    },
+    "refreshFunctionsLabel": {
+        "message": "Load functions",
+        "description": "Load WA-JS functions button"
+    },
+    "functionPathLabel": {
+        "message": "Function path",
+        "description": "WA-JS function path field"
+    },
+    "functionArgsLabel": {
+        "message": "Arguments JSON array",
+        "description": "WA-JS function args field"
+    },
+    "functionArgsHelpLabel": {
+        "message": "Example: [\"5511999999999@c.us\", {\"count\": 10}]",
+        "description": "WA-JS function args helper"
+    },
+    "functionProfileLabel": {
+        "message": "Profile",
+        "description": "WA-JS profile function label"
+    },
+    "functionContactStatusLabel": {
+        "message": "Contact status",
+        "description": "WA-JS contact status function label"
+    },
+    "functionProfilePictureLabel": {
+        "message": "Contact picture",
+        "description": "WA-JS profile picture function label"
+    },
+    "functionBusinessProfileLabel": {
+        "message": "Business profile",
+        "description": "WA-JS business profile function label"
+    },
+    "functionCommonGroupsLabel": {
+        "message": "Common groups",
+        "description": "WA-JS common groups function label"
+    },
+    "functionUnpinChatLabel": {
+        "message": "Unpin chat",
+        "description": "WA-JS unpin chat function label"
+    },
+    "functionUnmuteChatLabel": {
+        "message": "Unmute chat",
+        "description": "WA-JS unmute chat function label"
+    },
+    "functionArchiveChatLabel": {
+        "message": "Archive chat",
+        "description": "WA-JS archive chat function label"
+    },
+    "functionUnarchiveChatLabel": {
+        "message": "Unarchive chat",
+        "description": "WA-JS unarchive chat function label"
+    },
+    "functionTypingLabel": {
+        "message": "Typing 5s",
+        "description": "WA-JS typing function label"
+    },
+    "functionRecordingLabel": {
+        "message": "Recording 5s",
+        "description": "WA-JS recording function label"
+    },
+    "functionPauseTypingLabel": {
+        "message": "Pause typing",
+        "description": "WA-JS pause typing function label"
+    },
+    "functionSetInputLabel": {
+        "message": "Fill input",
+        "description": "WA-JS set input function label"
+    },
+    "functionSendPollLabel": {
+        "message": "Send poll",
+        "description": "WA-JS send poll function label"
+    },
+    "functionSendLocationLabel": {
+        "message": "Send location",
+        "description": "WA-JS send location function label"
+    },
+    "functionSendVCardLabel": {
+        "message": "Send vCard",
+        "description": "WA-JS send vCard function label"
+    },
+    "languageSettingsTitle": {
+        "message": "Language",
+        "description": "Language settings section title"
+    },
+    "languageSettingsHelp": {
+        "message": "The default follows the browser language. Change it here for extension screens that support manual language preference.",
+        "description": "Language settings help"
+    },
+    "languageAutoLabel": {
+        "message": "Automatic",
+        "description": "Automatic language option"
+    },
+    "languageEnglishLabel": {
+        "message": "English",
+        "description": "English language option"
+    },
+    "languagePortugueseLabel": {
+        "message": "Portuguese (Brazil)",
+        "description": "Portuguese language option"
     }
 }

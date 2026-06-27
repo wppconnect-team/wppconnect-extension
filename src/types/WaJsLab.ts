@@ -26,7 +26,10 @@ export type WaJsLabAction =
   | 'sendText'
   | 'sendPoll'
   | 'sendLocation'
-  | 'sendVCard';
+  | 'sendVCard'
+  | 'captureBulkTargets'
+  | 'listFunctions'
+  | 'executeFunction';
 
 export interface WaJsLabPayload {
   action: WaJsLabAction;
@@ -36,6 +39,8 @@ export interface WaJsLabPayload {
   limit?: number;
   latitude?: number;
   longitude?: number;
+  functionPath?: string;
+  argsJson?: string;
 }
 
 export interface WaJsLabResponse {

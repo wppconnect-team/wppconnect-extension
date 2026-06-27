@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import ArchiveForm from './components/organisms/ArchiveForm';
+import LanguageForm from './components/organisms/LanguageForm';
 import LogTable from './components/organisms/LogTable';
 import MessageButtonsForm from './components/organisms/MessageButtonsForm';
 import MessageForm from './components/organisms/MessageForm';
@@ -26,6 +27,7 @@ class Options extends Component<{}, {}>{
         <h1 className="text-2xl font-bold text-white">{this.title}</h1>
         <p className="text-sm text-slate-400">{this.subtitle}</p>
       </header>
+      <LanguageForm />
       <MessageForm />
       <MessageButtonsForm />
       <ArchiveForm />
