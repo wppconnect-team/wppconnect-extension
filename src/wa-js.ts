@@ -87,29 +87,42 @@ const hasInitialLoadingScreen = () => {
 };
 
 const hasChatListElement = () => Boolean(document.querySelector([
+    '#pane-side',
     '[data-testid="chat-list"]',
+    '[data-testid="chat-list-search"]',
+    '[data-testid="cell-frame-container"]',
     '[aria-label="Chat list"]',
     '[aria-label="Chats"]',
+    '[aria-label="Conversas"]',
     '[aria-label="Lista de conversas"]',
-    '[aria-label="Lista de chats"]'
+    '[aria-label="Lista de chats"]',
+    '[role="grid"]',
+    '[role="list"] [role="listitem"]'
 ].join(',')));
 
 const hasUsableChatStore = () => getStoreChats().length > 0;
+const hasRequiredRuntimeApi = () => Boolean(
+    (window.WPP as any)?.chat?.sendRawMessage
+    && (window.WPP as any)?.contact?.getPnLidEntry
+    && (window.WPP as any)?.conn
+);
 
 const isWhatsappMainReady = () => {
     const labWpp = window.WPP as any;
     const conn = labWpp?.conn;
+    let mainReady: boolean | undefined;
 
     if (typeof conn?.isMainReady === 'function') {
         try {
-            if (!conn.isMainReady()) return false;
+            mainReady = Boolean(conn.isMainReady());
         } catch (error) {
-            return false;
+            mainReady = undefined;
         }
     }
 
     if (hasInitialLoadingScreen()) return false;
-    return hasChatListElement() || hasUsableChatStore();
+    if (mainReady === true) return true;
+    return hasChatListElement() || hasUsableChatStore() || hasRequiredRuntimeApi();
 };
 
 async function waitForWhatsappMainReady(timeoutMs = 20000) {
@@ -235,8 +248,8 @@ const pickSendWidCandidate = (candidates: string[]) => {
 };
 
 const pickRawSendWidCandidate = (candidates: string[]) => {
-    return candidates.find(isPnWid)
-        || candidates.find(isLidWid)
+    return candidates.find(isLidWid)
+        || candidates.find(isPnWid)
         || candidates.find(candidate => !isGroupWid(candidate))
         || '';
 };
@@ -573,11 +586,11 @@ const safeIsAuthenticated = () => {
         }
     }
 
-    return Boolean(window.WPP?.isReady) && isWhatsappMainReady();
+    return Boolean(window.WPP?.isReady || hasRequiredRuntimeApi()) && isWhatsappMainReady();
 };
 
-const ensureWaJsReady = () => {
-    if (!window.WPP?.isReady || !safeIsAuthenticated()) {
+const ensureWaJsReady = async () => {
+    if (!await waitForWhatsappMainReady(30000)) {
         throw new Error('Abra o WhatsApp Web, mantenha a conta conectada e tente novamente.');
     }
 };
@@ -588,7 +601,7 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
     const startedAt = Date.now();
 
     try {
-        if (payload.action !== 'diagnostics') ensureWaJsReady();
+        if (payload.action !== 'diagnostics') await ensureWaJsReady();
         const labWpp = window.WPP as any;
         const chatId = normalizeWid(payload.chatId || payload.contactId);
         const contactId = normalizeWid(payload.contactId || payload.chatId);
@@ -599,6 +612,10 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
                 return makeLabResponse(payload, startedAt, {
                     isReady: Boolean(window.WPP.isReady),
                     isAuthenticated: safeIsAuthenticated(),
+                    hasInitialLoadingScreen: hasInitialLoadingScreen(),
+                    hasChatListElement: hasChatListElement(),
+                    hasUsableChatStore: hasUsableChatStore(),
+                    hasRequiredRuntimeApi: hasRequiredRuntimeApi(),
                     isOnline: labWpp.conn?.isOnline?.(),
                     isIdle: labWpp.conn?.isIdle?.(),
                     isMainReady: labWpp.conn?.isMainReady?.(),

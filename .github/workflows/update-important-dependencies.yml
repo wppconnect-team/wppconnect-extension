@@ -37,7 +37,7 @@ jobs:
           npx npm-check-updates \
             --upgrade \
             --target "${{ inputs.target || 'minor' }}" \
-            --filter "@wppconnect/wa-js,react,react-dom,@types/react,@types/react-dom,typescript,@playwright/test,webpack-cli,webpack-merge,ts-loader,copy-webpack-plugin,tailwindcss,postcss-loader,autoprefixer,css-loader,cssnano,style-loader,rimraf"
+            --filter "react,react-dom,@types/react,@types/react-dom,typescript,@playwright/test,webpack-cli,webpack-merge,ts-loader,copy-webpack-plugin,tailwindcss,postcss-loader,autoprefixer,css-loader,cssnano,style-loader,rimraf"
 
       - name: Install dependencies
         run: npm install
