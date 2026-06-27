@@ -102,9 +102,12 @@ const hasChatListElement = () => Boolean(document.querySelector([
 
 const hasUsableChatStore = () => getStoreChats().length > 0;
 const hasRequiredRuntimeApi = () => Boolean(
-    (window.WPP as any)?.chat?.sendRawMessage
-    && (window.WPP as any)?.contact?.getPnLidEntry
-    && (window.WPP as any)?.conn
+    (window.WPP as any)?.chat
+    && (
+        (window.WPP as any).chat.sendRawMessage
+        || (window.WPP as any).chat.sendTextMessage
+        || (window.WPP as any).chat.list
+    )
 );
 
 const isWhatsappMainReady = () => {
@@ -120,18 +123,17 @@ const isWhatsappMainReady = () => {
         }
     }
 
-    if (hasInitialLoadingScreen()) return false;
     if (mainReady === true) return true;
-    return hasChatListElement() || hasUsableChatStore() || hasRequiredRuntimeApi();
+    return Boolean(window.WPP?.isReady) || hasRequiredRuntimeApi() || hasChatListElement() || hasUsableChatStore();
 };
 
 async function waitForWhatsappMainReady(timeoutMs = 20000) {
     const startedAt = Date.now();
     while (Date.now() - startedAt < timeoutMs) {
-        if (safeIsAuthenticated()) return true;
+        if (isWhatsappMainReady()) return true;
         await wait(250);
     }
-    return safeIsAuthenticated();
+    return isWhatsappMainReady();
 }
 
 const uniqueChats = (chats: any[]) => {
@@ -577,21 +579,25 @@ const installRuntimeGuards = () => {
 };
 
 const safeIsAuthenticated = () => {
+    if (Boolean(window.WPP?.isReady) || hasRequiredRuntimeApi() || hasChatListElement() || hasUsableChatStore()) {
+        return true;
+    }
+
     const connIsAuthenticated = window.WPP?.conn?.isAuthenticated;
     if (typeof connIsAuthenticated === 'function') {
         try {
-            if (!connIsAuthenticated.call(window.WPP.conn)) return false;
+            return Boolean(connIsAuthenticated.call(window.WPP.conn));
         } catch (error) {
             return false;
         }
     }
 
-    return Boolean(window.WPP?.isReady || hasRequiredRuntimeApi()) && isWhatsappMainReady();
+    return false;
 };
 
 const ensureWaJsReady = async () => {
-    if (!await waitForWhatsappMainReady(30000)) {
-        throw new Error('Abra o WhatsApp Web, mantenha a conta conectada e tente novamente.');
+    if (!await waitForWhatsappMainReady(10000)) {
+        throw new Error('WA-JS ainda não está disponível nesta aba. Recarregue o WhatsApp Web e tente novamente.');
     }
 };
 
@@ -921,8 +927,8 @@ async function sendWPPMessage({ contact, message, attachment, buttons = [] }: Me
 }
 
 async function sendMessage({ contact, hash, scheduledAt }: { contact: string, hash: number, scheduledAt?: number }) {
-    if (!await waitForWhatsappMainReady()) {
-        const errorMsg = 'Abra o WhatsApp Web e conecte-se primeiro.';
+    if (!await waitForWhatsappMainReady(10000)) {
+        const errorMsg = 'WA-JS ainda não está disponível nesta aba. Recarregue o WhatsApp Web e tente novamente.';
         WebpageMessageManager.sendMessage(ChromeMessageTypes.ADD_LOG, { level: 1, message: errorMsg, attachment: false, contact });
         throw new Error(errorMsg);
     }
@@ -1012,30 +1018,41 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.QUEUE_STATUS, () => asyncQue
 WebpageMessageManager.addHandler(ChromeMessageTypes.ARCHIVE_STATUS, () => getArchiveStatus());
 
 WebpageMessageManager.addHandler(ChromeMessageTypes.ARCHIVE_ALL_CHATS, async (payload) => {
-    if (window.WPP.isReady) {
+    if (isWhatsappMainReady()) {
         void archiveAllChats(payload);
         return true;
-    } else {
-        return new Promise((resolve, reject) => {
-            getWppLoader()!.onReady(async () => {
-                try {
-                    void archiveAllChats(payload);
-                    resolve(true);
-                } catch (error) {
-                    reject(error);
-                }
-            });
-        });
     }
+
+    const loader = getWppLoader();
+    if (!loader?.onReady) {
+        void archiveAllChats(payload);
+        return true;
+    }
+
+    return new Promise((resolve, reject) => {
+        loader.onReady(async () => {
+            try {
+                void archiveAllChats(payload);
+                resolve(true);
+            } catch (error) {
+                reject(error);
+            }
+        });
+    });
 });
 
 WebpageMessageManager.addHandler(ChromeMessageTypes.WAJS_LAB_EXECUTE, async (payload) => {
-    if (window.WPP.isReady) {
+    if (isWhatsappMainReady()) {
+        return executeWaJsLab(payload);
+    }
+
+    const loader = getWppLoader();
+    if (!loader?.onReady) {
         return executeWaJsLab(payload);
     }
 
     return new Promise((resolve) => {
-        getWppLoader()!.onReady(async () => {
+        loader.onReady(async () => {
             resolve(await executeWaJsLab(payload));
         });
     });
