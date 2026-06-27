@@ -43,6 +43,7 @@ let archiveStatus: ArchiveStatus = emptyArchiveStatus();
 let archiveStartTime = 0;
 let archiveEndTime = 0;
 let abortArchive = false;
+let runtimeGuardsInstalled = false;
 
 const wait = async (delayMs: number) => new Promise(resolve => setTimeout(resolve, delayMs));
 
@@ -80,6 +81,46 @@ const getStoreChats = () => {
     return [];
 };
 
+const hasInitialLoadingScreen = () => {
+    const bodyText = document.body?.innerText || '';
+    return /carregando\s+(suas\s+)?conversas|loading\s+(your\s+)?chats|loading\s+messages/i.test(bodyText);
+};
+
+const hasChatListElement = () => Boolean(document.querySelector([
+    '[data-testid="chat-list"]',
+    '[aria-label="Chat list"]',
+    '[aria-label="Chats"]',
+    '[aria-label="Lista de conversas"]',
+    '[aria-label="Lista de chats"]'
+].join(',')));
+
+const hasUsableChatStore = () => getStoreChats().length > 0;
+
+const isWhatsappMainReady = () => {
+    const labWpp = window.WPP as any;
+    const conn = labWpp?.conn;
+
+    if (typeof conn?.isMainReady === 'function') {
+        try {
+            if (!conn.isMainReady()) return false;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    if (hasInitialLoadingScreen()) return false;
+    return hasChatListElement() || hasUsableChatStore();
+};
+
+async function waitForWhatsappMainReady(timeoutMs = 20000) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+        if (safeIsAuthenticated()) return true;
+        await wait(250);
+    }
+    return safeIsAuthenticated();
+}
+
 const uniqueChats = (chats: any[]) => {
     const seen = new Set<string>();
     return chats.filter(chat => {
@@ -106,6 +147,24 @@ const listArchiveCandidates = async () => {
 
     if (chats.length === 0 && listError) throw listError;
     return chats.filter(chat => !isArchivedChat(chat) && canArchiveChat(chat));
+};
+
+const waitForArchiveCandidates = async (timeoutMs = 20000) => {
+    const startedAt = Date.now();
+    let lastCandidates: any[] = [];
+
+    while (Date.now() - startedAt < timeoutMs) {
+        const candidates = await listArchiveCandidates();
+        lastCandidates = candidates;
+
+        if (candidates.length > 0 || hasChatListElement() || hasUsableChatStore()) {
+            return candidates;
+        }
+
+        await wait(500);
+    }
+
+    return lastCandidates;
 };
 
 const normalizeArchiveDelay = (delayMs: number) => Math.min(10000, Math.max(0, Number.isFinite(delayMs) ? delayMs : 500));
@@ -416,7 +475,12 @@ async function sendRawPreparedMessage(targetChatId: string, rawMessage: any) {
     const rawOptions = { createChat: true, waitForAck: false };
 
     try {
-        return await window.WPP.chat.sendRawMessage(targetChatId, rawMessage, rawOptions);
+        return await Promise.race([
+            window.WPP.chat.sendRawMessage(targetChatId, rawMessage, rawOptions),
+            wait(30000).then(() => {
+                throw new Error('Timeout ao aguardar o retorno do sendRawMessage.');
+            })
+        ]);
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         throw new Error(`Falha no sendRawMessage para ${targetChatId}: ${message}`);
@@ -476,22 +540,40 @@ function isSuccessfulSend(value: any, result: any) {
     return Boolean(result?.id && (result.sendMsgResult == null || result.ack != null));
 }
 
+const isIgnorableAiThreadError = (error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack || '' : '';
+    return message.includes("reading 'isBot'") && (stack.includes('getMsgAiThread') || stack.includes('maybeLogFirstPromptSentInAiThread'));
+};
+
+const installRuntimeGuards = () => {
+    if (runtimeGuardsInstalled) return;
+    runtimeGuardsInstalled = true;
+
+    window.addEventListener('error', (event) => {
+        if (isIgnorableAiThreadError(event.error || event.message)) {
+            event.preventDefault();
+        }
+    }, true);
+
+    window.addEventListener('unhandledrejection', (event) => {
+        if (isIgnorableAiThreadError(event.reason)) {
+            event.preventDefault();
+        }
+    }, true);
+};
+
 const safeIsAuthenticated = () => {
     const connIsAuthenticated = window.WPP?.conn?.isAuthenticated;
     if (typeof connIsAuthenticated === 'function') {
         try {
-            return Boolean(connIsAuthenticated.call(window.WPP.conn));
+            if (!connIsAuthenticated.call(window.WPP.conn)) return false;
         } catch (error) {
             return false;
         }
     }
 
-    return Boolean(document.querySelector([
-        '[data-testid="chat-list"]',
-        '[aria-label="Chat list"]',
-        '[data-icon="new-chat-outline"]',
-        '[data-icon="menu"]'
-    ].join(',')));
+    return Boolean(window.WPP?.isReady) && isWhatsappMainReady();
 };
 
 const ensureWaJsReady = () => {
@@ -696,7 +778,7 @@ async function archiveAllChats({ delayMs }: { delayMs: number }) {
     };
 
     try {
-        if (!safeIsAuthenticated()) {
+        if (!await waitForWhatsappMainReady()) {
             throw new Error('Abra o WhatsApp Web e conecte-se primeiro.');
         }
 
@@ -705,7 +787,7 @@ async function archiveAllChats({ delayMs }: { delayMs: number }) {
             phase: 'listing'
         };
 
-        const archivableChats = await listArchiveCandidates();
+        const archivableChats = await waitForArchiveCandidates();
         archiveStatus = {
             ...archiveStatus,
             phase: archivableChats.length > 0 ? 'archiving' : 'finished',
@@ -822,7 +904,7 @@ async function sendWPPMessage({ contact, message, attachment, buttons = [] }: Me
 }
 
 async function sendMessage({ contact, hash, scheduledAt }: { contact: string, hash: number, scheduledAt?: number }) {
-    if (!safeIsAuthenticated()) {
+    if (!await waitForWhatsappMainReady()) {
         const errorMsg = 'Abra o WhatsApp Web e conecte-se primeiro.';
         WebpageMessageManager.sendMessage(ChromeMessageTypes.ADD_LOG, { level: 1, message: errorMsg, attachment: false, contact });
         throw new Error(errorMsg);
@@ -943,6 +1025,7 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.WAJS_LAB_EXECUTE, async (pay
 });
 
 storageManager.clearDatabase();
+installRuntimeGuards();
 
 const registerWaJsRuntimeFallbacks = () => {
     const injectFallbackModule = getWppLoader()?.injectFallbackModule;
