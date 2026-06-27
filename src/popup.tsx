@@ -368,6 +368,19 @@ class Popup extends Component<{}, PopupState> {
     chrome.storage.local.get({ logs: [] }, data => this.setState({ logs: data.logs || [] }));
   }
 
+  addLocalLog = (log: Omit<Log, 'date'>) => {
+    chrome.storage.local.get({ logs: [] }, data => {
+      const logs = [
+        ...(data.logs || []),
+        {
+          ...log,
+          date: new Date().toLocaleString()
+        }
+      ];
+      chrome.storage.local.set({ logs }, () => this.setState({ logs }));
+    });
+  }
+
   handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     this.setState({ contacts: event.target.value.replace(/[^\d\n\t,;]*/g, '') });
   }
@@ -496,6 +509,16 @@ class Popup extends Component<{}, PopupState> {
     if (selectedAction.labAction) this.runLabAction(selectedAction.labAction);
   }
 
+  getActionHistoryLabel = (action: WaJsLabAction) => {
+    if (action === 'executeFunction') return this.state.advancedFunctionPath || this.allWaJsFunctionsLabel;
+    return this.actions.find(item => item.labAction === action)?.label || action;
+  }
+
+  getActionHistoryTarget = (action: WaJsLabAction) => {
+    if (action === 'executeFunction') return this.state.advancedFunctionPath || '-';
+    return this.state.labChatId || this.state.labContactId || '-';
+  }
+
   runLabAction = (action: WaJsLabAction) => {
     this.setState({ labLoading: true, labResult: undefined, connectionError: undefined });
     PopupMessageManager.sendMessage(ChromeMessageTypes.WAJS_LAB_EXECUTE, {
@@ -509,17 +532,31 @@ class Popup extends Component<{}, PopupState> {
       functionPath: this.state.advancedFunctionPath,
       argsJson: this.state.advancedArgsJson
     }).then((labResult) => {
+      this.addLocalLog({
+        level: labResult.ok ? 3 : 1,
+        message: `${this.getActionHistoryLabel(action)}: ${labResult.ok ? 'OK' : labResult.error || 'Erro'}`,
+        attachment: false,
+        contact: this.getActionHistoryTarget(action)
+      });
       this.setState({ labResult, labLoading: false, connectionError: undefined, activeTab: 'history' });
     }).catch((error) => {
+      const message = error instanceof Error ? error.message : this.whatsappConnectionHelpLabel;
+      this.addLocalLog({
+        level: 1,
+        message: `${this.getActionHistoryLabel(action)}: ${message}`,
+        attachment: false,
+        contact: this.getActionHistoryTarget(action)
+      });
       this.setState({
         labLoading: false,
-        connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel,
+        connectionError: message,
+        activeTab: 'history',
         labResult: {
           ok: false,
           action,
           durationMs: 0,
           timestamp: new Date().toISOString(),
-          error: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel
+          error: message
         }
       });
     });
