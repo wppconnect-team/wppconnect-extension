@@ -782,12 +782,12 @@
         "description": "Botão de detalhes da execução agendada"
     },
     "scheduledDetailsTitle": {
-        "message": "Detalhes do agendamento",
-        "description": "Título do painel de detalhe de execução agendada"
+        "message": "Detalhes da execução",
+        "description": "Título do painel de detalhe de execução"
     },
     "scheduledDetailsEmptyLabel": {
-        "message": "Selecione uma execução agendada para inspecionar.",
-        "description": "Estado vazio do detalhe de execução agendada"
+        "message": "Selecione uma execução do histórico para inspecionar.",
+        "description": "Estado vazio do detalhe de execução"
     },
     "scheduledDetailsFunctionLabel": {
         "message": "Função",

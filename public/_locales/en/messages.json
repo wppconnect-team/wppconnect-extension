@@ -782,12 +782,12 @@
         "description": "Scheduled execution details button"
     },
     "scheduledDetailsTitle": {
-        "message": "Schedule details",
-        "description": "Scheduled execution detail panel title"
+        "message": "Execution details",
+        "description": "Execution detail panel title"
     },
     "scheduledDetailsEmptyLabel": {
-        "message": "Select a scheduled execution to inspect it.",
-        "description": "Scheduled execution detail empty state"
+        "message": "Select an execution from history to inspect it.",
+        "description": "Execution detail empty state"
     },
     "scheduledDetailsFunctionLabel": {
         "message": "Function",
