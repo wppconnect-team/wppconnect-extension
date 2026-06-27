@@ -6,6 +6,7 @@ import LanguageForm from './components/organisms/LanguageForm';
 import LogTable from './components/organisms/LogTable';
 import MessageButtonsForm from './components/organisms/MessageButtonsForm';
 import MessageForm from './components/organisms/MessageForm';
+import { initI18n } from './utils/i18n';
 
 class Options extends Component<{}, {}>{
   title = chrome.i18n.getMessage('optionsPageTitle') || 'Wppconnect settings';
@@ -37,5 +38,7 @@ class Options extends Component<{}, {}>{
   }
 }
 
-createRoot(document.getElementById('root')!)
-  .render(<Options />);
+void initI18n().then(() => {
+  createRoot(document.getElementById('root')!)
+    .render(<Options />);
+});

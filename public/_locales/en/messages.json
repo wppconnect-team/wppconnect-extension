@@ -774,12 +774,8 @@
         "description": "Language settings section title"
     },
     "languageSettingsHelp": {
-        "message": "The default follows the browser language. Change it here for extension screens that support manual language preference.",
+        "message": "The extension uses the browser language as the initial value. This choice controls extension screens from now on.",
         "description": "Language settings help"
-    },
-    "languageAutoLabel": {
-        "message": "Automatic",
-        "description": "Automatic language option"
     },
     "languageEnglishLabel": {
         "message": "English",

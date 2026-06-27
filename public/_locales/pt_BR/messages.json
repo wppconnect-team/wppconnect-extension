@@ -774,12 +774,8 @@
         "description": "Título da seção de idioma"
     },
     "languageSettingsHelp": {
-        "message": "O padrão segue o idioma do navegador. Altere aqui para telas da extensão que respeitam preferência manual de idioma.",
+        "message": "A extensão usa o idioma do navegador como valor inicial. Depois disso, a escolha aqui controla as telas da extensão.",
         "description": "Ajuda da configuração de idioma"
-    },
-    "languageAutoLabel": {
-        "message": "Automático",
-        "description": "Opção de idioma automático"
     },
     "languageEnglishLabel": {
         "message": "Inglês",
