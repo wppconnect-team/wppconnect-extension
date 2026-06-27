@@ -22,15 +22,31 @@ type MessageDataResponse<K extends keyof ChromeMessageContentTypes> = {
   payload: ChromeMessageContentTypes[K]['response'];
 };
 
-function addLog({ level, message, attachment = false, contact }: Log) {
+function executionDetailsFromSchedule(execution: ScheduledExecution): Log['executionDetails'] {
+  return {
+    label: execution.label,
+    status: execution.status,
+    target: execution.target,
+    scheduledAt: execution.scheduledAt,
+    createdAt: execution.createdAt,
+    updatedAt: execution.updatedAt,
+    payload: execution.payload,
+    result: execution.result,
+    error: execution.error
+  };
+}
+
+function addLog({ id, level, message, attachment = false, contact, executionDetails }: Log) {
   return chrome.storage.local.get({ logs: [] }, async data => {
     const currentLogs = data.logs;
     currentLogs.push({
+      id: id || `log-${Date.now()}-${Math.random().toString(16).slice(2)}`,
       level,
       message,
       attachment,
       contact,
-      date: new Date().toLocaleString()
+      date: new Date().toLocaleString(),
+      executionDetails
     });
     return chrome.storage.local.set({ logs: currentLogs });
   });
@@ -94,8 +110,15 @@ async function executeScheduledExecution(execution: ScheduledExecution) {
   const current = latest.find(item => item.id === execution.id);
   if (!current || current.status !== 'scheduled') return;
 
+  const runningExecution = { ...execution, status: 'running' as const, error: undefined, updatedAt: Date.now() };
   await updateScheduledExecution(execution.id, { status: 'running', error: undefined });
-  addLog({ level: 2, message: `Agendamento iniciado: ${execution.label}`, attachment: false, contact: execution.target });
+  addLog({
+    level: 2,
+    message: `Agendamento iniciado: ${execution.label}`,
+    attachment: false,
+    contact: execution.target,
+    executionDetails: executionDetailsFromSchedule(runningExecution)
+  });
 
   try {
     const payload = execution.payload;
@@ -121,12 +144,26 @@ async function executeScheduledExecution(execution: ScheduledExecution) {
       }
     }
 
+    const completedExecution = { ...execution, status: 'completed' as const, result, error: undefined, updatedAt: Date.now() };
     await updateScheduledExecution(execution.id, { status: 'completed', result });
-    addLog({ level: 3, message: `Agendamento executado: ${execution.label}`, attachment: false, contact: execution.target });
+    addLog({
+      level: 3,
+      message: `Agendamento executado: ${execution.label}`,
+      attachment: false,
+      contact: execution.target,
+      executionDetails: executionDetailsFromSchedule(completedExecution)
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    const failedExecution = { ...execution, status: 'failed' as const, error: message, updatedAt: Date.now() };
     await updateScheduledExecution(execution.id, { status: 'failed', error: message });
-    addLog({ level: 1, message: `Agendamento falhou: ${execution.label} - ${message}`, attachment: false, contact: execution.target });
+    addLog({
+      level: 1,
+      message: `Agendamento falhou: ${execution.label} - ${message}`,
+      attachment: false,
+      contact: execution.target,
+      executionDetails: executionDetailsFromSchedule(failedExecution)
+    });
   }
 }
 
@@ -163,7 +200,13 @@ ContentScriptMessageManager.addHandler(ChromeMessageTypes.SCHEDULE_EXECUTION, as
   const nextExecution = { ...execution, status: 'scheduled' as const, updatedAt: Date.now() };
   await setScheduledExecutions([...executions.filter(item => item.id !== execution.id), nextExecution]);
   await refreshScheduledTimers();
-  addLog({ level: 2, message: `Agendado: ${nextExecution.label}`, attachment: false, contact: nextExecution.target });
+  addLog({
+    level: 2,
+    message: `Agendado: ${nextExecution.label}`,
+    attachment: false,
+    contact: nextExecution.target,
+    executionDetails: executionDetailsFromSchedule(nextExecution)
+  });
   return nextExecution;
 });
 
@@ -177,7 +220,13 @@ ContentScriptMessageManager.addHandler(ChromeMessageTypes.CANCEL_SCHEDULED_EXECU
 
   const executions = await updateScheduledExecution(id, { status: 'cancelled' });
   const cancelled = executions.find(execution => execution.id === id);
-  if (cancelled) addLog({ level: 2, message: `Agendamento cancelado: ${cancelled.label}`, attachment: false, contact: cancelled.target });
+  if (cancelled) addLog({
+    level: 2,
+    message: `Agendamento cancelado: ${cancelled.label}`,
+    attachment: false,
+    contact: cancelled.target,
+    executionDetails: executionDetailsFromSchedule(cancelled)
+  });
   return executions;
 });
 

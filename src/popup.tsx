@@ -96,7 +96,7 @@ type PopupState = {
   labResult?: WaJsLabResponse,
   logs: Log[],
   activeOperation?: 'send' | 'archive',
-  selectedScheduledExecutionId?: string
+  selectedHistoryLogKey?: string
 };
 
 type UiIcon =
@@ -186,7 +186,7 @@ class Popup extends Component<{}, PopupState> {
       labResult: undefined,
       logs: [],
       activeOperation: undefined,
-      selectedScheduledExecutionId: undefined
+      selectedHistoryLogKey: undefined
     };
   }
 
@@ -295,7 +295,6 @@ class Popup extends Component<{}, PopupState> {
   cancelScheduledExecutionLabel = chrome.i18n.getMessage('cancelScheduledExecutionLabel') || 'Cancel';
   schedulingLoadingLabel = chrome.i18n.getMessage('schedulingLoadingLabel') || 'Scheduling...';
   executingLoadingLabel = chrome.i18n.getMessage('executingLoadingLabel') || 'Executing...';
-  scheduledExecutionDetailsLabel = chrome.i18n.getMessage('scheduledExecutionDetailsLabel') || 'Details';
   scheduledDetailsTitle = chrome.i18n.getMessage('scheduledDetailsTitle') || 'Schedule details';
   scheduledDetailsEmptyLabel = chrome.i18n.getMessage('scheduledDetailsEmptyLabel') || 'Select a scheduled execution to inspect it.';
   scheduledDetailsFunctionLabel = chrome.i18n.getMessage('scheduledDetailsFunctionLabel') || 'Function';
@@ -445,6 +444,7 @@ class Popup extends Component<{}, PopupState> {
       const logs = [
         ...(data.logs || []),
         {
+          id: log.id || `log-${Date.now()}-${Math.random().toString(16).slice(2)}`,
           ...log,
           date: new Date().toLocaleString()
         }
@@ -543,7 +543,6 @@ class Popup extends Component<{}, PopupState> {
         ...prevState.scheduledExecutions.filter(item => item.id !== scheduledExecution.id),
         scheduledExecution
       ],
-      selectedScheduledExecutionId: scheduledExecution.id,
       connectionError: undefined
     }));
   }
@@ -776,22 +775,45 @@ class Popup extends Component<{}, PopupState> {
   }
 
   runLabAction = (action: WaJsLabAction) => {
+    const startedAt = Date.now();
+    const payload = this.getLabPayload(action);
+    const label = this.getActionHistoryLabel(action);
+    const target = this.getActionHistoryTarget(action);
     this.beginOperation('executing');
-    PopupMessageManager.sendMessage(ChromeMessageTypes.WAJS_LAB_EXECUTE, this.getLabPayload(action)).then((labResult) => {
+    PopupMessageManager.sendMessage(ChromeMessageTypes.WAJS_LAB_EXECUTE, payload).then((labResult) => {
       this.addLocalLog({
         level: labResult.ok ? 3 : 1,
-        message: `${this.getActionHistoryLabel(action)}: ${labResult.ok ? 'OK' : labResult.error || 'Erro'}`,
+        message: `${label}: ${labResult.ok ? 'OK' : labResult.error || 'Erro'}`,
         attachment: false,
-        contact: this.getActionHistoryTarget(action)
+        contact: target,
+        executionDetails: {
+          label,
+          status: labResult.ok ? 'completed' : 'failed',
+          target,
+          createdAt: startedAt,
+          updatedAt: Date.now(),
+          payload,
+          result: labResult,
+          error: labResult.error
+        }
       });
       this.setState(this.finishOperationState({ labResult, connectionError: undefined, activeTab: 'history' }));
     }).catch((error) => {
       const message = error instanceof Error ? error.message : this.whatsappConnectionHelpLabel;
       this.addLocalLog({
         level: 1,
-        message: `${this.getActionHistoryLabel(action)}: ${message}`,
+        message: `${label}: ${message}`,
         attachment: false,
-        contact: this.getActionHistoryTarget(action)
+        contact: target,
+        executionDetails: {
+          label,
+          status: 'failed',
+          target,
+          createdAt: startedAt,
+          updatedAt: Date.now(),
+          payload,
+          error: message
+        }
       });
       this.setState(this.finishOperationState({
         connectionError: message,
@@ -1347,38 +1369,50 @@ class Popup extends Component<{}, PopupState> {
     </div>;
   }
 
-  renderScheduledExecutionDetails(execution?: ScheduledExecution) {
+  getHistoryLogKey(log: Log, index: number) {
+    return log.id || `${log.date}-${log.contact}-${index}`;
+  }
+
+  getLogStatusLabel(log: Log) {
+    if (log.executionDetails?.status && log.executionDetails.status !== 'info') return this.getScheduledStatusLabel(log.executionDetails.status as ScheduledExecution['status']);
+    if (log.level === 3) return this.scheduledExecutionCompletedLabel;
+    if (log.level === 1) return this.scheduledExecutionFailedLabel;
+    return this.scheduledExecutionRunningLabel;
+  }
+
+  renderHistoryExecutionDetails(log?: Log) {
+    const details = log?.executionDetails;
     return <div className="mb-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.04] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-extrabold text-white">{this.scheduledDetailsTitle}</h3>
-          {!execution && <p className="mt-1 text-xs leading-5 text-slate-400">{this.scheduledDetailsEmptyLabel}</p>}
+          {!log && <p className="mt-1 text-xs leading-5 text-slate-400">{this.scheduledDetailsEmptyLabel}</p>}
         </div>
-        {execution && <button type="button" onClick={() => this.setState({ selectedScheduledExecutionId: undefined })} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-emerald-400/35 hover:text-emerald-100">
+        {log && <button type="button" onClick={() => this.setState({ selectedHistoryLogKey: undefined })} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-emerald-400/35 hover:text-emerald-100">
           {this.scheduledDetailsCloseLabel}
         </button>}
       </div>
-      {execution && <>
+      {log && <>
         <div className="mt-4 grid grid-cols-2 gap-2">
-          {this.renderScheduledDetailField(this.scheduledDetailsFunctionLabel, execution.label)}
-          {this.renderScheduledDetailField(this.scheduledDetailsStatusLabel, this.getScheduledStatusLabel(execution.status))}
-          {this.renderScheduledDetailField(this.scheduledDetailsTargetLabel, execution.target || '-')}
-          {this.renderScheduledDetailField(this.scheduledDetailsScheduledForLabel, this.formatDateTime(execution.scheduledAt))}
-          {this.renderScheduledDetailField(this.scheduledDetailsCreatedAtLabel, this.formatDateTime(execution.createdAt))}
-          {this.renderScheduledDetailField(this.scheduledDetailsUpdatedAtLabel, this.formatDateTime(execution.updatedAt))}
+          {this.renderScheduledDetailField(this.scheduledDetailsFunctionLabel, details?.label || log.message)}
+          {this.renderScheduledDetailField(this.scheduledDetailsStatusLabel, this.getLogStatusLabel(log))}
+          {this.renderScheduledDetailField(this.scheduledDetailsTargetLabel, details?.target || log.contact || '-')}
+          {this.renderScheduledDetailField(this.scheduledDetailsScheduledForLabel, details?.scheduledAt ? this.formatDateTime(details.scheduledAt) : '-')}
+          {this.renderScheduledDetailField(this.scheduledDetailsCreatedAtLabel, details?.createdAt ? this.formatDateTime(details.createdAt) : log.date || '-')}
+          {this.renderScheduledDetailField(this.scheduledDetailsUpdatedAtLabel, details?.updatedAt ? this.formatDateTime(details.updatedAt) : log.date || '-')}
         </div>
-        {execution.error && <div className="mt-3 rounded-lg border border-rose-400/25 bg-rose-400/10 p-3 text-xs leading-5 text-rose-100">
+        {(details?.error || log.level === 1) && <div className="mt-3 rounded-lg border border-rose-400/25 bg-rose-400/10 p-3 text-xs leading-5 text-rose-100">
           <div className="font-extrabold text-rose-200">{this.scheduledDetailsErrorLabel}</div>
-          <div className="mt-1 break-words">{execution.error}</div>
+          <div className="mt-1 break-words">{details?.error || log.message}</div>
         </div>}
         <div className="mt-3 grid gap-3">
           <div>
             <div className="mb-2 text-[0.68rem] font-bold uppercase text-slate-500">{this.scheduledDetailsPayloadLabel}</div>
-            <pre className="max-h-48 overflow-auto rounded-lg border border-white/10 bg-slate-950/60 p-3 text-xs leading-5 text-slate-200">{this.formatDetailsJson(execution.payload)}</pre>
+            <pre className="max-h-48 overflow-auto rounded-lg border border-white/10 bg-slate-950/60 p-3 text-xs leading-5 text-slate-200">{this.formatDetailsJson(details?.payload || { message: log.message, contact: log.contact, attachment: log.attachment })}</pre>
           </div>
-          {execution.result !== undefined && <div>
+          {details?.result !== undefined && <div>
             <div className="mb-2 text-[0.68rem] font-bold uppercase text-slate-500">{this.scheduledDetailsResultLabel}</div>
-            <pre className="max-h-48 overflow-auto rounded-lg border border-white/10 bg-slate-950/60 p-3 text-xs leading-5 text-slate-200">{this.formatDetailsJson(execution.result)}</pre>
+            <pre className="max-h-48 overflow-auto rounded-lg border border-white/10 bg-slate-950/60 p-3 text-xs leading-5 text-slate-200">{this.formatDetailsJson(details.result)}</pre>
           </div>}
         </div>
       </>}
@@ -1389,7 +1423,6 @@ class Popup extends Component<{}, PopupState> {
     const executions = this.state.scheduledExecutions
       .slice()
       .sort((a, b) => b.createdAt - a.createdAt);
-    const selectedExecution = executions.find(execution => execution.id === this.state.selectedScheduledExecutionId);
 
     return this.renderPanel(<>
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -1398,7 +1431,6 @@ class Popup extends Component<{}, PopupState> {
           {chrome.i18n.getMessage('updateButtonLabel') || 'Update'}
         </Button>
       </div>
-      {(executions.length > 0 || this.state.selectedScheduledExecutionId) && this.renderScheduledExecutionDetails(selectedExecution)}
       <div className="max-h-[28rem] space-y-2 overflow-auto pr-1">
         {executions.length === 0 && <div className="rounded-xl border border-dashed border-white/12 bg-slate-900/32 p-5 text-center text-sm text-slate-400">{this.scheduledExecutionsEmptyLabel}</div>}
         {executions.map(execution => {
@@ -1423,9 +1455,6 @@ class Popup extends Component<{}, PopupState> {
             </div>
             <div className="flex items-center gap-2">
               <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass}`}>{this.getScheduledStatusLabel(execution.status)}</span>
-              <button type="button" onClick={() => this.setState({ selectedScheduledExecutionId: execution.id })} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-emerald-400/40 hover:text-emerald-100">
-                {this.scheduledExecutionDetailsLabel}
-              </button>
               {isPending && <button type="button" onClick={() => this.cancelScheduledExecution(execution.id)} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-rose-400/40 hover:text-rose-200">
                 {this.cancelScheduledExecutionLabel}
               </button>}
@@ -1448,19 +1477,26 @@ class Popup extends Component<{}, PopupState> {
       </div>
       <div className="space-y-2">
         {logs.length === 0 && <div className="rounded-xl border border-dashed border-white/12 bg-slate-900/32 p-5 text-center text-sm text-slate-400">{this.noRecentExecutionsLabel}</div>}
-        {logs.map((log, index) => this.renderHistoryRow(log, index))}
+        {logs.map((log, index) => this.renderHistoryRow(log, index, true))}
       </div>
     </section>;
   }
 
-  renderHistoryRow(log: Log, index: number) {
+  renderHistoryRow(log: Log, index: number, openHistoryOnClick = false) {
     const isSuccess = log.level === 3;
     const isWarning = log.level === 2;
     const icon: UiIcon = isSuccess ? 'check' : isWarning ? 'alert' : 'message';
     const color = isSuccess ? 'text-emerald-300 bg-emerald-400/10 ring-emerald-400/25' : isWarning ? 'text-amber-300 bg-amber-400/10 ring-amber-400/25' : 'text-rose-300 bg-rose-400/10 ring-rose-400/25';
     const badge = isSuccess ? this.readyToSendLabel : isWarning ? this.duplicatedContactsPopup.replace(':', '') : this.messagesNotSentPopup.replace(':', '');
+    const logKey = this.getHistoryLogKey(log, index);
+    const isSelected = this.state.selectedHistoryLogKey === logKey;
 
-    return <div key={`${log.date}-${log.contact}-${index}`} className="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-white/10 bg-slate-800/42 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
+    return <button
+      key={logKey}
+      type="button"
+      onClick={() => this.setState({ selectedHistoryLogKey: logKey, activeTab: openHistoryOnClick ? 'history' : this.state.activeTab })}
+      className={`grid w-full grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,.04)] transition hover:border-emerald-400/35 hover:bg-slate-800/60 ${isSelected ? 'border-emerald-400/40 bg-emerald-400/[0.06]' : 'border-white/10 bg-slate-800/42'}`}
+    >
       <div className={`flex h-9 w-9 items-center justify-center rounded-full ring-1 ${color}`}>
         <Icon name={icon} className="h-5 w-5" />
       </div>
@@ -1472,7 +1508,7 @@ class Popup extends Component<{}, PopupState> {
         <span className={`hidden rounded-full px-3 py-1 text-xs font-bold sm:inline ${isSuccess ? 'bg-emerald-400/12 text-emerald-300' : isWarning ? 'bg-amber-400/12 text-amber-300' : 'bg-rose-400/12 text-rose-300'}`}>{badge}</span>
         <span className="w-20 truncate text-right text-xs text-slate-400">{log.date}</span>
       </div>
-    </div>;
+    </button>;
   }
 
   renderExecutions() {
@@ -1487,6 +1523,9 @@ class Popup extends Component<{}, PopupState> {
   }
 
   renderHistory() {
+    const historyLogs = this.state.logs.slice().reverse();
+    const selectedHistoryLog = historyLogs.find((log, index) => this.getHistoryLogKey(log, index) === this.state.selectedHistoryLogKey);
+
     return <div className="space-y-5 px-7 pb-6">
       {this.state.labResult && this.renderLabResult()}
       {this.renderPanel(<>
@@ -1496,9 +1535,12 @@ class Popup extends Component<{}, PopupState> {
             {chrome.i18n.getMessage('updateButtonLabel') || 'Update'}
           </Button>
         </div>
+        {this.state.selectedHistoryLogKey && <div className="mt-4">
+          {this.renderHistoryExecutionDetails(selectedHistoryLog)}
+        </div>}
         <div className="mt-4 max-h-[27rem] space-y-2 overflow-auto pr-1">
           {this.state.logs.length === 0 && <div className="rounded-xl border border-dashed border-white/12 bg-slate-950/30 p-6 text-center text-sm text-slate-400">{this.noRecentExecutionsLabel}</div>}
-          {this.state.logs.slice().reverse().map((log, index) => this.renderHistoryRow(log, index))}
+          {historyLogs.map((log, index) => this.renderHistoryRow(log, index))}
         </div>
       </>)}
     </div>;
