@@ -175,6 +175,13 @@ const pickSendWidCandidate = (candidates: string[]) => {
         || '';
 };
 
+const pickRawSendWidCandidate = (candidates: string[]) => {
+    return candidates.find(isLidWid)
+        || candidates.find(isPnWid)
+        || candidates.find(candidate => !isGroupWid(candidate))
+        || '';
+};
+
 async function getPnLidEntryCandidates(value: string) {
     const getPnLidEntry = (window.WPP as any)?.contact?.getPnLidEntry;
     if (typeof getPnLidEntry !== 'function') return [];
@@ -221,6 +228,18 @@ async function resolvePreferredSendWid(value?: string) {
 
     const pnLidCandidates = await getPnLidEntryCandidates(normalized);
     return pickSendWidCandidate([...pnLidCandidates, ...queryCandidates]) || normalized;
+}
+
+async function resolveRawSendWid(value?: string) {
+    const normalized = normalizeWid(value);
+    if (!normalized) return '';
+    if (isGroupWid(normalized) || isLidWid(normalized)) return normalized;
+
+    const queryCandidates = await queryExistsCandidates(normalized);
+    if (queryCandidates.length === 0) return normalized;
+
+    const pnLidCandidates = await getPnLidEntryCandidates(normalized);
+    return pickRawSendWidCandidate([...pnLidCandidates, ...queryCandidates]) || normalized;
 }
 
 const summarizeChat = (chat: any) => ({
@@ -411,7 +430,7 @@ async function sendRawPreparedMessage(targetChatId: string, rawMessage: any) {
 }
 
 async function sendRawTextMessage(chatId: string, text: string, buttons: Message['buttons'] = []) {
-    const targetChatId = await resolvePreferredSendWid(chatId);
+    const targetChatId = await resolveRawSendWid(chatId);
     const rawMessage = prepareButtonsForRawMessage({
         body: text,
         type: 'chat',
@@ -424,7 +443,7 @@ async function sendRawTextMessage(chatId: string, text: string, buttons: Message
 }
 
 async function sendRawFileMessage(chatId: string, attachment: NonNullable<WaJsLabPayload['attachment']>, caption = '', type: 'image' | 'audio' | 'video' | 'document' = 'document', buttons: Message['buttons'] = []) {
-    const targetChatId = await resolvePreferredSendWid(chatId);
+    const targetChatId = await resolveRawSendWid(chatId);
     const file = await attachmentToRawBody(attachment);
     const rawMessage = prepareButtonsForRawMessage({
         type,
