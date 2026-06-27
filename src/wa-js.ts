@@ -216,12 +216,11 @@ async function resolvePreferredSendWid(value?: string) {
     if (!normalized) return '';
     if (isGroupWid(normalized)) return normalized;
 
-    const pnLidCandidates = await getPnLidEntryCandidates(normalized);
-    const preferredPnLid = pickSendWidCandidate(pnLidCandidates);
-    if (preferredPnLid) return preferredPnLid;
-
     const queryCandidates = await queryExistsCandidates(normalized);
-    return pickSendWidCandidate(queryCandidates) || normalized;
+    if (queryCandidates.length === 0) return normalized;
+
+    const pnLidCandidates = await getPnLidEntryCandidates(normalized);
+    return pickSendWidCandidate([...pnLidCandidates, ...queryCandidates]) || normalized;
 }
 
 const summarizeChat = (chat: any) => ({
@@ -370,25 +369,82 @@ const makeLabResponse = (payload: WaJsLabPayload, startedAt: number, data?: unkn
     error: error instanceof Error ? error.message : error ? String(error) : undefined
 });
 
-async function attachmentToFile(payload: WaJsLabPayload) {
-    if (!payload.attachment) throw new Error('Selecione um arquivo para enviar.');
+const blobToDataUrl = (blob: Blob) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('Falha ao ler arquivo.'));
+    reader.readAsDataURL(blob);
+});
 
-    const response = await fetch(payload.attachment.url.toString());
-    const data = await response.blob();
-    return new File([data], payload.attachment.name, {
-        type: payload.attachment.type,
-        lastModified: payload.attachment.lastModified
-    });
+async function attachmentToRawBody(attachment: NonNullable<WaJsLabPayload['attachment']>) {
+    const response = await fetch(attachment.url.toString());
+    const blob = await response.blob();
+    return {
+        body: await blobToDataUrl(blob),
+        mimetype: blob.type || attachment.type || 'application/octet-stream',
+        filename: attachment.name,
+        size: blob.size || 0
+    };
+}
+
+function prepareButtonsForRawMessage(rawMessage: any, buttons: Message['buttons'] = []) {
+    if (buttons.length === 0) return rawMessage;
+    const prepareMessageButtons = (window.WPP as any)?.chat?.prepareMessageButtons;
+    if (typeof prepareMessageButtons !== 'function') return { ...rawMessage, buttons };
+    return prepareMessageButtons(rawMessage, { buttons });
+}
+
+async function sendRawPreparedMessage(targetChatId: string, rawMessage: any) {
+    const rawOptions = { createChat: true, waitForAck: false };
+    let prepared = rawMessage;
+
+    try {
+        const chat = window.WPP.chat.get?.(targetChatId);
+        if (chat && typeof (window.WPP as any).chat?.prepareRawMessage === 'function') {
+            prepared = await (window.WPP as any).chat.prepareRawMessage(chat, rawMessage, rawOptions);
+        }
+    } catch (error) {
+        prepared = rawMessage;
+    }
+
+    return window.WPP.chat.sendRawMessage(targetChatId, prepared, rawOptions);
+}
+
+async function sendRawTextMessage(chatId: string, text: string, buttons: Message['buttons'] = []) {
+    const targetChatId = await resolvePreferredSendWid(chatId);
+    const rawMessage = prepareButtonsForRawMessage({
+        body: text,
+        type: 'chat',
+        subtype: null,
+        urlText: null,
+        urlNumber: null
+    }, buttons);
+
+    return sendRawPreparedMessage(targetChatId, rawMessage);
+}
+
+async function sendRawFileMessage(chatId: string, attachment: NonNullable<WaJsLabPayload['attachment']>, caption = '', type: 'image' | 'audio' | 'video' | 'document' = 'document', buttons: Message['buttons'] = []) {
+    const targetChatId = await resolvePreferredSendWid(chatId);
+    const file = await attachmentToRawBody(attachment);
+    const rawMessage = prepareButtonsForRawMessage({
+        type,
+        body: file.body,
+        mimetype: file.mimetype,
+        caption: caption || undefined,
+        filename: file.filename,
+        isCaptionByUser: Boolean(caption),
+        filehash: null,
+        encFilehash: null,
+        size: file.size,
+        mediaKey: null
+    }, buttons);
+
+    return sendRawPreparedMessage(targetChatId, rawMessage);
 }
 
 async function sendLabFileMessage(chatId: string, payload: WaJsLabPayload, type: 'image' | 'audio' | 'video' | 'document') {
-    const targetChatId = await resolvePreferredSendWid(chatId);
-    return window.WPP.chat.sendFileMessage(targetChatId, await attachmentToFile(payload), {
-        type,
-        caption: payload.text || undefined,
-        createChat: true,
-        waitForAck: true
-    });
+    if (!payload.attachment) throw new Error('Selecione um arquivo para enviar.');
+    return sendRawFileMessage(chatId, payload.attachment, payload.text || '', type);
 }
 
 async function waitForSendResult(result: any, timeoutMs = 30000) {
@@ -398,6 +454,13 @@ async function waitForSendResult(result: any, timeoutMs = 30000) {
         result.sendMsgResult,
         wait(timeoutMs).then(() => ({ messageSendResult: window.WPP.whatsapp.enums.SendMsgResult.OK, timeout: true }))
     ]);
+}
+
+function isSuccessfulSend(value: any, result: any) {
+    const okResult = window.WPP?.whatsapp?.enums?.SendMsgResult?.OK;
+    const sendResult = value?.messageSendResult ?? value;
+    if (sendResult === okResult || sendResult === 'OK') return true;
+    return Boolean(result?.id && (result.sendMsgResult == null || result.ack != null));
 }
 
 const safeIsAuthenticated = () => {
@@ -567,7 +630,7 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
                 return makeLabResponse(payload, startedAt, { chatId: chatId || null, text: payload.text || '' });
             case 'sendText':
                 if (!chatId) throw new Error('Informe um chatId ou número.');
-                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendTextMessage(await resolvePreferredSendWid(chatId), payload.text || 'Teste WA-JS Lab', { createChat: true, waitForAck: true })));
+                return makeLabResponse(payload, startedAt, compactValue(await sendRawTextMessage(chatId, payload.text || 'Teste WA-JS Lab')));
             case 'sendImage':
                 if (!chatId) throw new Error('Informe um chatId ou número.');
                 return makeLabResponse(payload, startedAt, compactValue(await sendLabFileMessage(chatId, payload, 'image')));
@@ -727,52 +790,21 @@ function getArchiveStatus(): ArchiveStatus {
 }
 
 async function sendWPPMessage({ contact, message, attachment, buttons = [] }: Message) {
-    const resolvedContact = await resolvePreferredSendWid(contact);
-
     if (attachment && buttons.length > 0) {
-        const response = await fetch(attachment.url.toString());
-        const data = await response.blob();
-        return window.WPP.chat.sendFileMessage(
-            resolvedContact,
-            new File([data], attachment.name, {
-                type: attachment.type,
-                lastModified: attachment.lastModified,
-            }),
-            {
-                type: 'image',
-                caption: message,
-                createChat: true,
-                waitForAck: true,
-                buttons
-            }
-        );
+        return sendRawFileMessage(contact, attachment, message, 'image', buttons);
     } else if (buttons.length > 0) {
-        return window.WPP.chat.sendTextMessage(resolvedContact, message, {
-            createChat: true,
-            waitForAck: true,
-            buttons
-        });
+        return sendRawTextMessage(contact, message, buttons);
     } else if (attachment) {
-        const response = await fetch(attachment.url.toString());
-        const data = await response.blob();
-        return window.WPP.chat.sendFileMessage(
-            resolvedContact,
-            new File([data], attachment.name, {
-                type: attachment.type,
-                lastModified: attachment.lastModified,
-            }),
-            {
-                type: 'auto-detect',
-                caption: message,
-                createChat: true,
-                waitForAck: true
-            }
-        );
+        const type = attachment.type.startsWith('image/')
+            ? 'image'
+            : attachment.type.startsWith('audio/')
+                ? 'audio'
+                : attachment.type.startsWith('video/')
+                    ? 'video'
+                    : 'document';
+        return sendRawFileMessage(contact, attachment, message, type);
     } else {
-        return window.WPP.chat.sendTextMessage(resolvedContact, message, {
-            createChat: true,
-            waitForAck: true
-        });
+        return sendRawTextMessage(contact, message);
     }
 }
 
@@ -798,8 +830,7 @@ async function sendMessage({ contact, hash, scheduledAt }: { contact: string, ha
 
     const result = await sendWPPMessage({ contact, ...message });
     const value = await waitForSendResult(result);
-    const sendResult = (value as any)?.messageSendResult ?? value;
-    if (sendResult !== window.WPP.whatsapp.enums.SendMsgResult.OK) {
+    if (!isSuccessfulSend(value, result)) {
         throw new Error('Falha ao enviar a mensagem: ' + value);
     } else {
         WebpageMessageManager.sendMessage(ChromeMessageTypes.ADD_LOG, { level: 3, message: 'Mensagem enviada com sucesso!', attachment: message.attachment != null, contact: contact });

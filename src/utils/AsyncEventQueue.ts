@@ -17,6 +17,7 @@ class AsyncEventQueue {
     private waiting: number | false = false;
     private aborted: boolean = false;
     private paused: boolean = false;
+    private activeItem: boolean = false;
     private pausePromiseResolve: ((value?: unknown) => void) | null = () => { };
 
     private async wait(ms: number) {
@@ -33,52 +34,62 @@ class AsyncEventQueue {
             this.processedItems = 0;
             this.items = [];
 
-            while (this.queue.length > 0) {
-                if (this.paused) {
-                    await new Promise(resolve => {
-                        this.pausePromiseResolve = resolve;
-                    });
-                }
-
-                if (this.aborted) {
-                    this.remainingItems = this.queue.length;
-                    this.queue = [];
-                    break;
-                }
-
-                const item = this.queue.shift();
-                if (item === undefined) continue;
-                this.processedItems++;
-                const startTime = Date.now();
-                this.sendingMessage = Date.now();
-                await item.eventHandler(item.detail);
-                this.sendingMessage = false;
-                const elapsedTime = Date.now() - startTime;
-                this.items.push({ detail: item.detail, startTime, elapsedTime });
-                if (item.detail.delay && this.queue.length !== 0) {
-                    this.waiting = Date.now();
-                    const waitStart = Date.now();
-                    const waitTarget = item.detail.delay * 1000;
-                    while (Date.now() - waitStart < waitTarget) {
-                        await this.wait(100);
-                        if (this.paused) {
-                            await new Promise(resolve => {
-                                this.pausePromiseResolve = resolve;
-                            });
-                        }
-
-                        if (this.aborted) {
-                            this.remainingItems = this.queue.length;
-                            this.queue = [];
-                            break;
-                        }
+            try {
+                while (this.queue.length > 0) {
+                    if (this.paused) {
+                        await new Promise(resolve => {
+                            this.pausePromiseResolve = resolve;
+                        });
                     }
-                    this.waiting = false;
-                }
-            }
 
-            this.endTime = Date.now();
-            this.isProcessing = false;
+                    if (this.aborted) {
+                        this.remainingItems = this.queue.length;
+                        this.queue = [];
+                        break;
+                    }
+
+                    const item = this.queue.shift();
+                    if (item === undefined) continue;
+                    const startTime = Date.now();
+                    this.activeItem = true;
+                    this.sendingMessage = Date.now();
+                    try {
+                        await item.eventHandler(item.detail);
+                        this.processedItems++;
+                        const elapsedTime = Date.now() - startTime;
+                        this.items.push({ detail: item.detail, startTime, elapsedTime });
+                    } finally {
+                        this.sendingMessage = false;
+                        this.activeItem = false;
+                    }
+                    if (item.detail.delay && this.queue.length !== 0) {
+                        this.waiting = Date.now();
+                        const waitStart = Date.now();
+                        const waitTarget = item.detail.delay * 1000;
+                        while (Date.now() - waitStart < waitTarget) {
+                            await this.wait(100);
+                            if (this.paused) {
+                                await new Promise(resolve => {
+                                    this.pausePromiseResolve = resolve;
+                                });
+                            }
+
+                            if (this.aborted) {
+                                this.remainingItems = this.queue.length;
+                                this.queue = [];
+                                break;
+                            }
+                        }
+                        this.waiting = false;
+                    }
+                }
+            } finally {
+                this.endTime = Date.now();
+                this.isProcessing = false;
+                this.sendingMessage = false;
+                this.waiting = false;
+                this.activeItem = false;
+            }
         }
     }
 
@@ -109,8 +120,8 @@ class AsyncEventQueue {
             sendingMessage: this.sendingMessage === false ? this.sendingMessage : Date.now() - this.sendingMessage,
             waiting: this.waiting === false ? this.waiting : Date.now() - this.waiting,
             processedItems: this.processedItems,
-            remainingItems: this.aborted ? this.remainingItems : this.queue.length,
-            totalItems: this.processedItems + this.queue.length,
+            remainingItems: this.aborted ? this.remainingItems : this.queue.length + (this.activeItem ? 1 : 0),
+            totalItems: this.processedItems + this.queue.length + (this.activeItem ? 1 : 0),
         };
     }
 }
