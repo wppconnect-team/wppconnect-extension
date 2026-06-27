@@ -705,6 +705,70 @@
         "message": "Enviar vCard",
         "description": "Label da função enviar vCard WA-JS"
     },
+    "functionSendImageLabel": {
+        "message": "Enviar imagem",
+        "description": "Label da função enviar imagem WA-JS"
+    },
+    "functionSendAudioLabel": {
+        "message": "Enviar áudio",
+        "description": "Label da função enviar áudio WA-JS"
+    },
+    "functionSendVideoLabel": {
+        "message": "Enviar vídeo",
+        "description": "Label da função enviar vídeo WA-JS"
+    },
+    "functionSendDocumentLabel": {
+        "message": "Enviar documento",
+        "description": "Label da função enviar documento WA-JS"
+    },
+    "functionRequiresAttachmentLabel": {
+        "message": "Arquivo",
+        "description": "Label do campo de arquivo da função WA-JS"
+    },
+    "functionAttachmentHelpLabel": {
+        "message": "Escolha o arquivo de mídia para esta execução.",
+        "description": "Ajuda do campo de arquivo da função WA-JS"
+    },
+    "optionalFieldLabel": {
+        "message": "opcional",
+        "description": "Sufixo para campo opcional"
+    },
+    "removeAttachmentLabel": {
+        "message": "Remover",
+        "description": "Botão para remover arquivo selecionado"
+    },
+    "scheduledExecutionsTitle": {
+        "message": "Execuções agendadas",
+        "description": "Título da lista de execuções agendadas"
+    },
+    "scheduledExecutionsEmptyLabel": {
+        "message": "Nenhuma execução agendada ainda.",
+        "description": "Estado vazio da lista de execuções agendadas"
+    },
+    "scheduledExecutionPendingLabel": {
+        "message": "Agendada",
+        "description": "Status de execução agendada pendente"
+    },
+    "scheduledExecutionRunningLabel": {
+        "message": "Executando",
+        "description": "Status de execução agendada rodando"
+    },
+    "scheduledExecutionCompletedLabel": {
+        "message": "Concluída",
+        "description": "Status de execução agendada concluída"
+    },
+    "scheduledExecutionFailedLabel": {
+        "message": "Falhou",
+        "description": "Status de execução agendada falha"
+    },
+    "scheduledExecutionCancelledLabel": {
+        "message": "Cancelada",
+        "description": "Status de execução agendada cancelada"
+    },
+    "cancelScheduledExecutionLabel": {
+        "message": "Cancelar",
+        "description": "Botão de cancelar execução agendada"
+    },
     "languageSettingsTitle": {
         "message": "Idioma",
         "description": "Título da seção de idioma"

@@ -705,6 +705,70 @@
         "message": "Send vCard",
         "description": "WA-JS send vCard function label"
     },
+    "functionSendImageLabel": {
+        "message": "Send image",
+        "description": "WA-JS send image function label"
+    },
+    "functionSendAudioLabel": {
+        "message": "Send audio",
+        "description": "WA-JS send audio function label"
+    },
+    "functionSendVideoLabel": {
+        "message": "Send video",
+        "description": "WA-JS send video function label"
+    },
+    "functionSendDocumentLabel": {
+        "message": "Send document",
+        "description": "WA-JS send document function label"
+    },
+    "functionRequiresAttachmentLabel": {
+        "message": "File",
+        "description": "WA-JS function file field label"
+    },
+    "functionAttachmentHelpLabel": {
+        "message": "Choose the media file for this execution.",
+        "description": "WA-JS function file field help"
+    },
+    "optionalFieldLabel": {
+        "message": "optional",
+        "description": "Optional field suffix"
+    },
+    "removeAttachmentLabel": {
+        "message": "Remove",
+        "description": "Remove selected file button"
+    },
+    "scheduledExecutionsTitle": {
+        "message": "Scheduled executions",
+        "description": "Scheduled executions list title"
+    },
+    "scheduledExecutionsEmptyLabel": {
+        "message": "No scheduled executions yet.",
+        "description": "Scheduled executions empty state"
+    },
+    "scheduledExecutionPendingLabel": {
+        "message": "Scheduled",
+        "description": "Scheduled execution pending status"
+    },
+    "scheduledExecutionRunningLabel": {
+        "message": "Running",
+        "description": "Scheduled execution running status"
+    },
+    "scheduledExecutionCompletedLabel": {
+        "message": "Completed",
+        "description": "Scheduled execution completed status"
+    },
+    "scheduledExecutionFailedLabel": {
+        "message": "Failed",
+        "description": "Scheduled execution failed status"
+    },
+    "scheduledExecutionCancelledLabel": {
+        "message": "Cancelled",
+        "description": "Scheduled execution cancelled status"
+    },
+    "cancelScheduledExecutionLabel": {
+        "message": "Cancel",
+        "description": "Cancel scheduled execution button"
+    },
     "languageSettingsTitle": {
         "message": "Language",
         "description": "Language settings section title"
