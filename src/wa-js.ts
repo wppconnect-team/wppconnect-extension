@@ -121,7 +121,92 @@ const normalizeWid = (value?: string) => {
 
 const stringifyWid = (value: any) => value?._serialized || value?.toString?.() || value || null;
 const stripWidSuffix = (value: any) => String(stringifyWid(value) || '').replace(/@(c|g)\.us$/, '').replace(/@lid$/, '');
+const isGroupWid = (value: string) => /@g\.us$/i.test(value);
+const isLidWid = (value: string) => /@lid$/i.test(value);
 const getChatTitle = (chat: any) => getModelValue(chat, 'formattedTitle') || getModelValue(chat, 'name') || getModelValue(chat, 'pushname') || getChatId(chat);
+
+const getQueryNumberCandidates = (value: string) => {
+    const base = stripWidSuffix(value).replace(/\D/g, '');
+    if (!base) return [];
+    const candidates = [base];
+    if (base.startsWith('55') && base.length === 12) {
+        candidates.push(`${base.substring(0, 4)}9${base.substring(4)}`);
+    } else if (base.startsWith('55') && base.length === 13) {
+        candidates.push(`${base.substring(0, 4)}${base.substring(5)}`);
+    }
+    return [...new Set(candidates)];
+};
+
+const extractWidCandidates = (value: any): string[] => {
+    if (!value) return [];
+    const direct = stringifyWid(value);
+    const candidates = [
+        direct,
+        stringifyWid(value?.lid),
+        stringifyWid(value?.lidWid),
+        stringifyWid(value?.userLid),
+        stringifyWid(value?.pn),
+        stringifyWid(value?.phoneNumber),
+        stringifyWid(value?.pnWid),
+        stringifyWid(value?.wid),
+        stringifyWid(value?.id),
+        stringifyWid(value?.contact?.id),
+        stringifyWid(value?.contact?.wid),
+        stringifyWid(getModelValue(value?.contact, 'id')),
+        stringifyWid(getModelValue(value, 'id'))
+    ].filter(Boolean).map(String);
+
+    return [...new Set(candidates)];
+};
+
+async function getPnLidEntryCandidates(value: string) {
+    const getPnLidEntry = (window.WPP as any)?.contact?.getPnLidEntry;
+    if (typeof getPnLidEntry !== 'function') return [];
+
+    const input = normalizeWid(value);
+    const attempts = [...new Set([input, stripWidSuffix(input)])].filter(Boolean);
+    for (const attempt of attempts) {
+        try {
+            const entry = await getPnLidEntry.call((window.WPP as any).contact, attempt);
+            const candidates = extractWidCandidates(entry);
+            if (candidates.length > 0) return candidates;
+        } catch (error) {
+            // Some WhatsApp builds only resolve cached contacts through queryExists.
+        }
+    }
+
+    return [];
+}
+
+async function queryExistsCandidates(value: string) {
+    const queryExists = (window.WPP as any)?.contact?.queryExists;
+    if (typeof queryExists !== 'function') return [];
+
+    for (const candidate of getQueryNumberCandidates(value)) {
+        try {
+            const result = await queryExists.call((window.WPP as any).contact, candidate);
+            const candidates = extractWidCandidates(result).concat(extractWidCandidates(result?.wid));
+            if (candidates.length > 0) return candidates;
+        } catch (error) {
+            // Keep trying fallback candidates.
+        }
+    }
+
+    return [];
+}
+
+async function resolvePreferredSendWid(value?: string) {
+    const normalized = normalizeWid(value);
+    if (!normalized) return '';
+    if (isGroupWid(normalized) || isLidWid(normalized)) return normalized;
+
+    const pnLidCandidates = await getPnLidEntryCandidates(normalized);
+    const preferredPnLid = pnLidCandidates.find(isLidWid) || pnLidCandidates[0];
+    if (preferredPnLid) return preferredPnLid;
+
+    const queryCandidates = await queryExistsCandidates(normalized);
+    return queryCandidates.find(isLidWid) || queryCandidates[0] || normalized;
+}
 
 const summarizeChat = (chat: any) => ({
     id: getChatId(chat),
@@ -281,12 +366,22 @@ async function attachmentToFile(payload: WaJsLabPayload) {
 }
 
 async function sendLabFileMessage(chatId: string, payload: WaJsLabPayload, type: 'image' | 'audio' | 'video' | 'document') {
-    return window.WPP.chat.sendFileMessage(chatId, await attachmentToFile(payload), {
+    const targetChatId = await resolvePreferredSendWid(chatId);
+    return window.WPP.chat.sendFileMessage(targetChatId, await attachmentToFile(payload), {
         type,
         caption: payload.text || undefined,
         createChat: true,
         waitForAck: true
     });
+}
+
+async function waitForSendResult(result: any, timeoutMs = 30000) {
+    if (!result?.sendMsgResult?.then) return result;
+
+    return Promise.race([
+        result.sendMsgResult,
+        wait(timeoutMs).then(() => ({ messageSendResult: window.WPP.whatsapp.enums.SendMsgResult.OK, timeout: true }))
+    ]);
 }
 
 const safeIsAuthenticated = () => {
@@ -387,8 +482,15 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
                 });
             case 'queryContact':
                 if (!contactId) throw new Error('Informe um contato ou número.');
+                let pnLidEntry = null;
+                try {
+                    pnLidEntry = await labWpp.contact?.getPnLidEntry?.(contactId);
+                } catch (error) {
+                    pnLidEntry = null;
+                }
                 return makeLabResponse(payload, startedAt, {
                     query: contactId,
+                    pnLidEntry: compactValue(pnLidEntry),
                     exists: compactValue(await labWpp.contact?.queryExists?.(contactId.replace('@c.us', ''))),
                     widExists: compactValue(await window.WPP.contact.queryWidExists(contactId))
                 });
@@ -449,7 +551,7 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
                 return makeLabResponse(payload, startedAt, { chatId: chatId || null, text: payload.text || '' });
             case 'sendText':
                 if (!chatId) throw new Error('Informe um chatId ou número.');
-                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendTextMessage(chatId, payload.text || 'Teste WA-JS Lab', { createChat: true, waitForAck: true })));
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendTextMessage(await resolvePreferredSendWid(chatId), payload.text || 'Teste WA-JS Lab', { createChat: true, waitForAck: true })));
             case 'sendImage':
                 if (!chatId) throw new Error('Informe um chatId ou número.');
                 return makeLabResponse(payload, startedAt, compactValue(await sendLabFileMessage(chatId, payload, 'image')));
@@ -464,10 +566,10 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
                 return makeLabResponse(payload, startedAt, compactValue(await sendLabFileMessage(chatId, payload, 'document')));
             case 'sendPoll':
                 if (!chatId) throw new Error('Informe um chatId de grupo.');
-                return makeLabResponse(payload, startedAt, compactValue(await labWpp.chat?.sendCreatePollMessage?.(chatId, payload.text || 'Teste WA-JS Lab', ['Sim', 'Não'], { selectableCount: 1 })));
+                return makeLabResponse(payload, startedAt, compactValue(await labWpp.chat?.sendCreatePollMessage?.(await resolvePreferredSendWid(chatId), payload.text || 'Teste WA-JS Lab', ['Sim', 'Não'], { selectableCount: 1 })));
             case 'sendLocation':
                 if (!chatId) throw new Error('Informe um chatId ou número.');
-                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendLocationMessage(chatId, {
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendLocationMessage(await resolvePreferredSendWid(chatId), {
                     lat: payload.latitude ?? -23.55052,
                     lng: payload.longitude ?? -46.633308,
                     name: 'WA-JS Lab',
@@ -475,8 +577,8 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
                 })));
             case 'sendVCard':
                 if (!chatId || !contactId) throw new Error('Informe chatId e contactId.');
-                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendVCardContactMessage(chatId, {
-                    id: contactId,
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendVCardContactMessage(await resolvePreferredSendWid(chatId), {
+                    id: await resolvePreferredSendWid(contactId),
                     name: payload.text || 'Contato WA-JS Lab'
                 })));
             default:
@@ -609,11 +711,13 @@ function getArchiveStatus(): ArchiveStatus {
 }
 
 async function sendWPPMessage({ contact, message, attachment, buttons = [] }: Message) {
+    const resolvedContact = await resolvePreferredSendWid(contact);
+
     if (attachment && buttons.length > 0) {
         const response = await fetch(attachment.url.toString());
         const data = await response.blob();
         return window.WPP.chat.sendFileMessage(
-            contact,
+            resolvedContact,
             new File([data], attachment.name, {
                 type: attachment.type,
                 lastModified: attachment.lastModified,
@@ -627,7 +731,7 @@ async function sendWPPMessage({ contact, message, attachment, buttons = [] }: Me
             }
         );
     } else if (buttons.length > 0) {
-        return window.WPP.chat.sendTextMessage(contact, message, {
+        return window.WPP.chat.sendTextMessage(resolvedContact, message, {
             createChat: true,
             waitForAck: true,
             buttons
@@ -636,7 +740,7 @@ async function sendWPPMessage({ contact, message, attachment, buttons = [] }: Me
         const response = await fetch(attachment.url.toString());
         const data = await response.blob();
         return window.WPP.chat.sendFileMessage(
-            contact,
+            resolvedContact,
             new File([data], attachment.name, {
                 type: attachment.type,
                 lastModified: attachment.lastModified,
@@ -649,7 +753,7 @@ async function sendWPPMessage({ contact, message, attachment, buttons = [] }: Me
             }
         );
     } else {
-        return window.WPP.chat.sendTextMessage(contact, message, {
+        return window.WPP.chat.sendTextMessage(resolvedContact, message, {
             createChat: true,
             waitForAck: true
         });
@@ -668,32 +772,23 @@ async function sendMessage({ contact, hash, scheduledAt }: { contact: string, ha
         await wait(scheduledAt - Date.now());
     }
 
-    let findContact = await window.WPP.contact.queryExists(contact);
-    if (!findContact) {
-        let truncatedNumber = contact;
-        if (truncatedNumber.startsWith('55') && truncatedNumber.length === 12) {
-            truncatedNumber = `${truncatedNumber.substring(0, 4)}9${truncatedNumber.substring(4)}`;
-        } else if (truncatedNumber.startsWith('55') && truncatedNumber.length === 13) {
-            truncatedNumber = `${truncatedNumber.substring(0, 4)}${truncatedNumber.substring(5)}`;
-        }
-        findContact = await window.WPP.contact.queryExists(truncatedNumber);
-        if (!findContact) {
-            console.log('Número não encontrado!');
-            return void WebpageMessageManager.sendMessage(ChromeMessageTypes.ADD_LOG, { level: 1, message: 'Número não encontrado!', attachment: message.attachment != null, contact });
-        }
+    const resolvedContact = await resolvePreferredSendWid(contact);
+    if (!resolvedContact) {
+        console.log('Número não encontrado!');
+        return void WebpageMessageManager.sendMessage(ChromeMessageTypes.ADD_LOG, { level: 1, message: 'Número não encontrado!', attachment: message.attachment != null, contact });
     }
 
-    contact = findContact.wid.user;
+    contact = resolvedContact;
 
     const result = await sendWPPMessage({ contact, ...message });
-    return result?.sendMsgResult.then(value => {
-        const result = (value as any).messageSendResult ?? value;
-        if (result !== window.WPP.whatsapp.enums.SendMsgResult.OK) {
-            throw new Error('Falha ao enviar a mensagem: ' + value);
-        } else {
-            WebpageMessageManager.sendMessage(ChromeMessageTypes.ADD_LOG, { level: 3, message: 'Mensagem enviada com sucesso!', attachment: message.attachment != null, contact: contact });
-        }
-    });
+    const value = await waitForSendResult(result);
+    const sendResult = (value as any)?.messageSendResult ?? value;
+    if (sendResult !== window.WPP.whatsapp.enums.SendMsgResult.OK) {
+        throw new Error('Falha ao enviar a mensagem: ' + value);
+    } else {
+        WebpageMessageManager.sendMessage(ChromeMessageTypes.ADD_LOG, { level: 3, message: 'Mensagem enviada com sucesso!', attachment: message.attachment != null, contact: contact });
+    }
+    return value;
 }
 
 async function addToQueue(message: Message) {
