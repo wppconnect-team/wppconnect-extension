@@ -123,6 +123,7 @@ const stringifyWid = (value: any) => value?._serialized || value?.toString?.() |
 const stripWidSuffix = (value: any) => String(stringifyWid(value) || '').replace(/@(c|g)\.us$/, '').replace(/@lid$/, '');
 const isGroupWid = (value: string) => /@g\.us$/i.test(value);
 const isLidWid = (value: string) => /@lid$/i.test(value);
+const isPnWid = (value: string) => /@c\.us$/i.test(value);
 const getChatTitle = (chat: any) => getModelValue(chat, 'formattedTitle') || getModelValue(chat, 'name') || getModelValue(chat, 'pushname') || getChatId(chat);
 
 const getQueryNumberCandidates = (value: string) => {
@@ -139,24 +140,39 @@ const getQueryNumberCandidates = (value: string) => {
 
 const extractWidCandidates = (value: any): string[] => {
     if (!value) return [];
-    const direct = stringifyWid(value);
+    const normalizeCandidate = (candidate: any) => {
+        const raw = String(stringifyWid(candidate) || '').trim();
+        if (!raw || raw === '[object Object]') return '';
+        if (/@s\.whatsapp\.net$/i.test(raw)) return raw.replace(/@s\.whatsapp\.net$/i, '@c.us');
+        if (raw.includes('@')) return raw;
+        const digits = raw.replace(/\D/g, '');
+        return digits ? `${digits}@c.us` : '';
+    };
+    const direct = normalizeCandidate(value);
     const candidates = [
         direct,
-        stringifyWid(value?.lid),
-        stringifyWid(value?.lidWid),
-        stringifyWid(value?.userLid),
-        stringifyWid(value?.pn),
-        stringifyWid(value?.phoneNumber),
-        stringifyWid(value?.pnWid),
-        stringifyWid(value?.wid),
-        stringifyWid(value?.id),
-        stringifyWid(value?.contact?.id),
-        stringifyWid(value?.contact?.wid),
-        stringifyWid(getModelValue(value?.contact, 'id')),
-        stringifyWid(getModelValue(value, 'id'))
+        normalizeCandidate(value?.pn),
+        normalizeCandidate(value?.phoneNumber),
+        normalizeCandidate(value?.pnWid),
+        normalizeCandidate(value?.wid),
+        normalizeCandidate(value?.id),
+        normalizeCandidate(value?.contact?.id),
+        normalizeCandidate(value?.contact?.wid),
+        normalizeCandidate(getModelValue(value?.contact, 'id')),
+        normalizeCandidate(getModelValue(value, 'id')),
+        normalizeCandidate(value?.lid),
+        normalizeCandidate(value?.lidWid),
+        normalizeCandidate(value?.userLid)
     ].filter(Boolean).map(String);
 
     return [...new Set(candidates)];
+};
+
+const pickSendWidCandidate = (candidates: string[]) => {
+    return candidates.find(isPnWid)
+        || candidates.find(candidate => !isLidWid(candidate) && !isGroupWid(candidate))
+        || candidates.find(isLidWid)
+        || '';
 };
 
 async function getPnLidEntryCandidates(value: string) {
@@ -198,14 +214,14 @@ async function queryExistsCandidates(value: string) {
 async function resolvePreferredSendWid(value?: string) {
     const normalized = normalizeWid(value);
     if (!normalized) return '';
-    if (isGroupWid(normalized) || isLidWid(normalized)) return normalized;
+    if (isGroupWid(normalized)) return normalized;
 
     const pnLidCandidates = await getPnLidEntryCandidates(normalized);
-    const preferredPnLid = pnLidCandidates.find(isLidWid) || pnLidCandidates[0];
+    const preferredPnLid = pickSendWidCandidate(pnLidCandidates);
     if (preferredPnLid) return preferredPnLid;
 
     const queryCandidates = await queryExistsCandidates(normalized);
-    return queryCandidates.find(isLidWid) || queryCandidates[0] || normalized;
+    return pickSendWidCandidate(queryCandidates) || normalized;
 }
 
 const summarizeChat = (chat: any) => ({
