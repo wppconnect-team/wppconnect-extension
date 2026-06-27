@@ -16,7 +16,7 @@ type MessageHandler<K extends keyof ChromeMessageContentTypes> = (
   payload: ChromeMessageContentTypes[K]["payload"]
 ) => ChromeMessageContentTypes[K]["response"] | Promise<ChromeMessageContentTypes[K]["response"]>;
 
-const MESSAGE_TIMEOUT_MS = 5000;
+const MESSAGE_TIMEOUT_MS = 60000;
 
 export default class AsyncChromeMessageManager {
   constructor(private source: "popup" | "contentScript" | "webpage") {
