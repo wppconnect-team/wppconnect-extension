@@ -42,6 +42,7 @@ type PopupAction =
   | 'activeChat'
   | 'queryContact'
   | 'openChat'
+  | 'openNewChat'
   | 'markRead'
   | 'markUnread'
   | 'pinChat'
@@ -277,6 +278,7 @@ class Popup extends Component<{}, PopupState> {
   functionDiagnosticsLabel = chrome.i18n.getMessage('functionDiagnosticsLabel') || 'Connection diagnostics';
   functionActiveChatLabel = chrome.i18n.getMessage('functionActiveChatLabel') || 'Active chat';
   functionOpenChatLabel = chrome.i18n.getMessage('functionOpenChatLabel') || 'Open chat';
+  functionOpenNewChatLabel = chrome.i18n.getMessage('functionOpenNewChatLabel') || 'Open new chat';
   functionMarkReadLabel = chrome.i18n.getMessage('functionMarkReadLabel') || 'Mark read';
   functionMarkUnreadLabel = chrome.i18n.getMessage('functionMarkUnreadLabel') || 'Mark unread';
   functionPinChatLabel = chrome.i18n.getMessage('functionPinChatLabel') || 'Pin chat';
@@ -290,6 +292,29 @@ class Popup extends Component<{}, PopupState> {
   functionArchiveChatsDescription = chrome.i18n.getMessage('functionArchiveChatsDescription') || 'Archive non-archived chats';
   functionListChatsDescription = chrome.i18n.getMessage('functionListChatsDescription') || 'Inspect available chats';
   functionVerifyNumberDescription = chrome.i18n.getMessage('functionVerifyNumberDescription') || 'Check contact existence';
+  functionOpenNewChatDescription = chrome.i18n.getMessage('functionOpenNewChatDescription') || 'Open a chat, or send when text is filled';
+  productModulesTitle = chrome.i18n.getMessage('productModulesTitle') || 'Product modules';
+  productModulesSubtitle = chrome.i18n.getMessage('productModulesSubtitle') || 'What already exists and what comes next';
+  productModuleReadyLabel = chrome.i18n.getMessage('productModuleReadyLabel') || 'Ready';
+  productModuleNextLabel = chrome.i18n.getMessage('productModuleNextLabel') || 'Next';
+  moduleMessageTemplatesTitle = chrome.i18n.getMessage('moduleMessageTemplatesTitle') || 'Message templates';
+  moduleMessageTemplatesDescription = chrome.i18n.getMessage('moduleMessageTemplatesDescription') || 'Saved message, files and buttons.';
+  moduleBroadcastsTitle = chrome.i18n.getMessage('moduleBroadcastsTitle') || 'Broadcasts';
+  moduleBroadcastsDescription = chrome.i18n.getMessage('moduleBroadcastsDescription') || 'Run personalized campaigns.';
+  moduleAutomationsTitle = chrome.i18n.getMessage('moduleAutomationsTitle') || 'Automations';
+  moduleAutomationsDescription = chrome.i18n.getMessage('moduleAutomationsDescription') || 'Schedule any execution.';
+  moduleUtilitiesTitle = chrome.i18n.getMessage('moduleUtilitiesTitle') || 'Tools and utilities';
+  moduleUtilitiesDescription = chrome.i18n.getMessage('moduleUtilitiesDescription') || 'Open chats, verify numbers and inspect chats.';
+  moduleWebhooksApiTitle = chrome.i18n.getMessage('moduleWebhooksApiTitle') || 'Webhooks and API';
+  moduleWebhooksApiDescription = chrome.i18n.getMessage('moduleWebhooksApiDescription') || 'Runtime WA-JS bridge is ready; external API is next.';
+  moduleImprovementsTitle = chrome.i18n.getMessage('moduleImprovementsTitle') || 'Improvements';
+  moduleImprovementsDescription = chrome.i18n.getMessage('moduleImprovementsDescription') || 'Chat productivity actions.';
+  moduleBusinessToolsTitle = chrome.i18n.getMessage('moduleBusinessToolsTitle') || 'Business tools';
+  moduleBusinessToolsDescription = chrome.i18n.getMessage('moduleBusinessToolsDescription') || 'Profiles, vCards and media sending.';
+  moduleExportTitle = chrome.i18n.getMessage('moduleExportTitle') || 'Export';
+  moduleExportDescription = chrome.i18n.getMessage('moduleExportDescription') || 'Data export workspace to build next.';
+  moduleStatsTitle = chrome.i18n.getMessage('moduleStatsTitle') || 'Statistics';
+  moduleStatsDescription = chrome.i18n.getMessage('moduleStatsDescription') || 'History and execution metrics.';
   functionRequiresChatLabel = chrome.i18n.getMessage('functionRequiresChatLabel') || 'Chat ID or phone';
   functionRequiresContactLabel = chrome.i18n.getMessage('functionRequiresContactLabel') || 'Contact ID or phone';
   functionRequiresTextLabel = chrome.i18n.getMessage('functionRequiresTextLabel') || 'Message text';
@@ -378,6 +403,7 @@ class Popup extends Component<{}, PopupState> {
     { value: 'businessProfile', label: this.functionBusinessProfileLabel, icon: 'user', labAction: 'businessProfile', needsContact: true },
     { value: 'commonGroups', label: this.functionCommonGroupsLabel, icon: 'list', labAction: 'commonGroups', needsContact: true },
     { value: 'openChat', label: this.functionOpenChatLabel, icon: 'user', labAction: 'openChat', needsChat: true },
+    { value: 'openNewChat', label: this.functionOpenNewChatLabel, icon: 'message', labAction: 'openNewChat', needsChat: true, optionalText: true },
     { value: 'markRead', label: this.functionMarkReadLabel, icon: 'check', labAction: 'markRead', needsChat: true },
     { value: 'markUnread', label: this.functionMarkUnreadLabel, icon: 'message', labAction: 'markUnread', needsChat: true },
     { value: 'pinChat', label: this.functionPinChatLabel, icon: 'pin', labAction: 'pinChat', needsChat: true },
@@ -932,7 +958,8 @@ class Popup extends Component<{}, PopupState> {
       selectedAction: action,
       activeTab: 'executions',
       archiveConfirmOpen: false,
-      connectionError: undefined
+      connectionError: undefined,
+      labText: action === 'openNewChat' ? '' : this.state.labText
     }, () => {
       if (action === 'listChats' || action === 'diagnostics') this.executeSelectedAction();
     });
@@ -1331,7 +1358,13 @@ class Popup extends Component<{}, PopupState> {
           <button
             type="button"
             key={action.value}
-            onClick={() => this.setState({ selectedAction: action.value, actionMenuOpen: false, archiveConfirmOpen: false, connectionError: undefined })}
+            onClick={() => this.setState({
+              selectedAction: action.value,
+              actionMenuOpen: false,
+              archiveConfirmOpen: false,
+              connectionError: undefined,
+              labText: action.value === 'openNewChat' ? '' : this.state.labText
+            })}
             className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${this.state.selectedAction === action.value ? 'bg-emerald-500/15 text-emerald-100' : 'text-slate-200 hover:bg-white/10 hover:text-white'}`}
           >
             <Icon name={action.icon} className="h-4 w-4 shrink-0 text-emerald-300" />
@@ -1419,15 +1452,65 @@ class Popup extends Component<{}, PopupState> {
     </button>;
   }
 
-  renderQuickExecutions() {
+  renderProductModule(title: string, description: string, icon: UiIcon, status: 'ready' | 'next', action?: PopupAction, tab?: PopupTab) {
+    const active = Boolean(action && this.state.selectedAction === action) || Boolean(tab && this.state.activeTab === tab);
+    const clickable = Boolean(action || tab);
+    const statusClass = status === 'ready'
+      ? 'bg-emerald-400/12 text-emerald-300'
+      : 'bg-amber-400/12 text-amber-300';
+
+    return <button
+      type="button"
+      disabled={!clickable}
+      onClick={() => {
+        if (action) {
+          this.selectQuickAction(action);
+          return;
+        }
+        if (tab) {
+          this.setState({ activeTab: tab, actionMenuOpen: false, archiveConfirmOpen: false, connectionError: undefined });
+        }
+      }}
+      className={[
+        'group flex min-h-[7.25rem] flex-col rounded-xl border p-4 text-left transition disabled:cursor-default disabled:opacity-80',
+        active
+          ? 'border-emerald-400/50 bg-emerald-400/10 shadow-[0_18px_38px_rgba(16,185,129,.12)]'
+          : clickable
+            ? 'border-white/10 bg-slate-950/25 hover:border-emerald-400/35 hover:bg-white/10'
+            : 'border-dashed border-white/10 bg-slate-950/18'
+      ].join(' ')}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+          <Icon name={icon} className="h-5 w-5 transition group-enabled:group-hover:scale-105" />
+        </span>
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[0.68rem] font-extrabold uppercase ${statusClass}`}>
+          {status === 'ready' ? this.productModuleReadyLabel : this.productModuleNextLabel}
+        </span>
+      </div>
+      <div className="mt-3 text-sm font-extrabold leading-5 text-white">{title}</div>
+      <div className="mt-1 text-xs leading-5 text-slate-400">{description}</div>
+    </button>;
+  }
+
+  renderProductModules() {
     return this.renderPanel(<>
-      <h2 className="text-lg font-extrabold text-white">{this.quickExecutionsTitle}</h2>
-      <div className="mt-4 grid grid-cols-4 gap-3">
-        {this.renderQuickAction('sendMessage', this.functionSendMessageLabel, this.functionSendMessageDescription, 'send')}
-        {this.renderQuickAction('archiveChats', this.functionArchiveChatsLabel, this.functionArchiveChatsDescription, 'archive')}
-        {this.renderQuickAction('listChats', this.functionListChatsLabel, this.functionListChatsDescription, 'list')}
-        {this.renderQuickAction('queryContact', this.functionVerifyNumberLabel, this.functionVerifyNumberDescription, 'search')}
-        {this.renderQuickAction('allWaJsFunctions', this.allWaJsFunctionsLabel, this.allWaJsFunctionsDescription, 'zap', 'col-span-4 min-h-[6rem] flex-row gap-4 text-left')}
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-extrabold text-white">{this.productModulesTitle}</h2>
+          <p className="mt-1 text-sm leading-5 text-slate-400">{this.productModulesSubtitle}</p>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-3">
+        {this.renderProductModule(this.moduleMessageTemplatesTitle, this.moduleMessageTemplatesDescription, 'message', 'ready', undefined, 'settings')}
+        {this.renderProductModule(this.moduleBroadcastsTitle, this.moduleBroadcastsDescription, 'send', 'ready', 'sendMessage')}
+        {this.renderProductModule(this.moduleAutomationsTitle, this.moduleAutomationsDescription, 'clock', 'ready', 'allWaJsFunctions')}
+        {this.renderProductModule(this.moduleUtilitiesTitle, this.moduleUtilitiesDescription, 'search', 'ready', 'openNewChat')}
+        {this.renderProductModule(this.moduleWebhooksApiTitle, this.moduleWebhooksApiDescription, 'zap', 'ready', 'allWaJsFunctions')}
+        {this.renderProductModule(this.moduleImprovementsTitle, this.moduleImprovementsDescription, 'pin', 'ready', 'markRead')}
+        {this.renderProductModule(this.moduleBusinessToolsTitle, this.moduleBusinessToolsDescription, 'user', 'ready', 'businessProfile')}
+        {this.renderProductModule(this.moduleExportTitle, this.moduleExportDescription, 'file', 'next')}
+        {this.renderProductModule(this.moduleStatsTitle, this.moduleStatsDescription, 'list', 'ready', undefined, 'history')}
       </div>
     </>);
   }
@@ -1612,7 +1695,7 @@ class Popup extends Component<{}, PopupState> {
   renderExecutions() {
     return <div className="space-y-5 px-7 pb-6">
       {this.renderNewExecution()}
-      {this.renderQuickExecutions()}
+      {this.renderProductModules()}
       {this.renderScheduledExecutions()}
       {this.renderSummary()}
       {this.renderLatestExecutions()}

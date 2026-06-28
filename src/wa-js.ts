@@ -706,6 +706,18 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
             case 'openChat':
                 if (!chatId) throw new Error('Informe um chatId ou número.');
                 return makeLabResponse(payload, startedAt, { chatId, opened: await window.WPP.chat.openChatBottom(chatId) });
+            case 'openNewChat': {
+                if (!chatId) throw new Error('Informe um chatId ou número.');
+                const targetChatId = await resolveRawSendWid(chatId);
+                const opened = await window.WPP.chat.openChatBottom(targetChatId);
+                const text = (payload.text || '').trim();
+                const sent = text ? await sendRawTextMessage(targetChatId, text) : null;
+                return makeLabResponse(payload, startedAt, compactValue({
+                    chatId: targetChatId,
+                    opened,
+                    sent
+                }));
+            }
             case 'markRead':
                 if (!chatId) throw new Error('Informe um chatId ou número.');
                 return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.markIsRead(chatId)));

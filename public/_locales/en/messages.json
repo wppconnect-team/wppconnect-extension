@@ -872,5 +872,101 @@
     "bulkPrefixPreviewLabel": {
         "message": "Prefix",
         "description": "Bulk send prefix preview label"
+    },
+    "functionOpenNewChatLabel": {
+        "message": "Open new chat",
+        "description": "Function to open or start a new chat"
+    },
+    "functionOpenNewChatDescription": {
+        "message": "Open the chat and send if a message is filled",
+        "description": "Open new chat function description"
+    },
+    "productModulesTitle": {
+        "message": "Product modules",
+        "description": "Product modules section title"
+    },
+    "productModulesSubtitle": {
+        "message": "What already exists and what we will create next",
+        "description": "Product modules section subtitle"
+    },
+    "productModuleReadyLabel": {
+        "message": "Ready",
+        "description": "Available module status"
+    },
+    "productModuleNextLabel": {
+        "message": "Next",
+        "description": "Planned module status"
+    },
+    "moduleMessageTemplatesTitle": {
+        "message": "Message templates",
+        "description": "Message templates module title"
+    },
+    "moduleMessageTemplatesDescription": {
+        "message": "Saved message, files and buttons.",
+        "description": "Message templates module description"
+    },
+    "moduleBroadcastsTitle": {
+        "message": "Broadcasts",
+        "description": "Broadcasts module title"
+    },
+    "moduleBroadcastsDescription": {
+        "message": "Run personalized campaigns.",
+        "description": "Broadcasts module description"
+    },
+    "moduleAutomationsTitle": {
+        "message": "Automations",
+        "description": "Automations module title"
+    },
+    "moduleAutomationsDescription": {
+        "message": "Schedule any execution.",
+        "description": "Automations module description"
+    },
+    "moduleUtilitiesTitle": {
+        "message": "Tools and utilities",
+        "description": "Utilities module title"
+    },
+    "moduleUtilitiesDescription": {
+        "message": "Open chats, verify numbers and inspect chats.",
+        "description": "Utilities module description"
+    },
+    "moduleWebhooksApiTitle": {
+        "message": "Webhooks and API",
+        "description": "Webhooks and API module title"
+    },
+    "moduleWebhooksApiDescription": {
+        "message": "WA-JS bridge is ready; external API comes next.",
+        "description": "Webhooks and API module description"
+    },
+    "moduleImprovementsTitle": {
+        "message": "Improvements",
+        "description": "Improvements module title"
+    },
+    "moduleImprovementsDescription": {
+        "message": "Chat productivity actions.",
+        "description": "Improvements module description"
+    },
+    "moduleBusinessToolsTitle": {
+        "message": "Business tools",
+        "description": "Business tools module title"
+    },
+    "moduleBusinessToolsDescription": {
+        "message": "Profiles, vCards and media sending.",
+        "description": "Business tools module description"
+    },
+    "moduleExportTitle": {
+        "message": "Export",
+        "description": "Export module title"
+    },
+    "moduleExportDescription": {
+        "message": "Data export workspace to build next.",
+        "description": "Export module description"
+    },
+    "moduleStatsTitle": {
+        "message": "Statistics",
+        "description": "Statistics module title"
+    },
+    "moduleStatsDescription": {
+        "message": "History and execution metrics.",
+        "description": "Statistics module description"
     }
 }

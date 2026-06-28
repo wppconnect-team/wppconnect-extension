@@ -15,6 +15,7 @@ export type WaJsLabAction =
   | 'businessProfile'
   | 'commonGroups'
   | 'openChat'
+  | 'openNewChat'
   | 'markRead'
   | 'markUnread'
   | 'pinChat'
