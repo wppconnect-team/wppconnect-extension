@@ -934,7 +934,7 @@
         "description": "Webhooks and API module title"
     },
     "moduleWebhooksApiDescription": {
-        "message": "WA-JS bridge is ready; external API comes next.",
+        "message": "Send events to webhooks and use the page API.",
         "description": "Webhooks and API module description"
     },
     "moduleImprovementsTitle": {
@@ -958,7 +958,7 @@
         "description": "Export module title"
     },
     "moduleExportDescription": {
-        "message": "Data export workspace to build next.",
+        "message": "Download history, schedules and templates.",
         "description": "Export module description"
     },
     "moduleStatsTitle": {
@@ -968,5 +968,177 @@
     "moduleStatsDescription": {
         "message": "History and execution metrics.",
         "description": "Statistics module description"
+    },
+    "templatesPanelTitle": {
+        "message": "Message templates",
+        "description": "Templates panel title"
+    },
+    "templatesPanelSubtitle": {
+        "message": "Save the current message setup and reuse it later.",
+        "description": "Templates panel subtitle"
+    },
+    "templateNameLabel": {
+        "message": "Template name",
+        "description": "Template name label"
+    },
+    "templateNamePlaceholder": {
+        "message": "Ex: First contact",
+        "description": "Template name placeholder"
+    },
+    "saveTemplateLabel": {
+        "message": "Save template",
+        "description": "Save template button"
+    },
+    "applyTemplateLabel": {
+        "message": "Apply",
+        "description": "Apply template button"
+    },
+    "deleteTemplateLabel": {
+        "message": "Delete",
+        "description": "Delete template button"
+    },
+    "templatesEmptyLabel": {
+        "message": "No templates saved yet.",
+        "description": "Templates empty state"
+    },
+    "templateSavedLabel": {
+        "message": "Template saved",
+        "description": "Template saved log"
+    },
+    "templateAppliedLabel": {
+        "message": "Template applied",
+        "description": "Template applied log"
+    },
+    "templateDeletedLabel": {
+        "message": "Template deleted",
+        "description": "Template deleted log"
+    },
+    "webhookPanelTitle": {
+        "message": "Webhooks and page API",
+        "description": "Webhooks panel title"
+    },
+    "webhookPanelSubtitle": {
+        "message": "Send execution events to your endpoint and copy a browser API example.",
+        "description": "Webhooks panel subtitle"
+    },
+    "webhookEnabledLabel": {
+        "message": "Webhook enabled",
+        "description": "Webhook enabled option"
+    },
+    "webhookDisabledLabel": {
+        "message": "Webhook disabled",
+        "description": "Webhook disabled option"
+    },
+    "webhookUrlLabel": {
+        "message": "Webhook URL",
+        "description": "Webhook URL label"
+    },
+    "webhookSecretLabel": {
+        "message": "Secret header",
+        "description": "Webhook secret label"
+    },
+    "webhookSecretPlaceholder": {
+        "message": "Optional shared secret",
+        "description": "Webhook secret placeholder"
+    },
+    "generateSecretLabel": {
+        "message": "Generate",
+        "description": "Generate secret button"
+    },
+    "saveWebhookLabel": {
+        "message": "Save webhook",
+        "description": "Save webhook button"
+    },
+    "testWebhookLabel": {
+        "message": "Send test",
+        "description": "Test webhook button"
+    },
+    "webhookSavedLabel": {
+        "message": "Webhook saved",
+        "description": "Webhook saved log"
+    },
+    "webhookTestLabel": {
+        "message": "Webhook test event",
+        "description": "Webhook test log"
+    },
+    "pageApiExampleLabel": {
+        "message": "Page API example",
+        "description": "Page API example label"
+    },
+    "exportPanelTitle": {
+        "message": "Export",
+        "description": "Export panel title"
+    },
+    "exportPanelSubtitle": {
+        "message": "Download local extension data.",
+        "description": "Export panel subtitle"
+    },
+    "exportAllJsonLabel": {
+        "message": "Export all JSON",
+        "description": "Export all button"
+    },
+    "exportLogsCsvLabel": {
+        "message": "Export logs CSV",
+        "description": "Export logs button"
+    },
+    "exportSchedulesJsonLabel": {
+        "message": "Export schedules JSON",
+        "description": "Export schedules button"
+    },
+    "exportTemplatesJsonLabel": {
+        "message": "Export templates JSON",
+        "description": "Export templates button"
+    },
+    "exportDoneLabel": {
+        "message": "Export generated",
+        "description": "Export generated log"
+    },
+    "statsPanelTitle": {
+        "message": "Statistics",
+        "description": "Statistics panel title"
+    },
+    "statsPanelSubtitle": {
+        "message": "Operational view of executions, schedules and assets.",
+        "description": "Statistics panel subtitle"
+    },
+    "successRateLabel": {
+        "message": "Success rate",
+        "description": "Success rate metric"
+    },
+    "failedExecutionsLabel": {
+        "message": "Failed",
+        "description": "Failed metric"
+    },
+    "warningExecutionsLabel": {
+        "message": "Warnings",
+        "description": "Warnings metric"
+    },
+    "scheduledPendingMetricLabel": {
+        "message": "Pending",
+        "description": "Pending schedules metric"
+    },
+    "scheduledRunningMetricLabel": {
+        "message": "Running",
+        "description": "Running schedules metric"
+    },
+    "uniqueTargetsLabel": {
+        "message": "Unique targets",
+        "description": "Unique targets metric"
+    },
+    "templatesMetricLabel": {
+        "message": "Templates",
+        "description": "Templates metric"
+    },
+    "webhookMetricLabel": {
+        "message": "Webhook",
+        "description": "Webhook metric"
+    },
+    "enabledLabel": {
+        "message": "Enabled",
+        "description": "Enabled label"
+    },
+    "disabledLabel": {
+        "message": "Disabled",
+        "description": "Disabled label"
     }
 }

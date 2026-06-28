@@ -36,10 +36,40 @@ function executionDetailsFromSchedule(execution: ScheduledExecution): Log['execu
   };
 }
 
+function deliverWebhookLog(log: Log) {
+  chrome.storage.local.get({ webhookEnabled: false, webhookUrl: '', webhookSecret: '' }, async data => {
+    if (!data.webhookEnabled || !data.webhookUrl) return;
+
+    const payload = JSON.stringify({
+      source: 'wppconnect-extension',
+      event: 'log.created',
+      timestamp: new Date().toISOString(),
+      log
+    });
+
+    try {
+      await fetch(data.webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(data.webhookSecret ? { 'X-Wppconnect-Secret': data.webhookSecret } : {})
+        },
+        body: payload
+      });
+    } catch (error) {
+      try {
+        await fetch(data.webhookUrl, { method: 'POST', mode: 'no-cors', body: payload });
+      } catch (fallbackError) {
+        // Webhooks must not interrupt the content script.
+      }
+    }
+  });
+}
+
 function addLog({ id, level, message, attachment = false, contact, executionDetails }: Log) {
   return chrome.storage.local.get({ logs: [] }, async data => {
     const currentLogs = data.logs;
-    currentLogs.push({
+    const nextLog = {
       id: id || `log-${Date.now()}-${Math.random().toString(16).slice(2)}`,
       level,
       message,
@@ -47,7 +77,9 @@ function addLog({ id, level, message, attachment = false, contact, executionDeta
       contact,
       date: new Date().toLocaleString(),
       executionDetails
-    });
+    };
+    currentLogs.push(nextLog);
+    deliverWebhookLog(nextLog);
     return chrome.storage.local.set({ logs: currentLogs });
   });
 }

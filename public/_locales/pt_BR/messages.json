@@ -934,7 +934,7 @@
         "description": "Título do módulo de webhooks e API"
     },
     "moduleWebhooksApiDescription": {
-        "message": "Bridge WA-JS pronta; API externa vem depois.",
+        "message": "Envie eventos para webhooks e use a API da página.",
         "description": "Descrição do módulo de webhooks e API"
     },
     "moduleImprovementsTitle": {
@@ -958,7 +958,7 @@
         "description": "Título do módulo de exportação"
     },
     "moduleExportDescription": {
-        "message": "Área de exportação de dados para criar.",
+        "message": "Baixe histórico, agendamentos e modelos.",
         "description": "Descrição do módulo de exportação"
     },
     "moduleStatsTitle": {
@@ -968,5 +968,177 @@
     "moduleStatsDescription": {
         "message": "Histórico e métricas de execução.",
         "description": "Descrição do módulo de estatísticas"
+    },
+    "templatesPanelTitle": {
+        "message": "Modelos de Mensagem",
+        "description": "Título do painel de modelos"
+    },
+    "templatesPanelSubtitle": {
+        "message": "Salve a configuração atual de mensagem e reutilize depois.",
+        "description": "Subtítulo do painel de modelos"
+    },
+    "templateNameLabel": {
+        "message": "Nome do modelo",
+        "description": "Label do nome do modelo"
+    },
+    "templateNamePlaceholder": {
+        "message": "Ex: Primeiro contato",
+        "description": "Placeholder do nome do modelo"
+    },
+    "saveTemplateLabel": {
+        "message": "Salvar modelo",
+        "description": "Botão para salvar modelo"
+    },
+    "applyTemplateLabel": {
+        "message": "Aplicar",
+        "description": "Botão para aplicar modelo"
+    },
+    "deleteTemplateLabel": {
+        "message": "Excluir",
+        "description": "Botão para excluir modelo"
+    },
+    "templatesEmptyLabel": {
+        "message": "Nenhum modelo salvo ainda.",
+        "description": "Estado vazio de modelos"
+    },
+    "templateSavedLabel": {
+        "message": "Modelo salvo",
+        "description": "Log de modelo salvo"
+    },
+    "templateAppliedLabel": {
+        "message": "Modelo aplicado",
+        "description": "Log de modelo aplicado"
+    },
+    "templateDeletedLabel": {
+        "message": "Modelo excluído",
+        "description": "Log de modelo excluído"
+    },
+    "webhookPanelTitle": {
+        "message": "Webhooks e API da página",
+        "description": "Título do painel de webhooks"
+    },
+    "webhookPanelSubtitle": {
+        "message": "Envie eventos de execução para seu endpoint e copie um exemplo de API do navegador.",
+        "description": "Subtítulo do painel de webhooks"
+    },
+    "webhookEnabledLabel": {
+        "message": "Webhook ativo",
+        "description": "Opção de webhook ativo"
+    },
+    "webhookDisabledLabel": {
+        "message": "Webhook desligado",
+        "description": "Opção de webhook desligado"
+    },
+    "webhookUrlLabel": {
+        "message": "URL do webhook",
+        "description": "Label da URL do webhook"
+    },
+    "webhookSecretLabel": {
+        "message": "Header secreto",
+        "description": "Label do segredo do webhook"
+    },
+    "webhookSecretPlaceholder": {
+        "message": "Segredo compartilhado opcional",
+        "description": "Placeholder do segredo do webhook"
+    },
+    "generateSecretLabel": {
+        "message": "Gerar",
+        "description": "Botão para gerar segredo"
+    },
+    "saveWebhookLabel": {
+        "message": "Salvar webhook",
+        "description": "Botão para salvar webhook"
+    },
+    "testWebhookLabel": {
+        "message": "Enviar teste",
+        "description": "Botão para testar webhook"
+    },
+    "webhookSavedLabel": {
+        "message": "Webhook salvo",
+        "description": "Log de webhook salvo"
+    },
+    "webhookTestLabel": {
+        "message": "Evento de teste do webhook",
+        "description": "Log de teste de webhook"
+    },
+    "pageApiExampleLabel": {
+        "message": "Exemplo de API da página",
+        "description": "Label do exemplo de API"
+    },
+    "exportPanelTitle": {
+        "message": "Exportação",
+        "description": "Título do painel de exportação"
+    },
+    "exportPanelSubtitle": {
+        "message": "Baixe os dados locais da extensão.",
+        "description": "Subtítulo do painel de exportação"
+    },
+    "exportAllJsonLabel": {
+        "message": "Exportar tudo em JSON",
+        "description": "Botão exportar tudo"
+    },
+    "exportLogsCsvLabel": {
+        "message": "Exportar logs em CSV",
+        "description": "Botão exportar logs"
+    },
+    "exportSchedulesJsonLabel": {
+        "message": "Exportar agendamentos JSON",
+        "description": "Botão exportar agendamentos"
+    },
+    "exportTemplatesJsonLabel": {
+        "message": "Exportar modelos JSON",
+        "description": "Botão exportar modelos"
+    },
+    "exportDoneLabel": {
+        "message": "Exportação gerada",
+        "description": "Log de exportação gerada"
+    },
+    "statsPanelTitle": {
+        "message": "Estatísticas",
+        "description": "Título do painel de estatísticas"
+    },
+    "statsPanelSubtitle": {
+        "message": "Visão operacional de execuções, agendamentos e ativos.",
+        "description": "Subtítulo do painel de estatísticas"
+    },
+    "successRateLabel": {
+        "message": "Taxa de sucesso",
+        "description": "Métrica de taxa de sucesso"
+    },
+    "failedExecutionsLabel": {
+        "message": "Falhas",
+        "description": "Métrica de falhas"
+    },
+    "warningExecutionsLabel": {
+        "message": "Alertas",
+        "description": "Métrica de alertas"
+    },
+    "scheduledPendingMetricLabel": {
+        "message": "Pendentes",
+        "description": "Métrica de agendamentos pendentes"
+    },
+    "scheduledRunningMetricLabel": {
+        "message": "Rodando",
+        "description": "Métrica de agendamentos rodando"
+    },
+    "uniqueTargetsLabel": {
+        "message": "Destinos únicos",
+        "description": "Métrica de destinos únicos"
+    },
+    "templatesMetricLabel": {
+        "message": "Modelos",
+        "description": "Métrica de modelos"
+    },
+    "webhookMetricLabel": {
+        "message": "Webhook",
+        "description": "Métrica de webhook"
+    },
+    "enabledLabel": {
+        "message": "Ativo",
+        "description": "Label de ativo"
+    },
+    "disabledLabel": {
+        "message": "Desligado",
+        "description": "Label de desligado"
     }
 }

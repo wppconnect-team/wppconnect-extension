@@ -78,6 +78,22 @@ type BulkDraft = {
   delay: number,
   prefix: number
 };
+type MessageTemplate = {
+  id: string,
+  name: string,
+  message: string,
+  attachment: Attachment,
+  buttons: unknown[],
+  delay: number,
+  prefix: number,
+  createdAt: number,
+  updatedAt: number
+};
+type WebhookConfig = {
+  enabled: boolean,
+  url: string,
+  secret: string
+};
 
 type PopupState = {
   contacts: string,
@@ -109,7 +125,10 @@ type PopupState = {
   logs: Log[],
   activeOperation?: 'send' | 'archive',
   selectedHistoryLogKey?: string,
-  bulkDraft: BulkDraft
+  bulkDraft: BulkDraft,
+  messageTemplates: MessageTemplate[],
+  templateName: string,
+  webhookConfig: WebhookConfig
 };
 
 type UiIcon =
@@ -206,6 +225,13 @@ class Popup extends Component<{}, PopupState> {
         buttons: [],
         delay: 0,
         prefix: getActiveLanguage() === 'pt_BR' ? 55 : 0
+      },
+      messageTemplates: [],
+      templateName: '',
+      webhookConfig: {
+        enabled: false,
+        url: '',
+        secret: ''
       }
     };
   }
@@ -315,6 +341,49 @@ class Popup extends Component<{}, PopupState> {
   moduleExportDescription = chrome.i18n.getMessage('moduleExportDescription') || 'Data export workspace to build next.';
   moduleStatsTitle = chrome.i18n.getMessage('moduleStatsTitle') || 'Statistics';
   moduleStatsDescription = chrome.i18n.getMessage('moduleStatsDescription') || 'History and execution metrics.';
+  templatesPanelTitle = chrome.i18n.getMessage('templatesPanelTitle') || 'Message templates';
+  templatesPanelSubtitle = chrome.i18n.getMessage('templatesPanelSubtitle') || 'Save the current message setup and reuse it later.';
+  templateNameLabel = chrome.i18n.getMessage('templateNameLabel') || 'Template name';
+  templateNamePlaceholder = chrome.i18n.getMessage('templateNamePlaceholder') || 'Ex: First contact';
+  saveTemplateLabel = chrome.i18n.getMessage('saveTemplateLabel') || 'Save template';
+  applyTemplateLabel = chrome.i18n.getMessage('applyTemplateLabel') || 'Apply';
+  deleteTemplateLabel = chrome.i18n.getMessage('deleteTemplateLabel') || 'Delete';
+  templatesEmptyLabel = chrome.i18n.getMessage('templatesEmptyLabel') || 'No templates saved yet.';
+  templateSavedLabel = chrome.i18n.getMessage('templateSavedLabel') || 'Template saved';
+  templateAppliedLabel = chrome.i18n.getMessage('templateAppliedLabel') || 'Template applied';
+  templateDeletedLabel = chrome.i18n.getMessage('templateDeletedLabel') || 'Template deleted';
+  webhookPanelTitle = chrome.i18n.getMessage('webhookPanelTitle') || 'Webhooks and page API';
+  webhookPanelSubtitle = chrome.i18n.getMessage('webhookPanelSubtitle') || 'Send execution events to your endpoint and copy a browser API example.';
+  webhookEnabledLabel = chrome.i18n.getMessage('webhookEnabledLabel') || 'Webhook enabled';
+  webhookDisabledLabel = chrome.i18n.getMessage('webhookDisabledLabel') || 'Webhook disabled';
+  webhookUrlLabel = chrome.i18n.getMessage('webhookUrlLabel') || 'Webhook URL';
+  webhookSecretLabel = chrome.i18n.getMessage('webhookSecretLabel') || 'Secret header';
+  webhookSecretPlaceholder = chrome.i18n.getMessage('webhookSecretPlaceholder') || 'Optional shared secret';
+  generateSecretLabel = chrome.i18n.getMessage('generateSecretLabel') || 'Generate';
+  saveWebhookLabel = chrome.i18n.getMessage('saveWebhookLabel') || 'Save webhook';
+  testWebhookLabel = chrome.i18n.getMessage('testWebhookLabel') || 'Send test';
+  webhookSavedLabel = chrome.i18n.getMessage('webhookSavedLabel') || 'Webhook saved';
+  webhookTestLabel = chrome.i18n.getMessage('webhookTestLabel') || 'Webhook test event';
+  pageApiExampleLabel = chrome.i18n.getMessage('pageApiExampleLabel') || 'Page API example';
+  exportPanelTitle = chrome.i18n.getMessage('exportPanelTitle') || 'Export';
+  exportPanelSubtitle = chrome.i18n.getMessage('exportPanelSubtitle') || 'Download local extension data.';
+  exportAllJsonLabel = chrome.i18n.getMessage('exportAllJsonLabel') || 'Export all JSON';
+  exportLogsCsvLabel = chrome.i18n.getMessage('exportLogsCsvLabel') || 'Export logs CSV';
+  exportSchedulesJsonLabel = chrome.i18n.getMessage('exportSchedulesJsonLabel') || 'Export schedules JSON';
+  exportTemplatesJsonLabel = chrome.i18n.getMessage('exportTemplatesJsonLabel') || 'Export templates JSON';
+  exportDoneLabel = chrome.i18n.getMessage('exportDoneLabel') || 'Export generated';
+  statsPanelTitle = chrome.i18n.getMessage('statsPanelTitle') || 'Statistics';
+  statsPanelSubtitle = chrome.i18n.getMessage('statsPanelSubtitle') || 'Operational view of executions, schedules and assets.';
+  successRateLabel = chrome.i18n.getMessage('successRateLabel') || 'Success rate';
+  failedExecutionsLabel = chrome.i18n.getMessage('failedExecutionsLabel') || 'Failed';
+  warningExecutionsLabel = chrome.i18n.getMessage('warningExecutionsLabel') || 'Warnings';
+  scheduledPendingMetricLabel = chrome.i18n.getMessage('scheduledPendingMetricLabel') || 'Pending';
+  scheduledRunningMetricLabel = chrome.i18n.getMessage('scheduledRunningMetricLabel') || 'Running';
+  uniqueTargetsLabel = chrome.i18n.getMessage('uniqueTargetsLabel') || 'Unique targets';
+  templatesMetricLabel = chrome.i18n.getMessage('templatesMetricLabel') || 'Templates';
+  webhookMetricLabel = chrome.i18n.getMessage('webhookMetricLabel') || 'Webhook';
+  enabledLabel = chrome.i18n.getMessage('enabledLabel') || 'Enabled';
+  disabledLabel = chrome.i18n.getMessage('disabledLabel') || 'Disabled';
   functionRequiresChatLabel = chrome.i18n.getMessage('functionRequiresChatLabel') || 'Chat ID or phone';
   functionRequiresContactLabel = chrome.i18n.getMessage('functionRequiresContactLabel') || 'Contact ID or phone';
   functionRequiresTextLabel = chrome.i18n.getMessage('functionRequiresTextLabel') || 'Message text';
@@ -439,6 +508,8 @@ class Popup extends Component<{}, PopupState> {
     this.updateLogs();
     this.updateScheduledExecutions();
     this.updateBulkDraft();
+    this.updateMessageTemplates();
+    this.updateWebhookConfig();
     chrome.storage.onChanged.addListener(this.handleStorageChange);
     this.queueStatusListener = window.setInterval(this.updateStatus, 500);
     this.archiveStatusListener = window.setInterval(this.updateArchiveStatus, 500);
@@ -518,24 +589,78 @@ class Popup extends Component<{}, PopupState> {
     });
   }
 
+  updateMessageTemplates = () => {
+    chrome.storage.local.get({ messageTemplates: [] }, data => {
+      this.setState({ messageTemplates: Array.isArray(data.messageTemplates) ? data.messageTemplates : [] });
+    });
+  }
+
+  updateWebhookConfig = () => {
+    chrome.storage.local.get({ webhookEnabled: false, webhookUrl: '', webhookSecret: '' }, data => {
+      this.setState({
+        webhookConfig: {
+          enabled: Boolean(data.webhookEnabled),
+          url: data.webhookUrl || '',
+          secret: data.webhookSecret || ''
+        }
+      });
+    });
+  }
+
   handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
     if (areaName !== 'local') return;
     if (['message', 'attachment', 'buttons', 'delay', 'prefix'].some(key => key in changes)) {
       this.updateBulkDraft();
     }
+    if ('messageTemplates' in changes) this.updateMessageTemplates();
+    if (['webhookEnabled', 'webhookUrl', 'webhookSecret'].some(key => key in changes)) this.updateWebhookConfig();
   }
 
   addLocalLog = (log: Omit<Log, 'date'>) => {
     chrome.storage.local.get({ logs: [] }, data => {
+      const nextLog = {
+        id: log.id || `log-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        ...log,
+        date: new Date().toLocaleString()
+      };
       const logs = [
         ...(data.logs || []),
-        {
-          id: log.id || `log-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-          ...log,
-          date: new Date().toLocaleString()
+        nextLog
+      ].slice(-300);
+      chrome.storage.local.set({ logs }, () => {
+        this.setState({ logs });
+        this.deliverWebhookLog(nextLog);
+      });
+    });
+  }
+
+  deliverWebhookLog = (log: Log) => {
+    chrome.storage.local.get({ webhookEnabled: false, webhookUrl: '', webhookSecret: '' }, async data => {
+      if (!data.webhookEnabled || !data.webhookUrl) return;
+
+      const payload = JSON.stringify({
+        source: 'wppconnect-extension',
+        event: 'log.created',
+        timestamp: new Date().toISOString(),
+        log
+      });
+
+      try {
+        await fetch(data.webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(data.webhookSecret ? { 'X-Wppconnect-Secret': data.webhookSecret } : {})
+          },
+          body: payload
+        });
+      } catch (error) {
+        try {
+          await fetch(data.webhookUrl, { method: 'POST', mode: 'no-cors', body: payload });
+        } catch (fallbackError) {
+          // Webhooks should never block the popup.
         }
-      ];
-      chrome.storage.local.set({ logs }, () => this.setState({ logs }));
+      }
     });
   }
 
@@ -604,6 +729,164 @@ class Popup extends Component<{}, PopupState> {
 
     this.setState({ duplicatedContacts });
     return contacts;
+  }
+
+  saveMessageTemplate = () => {
+    const language = getActiveLanguage();
+    chrome.storage.local.get({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, data => {
+      const now = Date.now();
+      const name = this.state.templateName.trim() || `${this.moduleMessageTemplatesTitle} ${this.state.messageTemplates.length + 1}`;
+      const template: MessageTemplate = {
+        id: `template-${now}-${Math.random().toString(16).slice(2)}`,
+        name,
+        message: data.message || '',
+        attachment: data.attachment || null,
+        buttons: Array.isArray(data.buttons) ? data.buttons : [],
+        delay: Number(data.delay) || 0,
+        prefix: Number(data.prefix) || 0,
+        createdAt: now,
+        updatedAt: now
+      };
+      const messageTemplates = [template, ...this.state.messageTemplates].slice(0, 30);
+      chrome.storage.local.set({ messageTemplates }, () => {
+        this.setState({ messageTemplates, templateName: '' });
+        this.addLocalLog({ level: 3, message: this.templateSavedLabel, attachment: Boolean(template.attachment), contact: template.name });
+      });
+    });
+  }
+
+  applyMessageTemplate = (template: MessageTemplate) => {
+    chrome.storage.local.set({
+      message: template.message,
+      attachment: template.attachment,
+      buttons: template.buttons,
+      delay: template.delay,
+      prefix: template.prefix
+    }, () => {
+      this.updateBulkDraft();
+      this.addLocalLog({ level: 3, message: this.templateAppliedLabel, attachment: Boolean(template.attachment), contact: template.name });
+    });
+  }
+
+  deleteMessageTemplate = (id: string) => {
+    const template = this.state.messageTemplates.find(item => item.id === id);
+    const messageTemplates = this.state.messageTemplates.filter(item => item.id !== id);
+    chrome.storage.local.set({ messageTemplates }, () => {
+      this.setState({ messageTemplates });
+      if (template) this.addLocalLog({ level: 2, message: this.templateDeletedLabel, attachment: Boolean(template.attachment), contact: template.name });
+    });
+  }
+
+  setWebhookConfig = (patch: Partial<WebhookConfig>) => {
+    this.setState(prevState => ({ webhookConfig: { ...prevState.webhookConfig, ...patch } }));
+  }
+
+  saveWebhookConfig = () => {
+    const { webhookConfig } = this.state;
+    chrome.storage.local.set({
+      webhookEnabled: webhookConfig.enabled,
+      webhookUrl: webhookConfig.url.trim(),
+      webhookSecret: webhookConfig.secret.trim()
+    }, () => {
+      this.updateWebhookConfig();
+      this.addLocalLog({ level: 3, message: this.webhookSavedLabel, attachment: false, contact: webhookConfig.url.trim() || '-' });
+    });
+  }
+
+  generateWebhookSecret = () => {
+    const bytes = new Uint8Array(18);
+    crypto.getRandomValues(bytes);
+    this.setWebhookConfig({
+      secret: Array.from(bytes).map(byte => byte.toString(16).padStart(2, '0')).join('')
+    });
+  }
+
+  testWebhook = () => {
+    const { webhookConfig } = this.state;
+    chrome.storage.local.set({
+      webhookEnabled: true,
+      webhookUrl: webhookConfig.url.trim(),
+      webhookSecret: webhookConfig.secret.trim()
+    }, () => {
+      this.updateWebhookConfig();
+      this.addLocalLog({ level: 2, message: this.webhookTestLabel, attachment: false, contact: webhookConfig.url.trim() || '-' });
+    });
+  }
+
+  escapeCsvValue = (value: unknown) => {
+    const text = value == null ? '' : String(value);
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
+  logsToCsv = (logs: Log[]) => {
+    const header = ['date', 'level', 'message', 'contact', 'status', 'scheduledAt'];
+    const rows = logs.map(log => [
+      log.date || '',
+      log.level,
+      log.message,
+      log.contact,
+      log.executionDetails?.status || '',
+      log.executionDetails?.scheduledAt ? new Date(log.executionDetails.scheduledAt).toISOString() : ''
+    ]);
+    return [header, ...rows].map(row => row.map(value => this.escapeCsvValue(value)).join(',')).join('\n');
+  }
+
+  downloadTextFile = (fileName: string, content: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  exportData = (kind: 'all' | 'logsCsv' | 'scheduled' | 'templates') => {
+    chrome.storage.local.get({
+      logs: [],
+      scheduledExecutions: [],
+      messageTemplates: [],
+      message: this.defaultMessage,
+      attachment: null,
+      buttons: [],
+      delay: 0,
+      prefix: getActiveLanguage() === 'pt_BR' ? 55 : 0,
+      webhookEnabled: false,
+      webhookUrl: '',
+      webhookSecret: ''
+    }, data => {
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      if (kind === 'logsCsv') {
+        this.downloadTextFile(`wppconnect-logs-${stamp}.csv`, this.logsToCsv(data.logs || []), 'text/csv;charset=utf-8');
+      } else {
+        const payload = kind === 'all'
+          ? {
+            exportedAt: new Date().toISOString(),
+            logs: data.logs || [],
+            scheduledExecutions: data.scheduledExecutions || [],
+            messageTemplates: data.messageTemplates || [],
+            draft: {
+              message: data.message,
+              attachment: data.attachment,
+              buttons: data.buttons,
+              delay: data.delay,
+              prefix: data.prefix
+            },
+            webhook: {
+              enabled: data.webhookEnabled,
+              url: data.webhookUrl,
+              hasSecret: Boolean(data.webhookSecret)
+            }
+          }
+          : kind === 'scheduled'
+            ? data.scheduledExecutions || []
+            : data.messageTemplates || [];
+        this.downloadTextFile(`wppconnect-${kind}-${stamp}.json`, JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
+      }
+      this.addLocalLog({ level: 3, message: this.exportDoneLabel, attachment: false, contact: kind });
+    });
   }
 
   resetSchedulingDefaults = () => ({
@@ -992,6 +1275,40 @@ class Popup extends Component<{}, PopupState> {
     const total = this.state.archiveStatus?.totalItems || 0;
 
     return total === 0 ? 0 : Math.round(((processed + failed) / total) * 100);
+  }
+
+  getDetailedStats = () => {
+    const success = this.state.logs.filter(log => log.level === 3).length;
+    const failed = this.state.logs.filter(log => log.level === 1).length;
+    const warnings = this.state.logs.filter(log => log.level === 2).length;
+    const totalFinished = success + failed;
+    const scheduledPending = this.state.scheduledExecutions.filter(item => item.status === 'scheduled').length;
+    const scheduledRunning = this.state.scheduledExecutions.filter(item => item.status === 'running').length;
+    const uniqueTargets = new Set(this.state.logs.map(log => log.contact).filter(Boolean)).size;
+
+    return {
+      success,
+      failed,
+      warnings,
+      successRate: totalFinished === 0 ? 0 : Math.round((success / totalFinished) * 100),
+      scheduledPending,
+      scheduledRunning,
+      uniqueTargets,
+      templates: this.state.messageTemplates.length,
+      webhookEnabled: this.state.webhookConfig.enabled
+    };
+  }
+
+  getPageApiExample = () => {
+    return `window.postMessage({
+  source: 'Wppconnect',
+  type: 'WAJS_LAB_EXECUTE',
+  payload: {
+    action: 'sendText',
+    chatId: '5511999999999@c.us',
+    text: 'Hello from Wppconnect'
+  }
+}, window.location.origin);`;
   }
 
   getPrimaryButtonLabel = () => {
@@ -1506,11 +1823,136 @@ class Popup extends Component<{}, PopupState> {
         {this.renderProductModule(this.moduleBroadcastsTitle, this.moduleBroadcastsDescription, 'send', 'ready', 'sendMessage')}
         {this.renderProductModule(this.moduleAutomationsTitle, this.moduleAutomationsDescription, 'clock', 'ready', 'allWaJsFunctions')}
         {this.renderProductModule(this.moduleUtilitiesTitle, this.moduleUtilitiesDescription, 'search', 'ready', 'openNewChat')}
-        {this.renderProductModule(this.moduleWebhooksApiTitle, this.moduleWebhooksApiDescription, 'zap', 'ready', 'allWaJsFunctions')}
+        {this.renderProductModule(this.moduleWebhooksApiTitle, this.moduleWebhooksApiDescription, 'zap', 'ready')}
         {this.renderProductModule(this.moduleImprovementsTitle, this.moduleImprovementsDescription, 'pin', 'ready', 'markRead')}
         {this.renderProductModule(this.moduleBusinessToolsTitle, this.moduleBusinessToolsDescription, 'user', 'ready', 'businessProfile')}
-        {this.renderProductModule(this.moduleExportTitle, this.moduleExportDescription, 'file', 'next')}
+        {this.renderProductModule(this.moduleExportTitle, this.moduleExportDescription, 'file', 'ready')}
         {this.renderProductModule(this.moduleStatsTitle, this.moduleStatsDescription, 'list', 'ready', undefined, 'history')}
+      </div>
+    </>);
+  }
+
+  renderMessageTemplatesPanel() {
+    const draft = this.state.bulkDraft;
+
+    return this.renderPanel(<>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-extrabold text-white">{this.templatesPanelTitle}</h2>
+          <p className="mt-1 text-sm leading-5 text-slate-400">{this.templatesPanelSubtitle}</p>
+        </div>
+        <span className="shrink-0 rounded-full bg-emerald-400/12 px-3 py-1 text-xs font-extrabold text-emerald-300">{this.state.messageTemplates.length}</span>
+      </div>
+      <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-300">{this.templateNameLabel}</span>
+          <ControlInput value={this.state.templateName} placeholder={this.templateNamePlaceholder} onChange={(event) => this.setState({ templateName: event.target.value })} />
+        </label>
+        <Button className="self-end" variant="primary" type="button" onClick={this.saveMessageTemplate}>
+          {this.saveTemplateLabel}
+        </Button>
+      </div>
+      <div className="mt-3 rounded-xl border border-white/10 bg-slate-950/35 p-3 text-xs leading-5 text-slate-400">
+        <span className="font-bold text-slate-300">{this.bulkMessagePreviewTitle}: </span>
+        <span className="break-words">{draft.message?.trim() || this.defaultMessage || '-'}</span>
+      </div>
+      <div className="mt-4 space-y-2">
+        {this.state.messageTemplates.length === 0 && <div className="rounded-xl border border-dashed border-white/12 bg-slate-950/30 p-5 text-center text-sm text-slate-400">{this.templatesEmptyLabel}</div>}
+        {this.state.messageTemplates.map(template => (
+          <div key={template.id} className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-xl border border-white/10 bg-slate-800/42 p-4">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-extrabold text-white">{template.name}</div>
+              <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{template.message || '-'}</div>
+              <div className="mt-2 flex flex-wrap gap-2 text-[0.68rem] font-bold uppercase text-slate-500">
+                <span>{this.bulkButtonsCountLabel}: {template.buttons.length}</span>
+                <span>{this.bulkDelayPreviewLabel}: {template.delay.toFixed(1)}s</span>
+                <span>{this.bulkPrefixPreviewLabel}: {template.prefix ? `+${template.prefix}` : '-'}</span>
+                {template.attachment && <span>{this.selectedAttachmentLabel}: {template.attachment.name}</span>}
+              </div>
+            </div>
+            <div className="flex shrink-0 flex-col gap-2">
+              <Button className="min-h-[2rem] px-3 py-1 text-xs" variant="glass" type="button" onClick={() => this.applyMessageTemplate(template)}>
+                {this.applyTemplateLabel}
+              </Button>
+              <Button className="min-h-[2rem] px-3 py-1 text-xs" variant="danger" type="button" onClick={() => this.deleteMessageTemplate(template.id)}>
+                {this.deleteTemplateLabel}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>);
+  }
+
+  renderWebhookApiPanel() {
+    const { webhookConfig } = this.state;
+
+    return this.renderPanel(<>
+      <div>
+        <h2 className="text-lg font-extrabold text-white">{this.webhookPanelTitle}</h2>
+        <p className="mt-1 text-sm leading-5 text-slate-400">{this.webhookPanelSubtitle}</p>
+      </div>
+      <div className="mt-4 grid gap-3">
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => this.setWebhookConfig({ enabled: true })} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${webhookConfig.enabled ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.webhookEnabledLabel}</button>
+          <button type="button" onClick={() => this.setWebhookConfig({ enabled: false })} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${!webhookConfig.enabled ? 'bg-slate-700 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>{this.webhookDisabledLabel}</button>
+        </div>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-300">{this.webhookUrlLabel}</span>
+          <ControlInput value={webhookConfig.url} placeholder="https://example.com/webhook" onChange={(event) => this.setWebhookConfig({ url: event.target.value })} />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-300">{this.webhookSecretLabel}</span>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <ControlInput value={webhookConfig.secret} placeholder={this.webhookSecretPlaceholder} onChange={(event) => this.setWebhookConfig({ secret: event.target.value })} />
+            <Button variant="ghost" type="button" onClick={this.generateWebhookSecret}>{this.generateSecretLabel}</Button>
+          </div>
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="primary" type="button" onClick={this.saveWebhookConfig}>{this.saveWebhookLabel}</Button>
+          <Button variant="glass" type="button" disabled={!webhookConfig.url.trim()} onClick={this.testWebhook}>{this.testWebhookLabel}</Button>
+        </div>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-300">{this.pageApiExampleLabel}</span>
+          <ControlTextArea className="min-h-[8rem] resize-y font-mono text-xs" readOnly value={this.getPageApiExample()} />
+        </label>
+      </div>
+    </>);
+  }
+
+  renderExportCenter() {
+    return this.renderPanel(<>
+      <div>
+        <h2 className="text-lg font-extrabold text-white">{this.exportPanelTitle}</h2>
+        <p className="mt-1 text-sm leading-5 text-slate-400">{this.exportPanelSubtitle}</p>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Button variant="primary" type="button" onClick={() => this.exportData('all')}>{this.exportAllJsonLabel}</Button>
+        <Button variant="glass" type="button" onClick={() => this.exportData('logsCsv')}>{this.exportLogsCsvLabel}</Button>
+        <Button variant="glass" type="button" onClick={() => this.exportData('scheduled')}>{this.exportSchedulesJsonLabel}</Button>
+        <Button variant="glass" type="button" onClick={() => this.exportData('templates')}>{this.exportTemplatesJsonLabel}</Button>
+      </div>
+    </>);
+  }
+
+  renderStatisticsDashboard() {
+    const stats = this.getDetailedStats();
+
+    return this.renderPanel(<>
+      <div>
+        <h2 className="text-lg font-extrabold text-white">{this.statsPanelTitle}</h2>
+        <p className="mt-1 text-sm leading-5 text-slate-400">{this.statsPanelSubtitle}</p>
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-3">
+        {this.renderMetric(this.successRateLabel, `${stats.successRate}%`, 'check', 'text-emerald-300')}
+        {this.renderMetric(this.failedExecutionsLabel, stats.failed, 'alert', 'text-rose-300')}
+        {this.renderMetric(this.warningExecutionsLabel, stats.warnings, 'alert', 'text-amber-300')}
+        {this.renderMetric(this.scheduledPendingMetricLabel, stats.scheduledPending, 'clock', 'text-amber-300')}
+        {this.renderMetric(this.scheduledRunningMetricLabel, stats.scheduledRunning, 'play', 'text-emerald-300')}
+        {this.renderMetric(this.uniqueTargetsLabel, stats.uniqueTargets, 'user', 'text-sky-300')}
+        {this.renderMetric(this.templatesMetricLabel, stats.templates, 'message', 'text-emerald-300')}
+        {this.renderMetric(this.webhookMetricLabel, stats.webhookEnabled ? this.enabledLabel : this.disabledLabel, 'zap', stats.webhookEnabled ? 'text-emerald-300' : 'text-slate-400')}
+        {this.renderMetric(this.completedThisMonthLabel, stats.success, 'check', 'text-emerald-300')}
       </div>
     </>);
   }
@@ -1696,6 +2138,10 @@ class Popup extends Component<{}, PopupState> {
     return <div className="space-y-5 px-7 pb-6">
       {this.renderNewExecution()}
       {this.renderProductModules()}
+      {this.renderMessageTemplatesPanel()}
+      {this.renderWebhookApiPanel()}
+      {this.renderExportCenter()}
+      {this.renderStatisticsDashboard()}
       {this.renderScheduledExecutions()}
       {this.renderSummary()}
       {this.renderLatestExecutions()}
