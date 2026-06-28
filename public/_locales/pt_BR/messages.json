@@ -1168,5 +1168,53 @@
     "disabledLabel": {
         "message": "Desligado",
         "description": "Label de desligado"
+    },
+    "manualUpdateTitle": {
+        "message": "Atualização manual",
+        "description": "Título do painel de atualização manual"
+    },
+    "manualUpdateSubtitle": {
+        "message": "Use os releases do GitHub enquanto a extensão não está aprovada na Chrome Web Store.",
+        "description": "Subtítulo do painel de atualização manual"
+    },
+    "currentVersionLabel": {
+        "message": "Versão instalada",
+        "description": "Label da versão instalada"
+    },
+    "latestVersionLabel": {
+        "message": "Última versão",
+        "description": "Label da última versão"
+    },
+    "checkUpdateLabel": {
+        "message": "Verificar atualização",
+        "description": "Botão para verificar atualização"
+    },
+    "checkingUpdateLabel": {
+        "message": "Verificando...",
+        "description": "Botão durante verificação de atualização"
+    },
+    "updateAvailableLabel": {
+        "message": "Atualização disponível",
+        "description": "Status quando há atualização"
+    },
+    "extensionUpToDateLabel": {
+        "message": "Extensão atualizada",
+        "description": "Status quando a extensão está atualizada"
+    },
+    "openReleaseLabel": {
+        "message": "Abrir release",
+        "description": "Botão para abrir release"
+    },
+    "downloadZipLabel": {
+        "message": "Baixar ZIP",
+        "description": "Botão para baixar ZIP"
+    },
+    "updateManualInstallHint": {
+        "message": "Baixe o ZIP, descompacte e carregue a pasta novamente em chrome://extensions.",
+        "description": "Instrução curta de atualização manual"
+    },
+    "updateCheckFailedLabel": {
+        "message": "Não foi possível verificar atualizações.",
+        "description": "Erro ao verificar atualização"
     }
 }

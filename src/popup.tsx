@@ -107,6 +107,16 @@ type WebhookConfig = {
   url: string,
   secret: string
 };
+type ExtensionUpdateInfo = {
+  currentVersion: string,
+  latestVersion?: string,
+  latestTag?: string,
+  releaseUrl?: string,
+  assetUrl?: string,
+  publishedAt?: string,
+  updateAvailable?: boolean,
+  checkedAt: number
+};
 
 type PopupState = {
   contacts: string,
@@ -143,7 +153,10 @@ type PopupState = {
   bulkDraft: BulkDraft,
   messageTemplates: MessageTemplate[],
   templateName: string,
-  webhookConfig: WebhookConfig
+  webhookConfig: WebhookConfig,
+  updateChecking: boolean,
+  updateInfo?: ExtensionUpdateInfo,
+  updateError?: string
 };
 
 type UiIcon =
@@ -166,6 +179,10 @@ type UiIcon =
   | 'video'
   | 'file'
   | 'trash';
+
+const EXTENSION_REPO = 'wppconnect-team/wppconnect-extension';
+const EXTENSION_RELEASES_URL = `https://github.com/${EXTENSION_REPO}/releases`;
+const EXTENSION_LATEST_RELEASE_API = `https://api.github.com/repos/${EXTENSION_REPO}/releases/latest`;
 
 const Icon = ({ name, className = 'h-5 w-5' }: { name: UiIcon, className?: string }) => {
   const common = {
@@ -249,7 +266,10 @@ class Popup extends Component<{}, PopupState> {
         enabled: false,
         url: '',
         secret: ''
-      }
+      },
+      updateChecking: false,
+      updateInfo: undefined,
+      updateError: undefined
     };
   }
 
@@ -469,6 +489,18 @@ class Popup extends Component<{}, PopupState> {
   settingsBackLabel = chrome.i18n.getMessage('settingsBackLabel') || 'Back';
   optionsPageTitle = chrome.i18n.getMessage('optionsPageTitle') || 'Wppconnect settings';
   optionsPageSubtitle = chrome.i18n.getMessage('optionsPageSubtitle') || 'Prepare the message, delivery controls and send logs.';
+  manualUpdateTitle = chrome.i18n.getMessage('manualUpdateTitle') || 'Manual update';
+  manualUpdateSubtitle = chrome.i18n.getMessage('manualUpdateSubtitle') || 'Use GitHub releases while the Chrome Web Store listing is not approved.';
+  currentVersionLabel = chrome.i18n.getMessage('currentVersionLabel') || 'Current version';
+  latestVersionLabel = chrome.i18n.getMessage('latestVersionLabel') || 'Latest version';
+  checkUpdateLabel = chrome.i18n.getMessage('checkUpdateLabel') || 'Check update';
+  checkingUpdateLabel = chrome.i18n.getMessage('checkingUpdateLabel') || 'Checking...';
+  updateAvailableLabel = chrome.i18n.getMessage('updateAvailableLabel') || 'Update available';
+  extensionUpToDateLabel = chrome.i18n.getMessage('extensionUpToDateLabel') || 'Extension is up to date';
+  openReleaseLabel = chrome.i18n.getMessage('openReleaseLabel') || 'Open release';
+  downloadZipLabel = chrome.i18n.getMessage('downloadZipLabel') || 'Download ZIP';
+  updateManualInstallHint = chrome.i18n.getMessage('updateManualInstallHint') || 'Download the ZIP, unzip it, then load the folder again in chrome://extensions.';
+  updateCheckFailedLabel = chrome.i18n.getMessage('updateCheckFailedLabel') || 'Could not check updates.';
   bulkMessagePreviewTitle = chrome.i18n.getMessage('bulkMessagePreviewTitle') || 'Message that will be sent';
   bulkChangeMessageLabel = chrome.i18n.getMessage('bulkChangeMessageLabel') || 'Edit message';
   bulkNoAttachmentLabel = chrome.i18n.getMessage('bulkNoAttachmentLabel') || 'No file selected';
@@ -685,6 +717,77 @@ class Popup extends Component<{}, PopupState> {
         }
       });
     });
+  }
+
+  getCurrentExtensionVersion = () => chrome.runtime.getManifest().version || '0.0.0'
+
+  compareVersions = (left: string, right: string) => {
+    const parse = (value: string) => value.replace(/^v/i, '').split(/[.-]/).map(part => Number.parseInt(part, 10) || 0);
+    const leftParts = parse(left);
+    const rightParts = parse(right);
+    const length = Math.max(leftParts.length, rightParts.length);
+
+    for (let index = 0; index < length; index++) {
+      const diff = (leftParts[index] || 0) - (rightParts[index] || 0);
+      if (diff !== 0) return diff;
+    }
+
+    return 0;
+  }
+
+  checkForExtensionUpdate = async () => {
+    this.setState({ updateChecking: true, updateError: undefined });
+
+    try {
+      const response = await fetch(EXTENSION_LATEST_RELEASE_API, {
+        headers: { Accept: 'application/vnd.github+json' }
+      });
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+
+      const release = await response.json() as {
+        tag_name?: string,
+        html_url?: string,
+        published_at?: string,
+        assets?: Array<{ name?: string, browser_download_url?: string }>
+      };
+      const currentVersion = this.getCurrentExtensionVersion();
+      const latestTag = release.tag_name || currentVersion;
+      const latestVersion = latestTag.replace(/^v/i, '');
+      const zipAsset = release.assets?.find(asset => asset.name?.endsWith('.zip'));
+
+      this.setState({
+        updateChecking: false,
+        updateInfo: {
+          currentVersion,
+          latestVersion,
+          latestTag,
+          releaseUrl: release.html_url || EXTENSION_RELEASES_URL,
+          assetUrl: zipAsset?.browser_download_url,
+          publishedAt: release.published_at,
+          updateAvailable: this.compareVersions(latestVersion, currentVersion) > 0,
+          checkedAt: Date.now()
+        }
+      });
+    } catch (error) {
+      this.setState({
+        updateChecking: false,
+        updateError: error instanceof Error ? error.message : this.updateCheckFailedLabel,
+        updateInfo: {
+          currentVersion: this.getCurrentExtensionVersion(),
+          releaseUrl: EXTENSION_RELEASES_URL,
+          checkedAt: Date.now()
+        }
+      });
+    }
+  }
+
+  openExternalUrl = (url?: string) => {
+    if (!url) return;
+    try {
+      chrome.tabs.create({ url });
+    } catch (error) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   }
 
   handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
@@ -2464,6 +2567,58 @@ class Popup extends Component<{}, PopupState> {
     </div>;
   }
 
+  renderExtensionUpdatePanel() {
+    const currentVersion = this.state.updateInfo?.currentVersion || this.getCurrentExtensionVersion();
+    const latestVersion = this.state.updateInfo?.latestVersion || '-';
+    const updateAvailable = Boolean(this.state.updateInfo?.updateAvailable);
+    const statusLabel = this.state.updateError
+      ? this.updateCheckFailedLabel
+      : this.state.updateInfo
+        ? updateAvailable ? this.updateAvailableLabel : this.extensionUpToDateLabel
+        : this.manualUpdateSubtitle;
+    const statusClass = this.state.updateError
+      ? 'border-rose-400/25 bg-rose-400/10 text-rose-200'
+      : updateAvailable
+        ? 'border-amber-400/25 bg-amber-400/10 text-amber-100'
+        : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-100';
+
+    return this.renderPanel(<>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-extrabold text-white">{this.manualUpdateTitle}</h2>
+          <p className="mt-1 text-sm leading-5 text-slate-400">{this.updateManualInstallHint}</p>
+        </div>
+        <Button
+          type="button"
+          variant="glass"
+          className="shrink-0"
+          disabled={this.state.updateChecking}
+          onClick={this.checkForExtensionUpdate}
+          icon={<Icon name="refresh" className={`h-4 w-4 ${this.state.updateChecking ? 'animate-spin' : ''}`} />}
+        >
+          {this.state.updateChecking ? this.checkingUpdateLabel : this.checkUpdateLabel}
+        </Button>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        {this.renderMiniMetric(this.currentVersionLabel, currentVersion)}
+        {this.renderMiniMetric(this.latestVersionLabel, latestVersion)}
+      </div>
+      <div className={`mt-4 rounded-xl border p-3 text-sm leading-5 ${statusClass}`}>
+        <div className="font-bold">{statusLabel}</div>
+        {this.state.updateError && <div className="mt-1 break-words font-mono text-xs opacity-80">{this.state.updateError}</div>}
+        {this.state.updateInfo?.publishedAt && <div className="mt-1 text-xs opacity-75">{new Date(this.state.updateInfo.publishedAt).toLocaleString()}</div>}
+      </div>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <Button variant="glass" type="button" onClick={() => this.openExternalUrl(this.state.updateInfo?.releaseUrl || EXTENSION_RELEASES_URL)}>
+          {this.openReleaseLabel}
+        </Button>
+        <Button variant={updateAvailable ? 'primary' : 'glass'} type="button" disabled={!this.state.updateInfo?.assetUrl} onClick={() => this.openExternalUrl(this.state.updateInfo?.assetUrl)}>
+          {this.downloadZipLabel}
+        </Button>
+      </div>
+    </>);
+  }
+
   renderSettings() {
     return <div className="space-y-5 px-7 pb-6">
       {this.renderPanel(<div className="flex items-start justify-between gap-4">
@@ -2481,6 +2636,7 @@ class Popup extends Component<{}, PopupState> {
           {this.settingsBackLabel}
         </Button>
       </div>)}
+      {this.renderExtensionUpdatePanel()}
       <MessageForm />
       <MessageButtonsForm />
       <ArchiveForm />

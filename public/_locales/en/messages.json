@@ -1168,5 +1168,53 @@
     "disabledLabel": {
         "message": "Disabled",
         "description": "Disabled label"
+    },
+    "manualUpdateTitle": {
+        "message": "Manual update",
+        "description": "Manual update panel title"
+    },
+    "manualUpdateSubtitle": {
+        "message": "Use GitHub releases while the Chrome Web Store listing is not approved.",
+        "description": "Manual update panel subtitle"
+    },
+    "currentVersionLabel": {
+        "message": "Installed version",
+        "description": "Installed version label"
+    },
+    "latestVersionLabel": {
+        "message": "Latest version",
+        "description": "Latest version label"
+    },
+    "checkUpdateLabel": {
+        "message": "Check update",
+        "description": "Check update button"
+    },
+    "checkingUpdateLabel": {
+        "message": "Checking...",
+        "description": "Checking update button"
+    },
+    "updateAvailableLabel": {
+        "message": "Update available",
+        "description": "Update available status"
+    },
+    "extensionUpToDateLabel": {
+        "message": "Extension is up to date",
+        "description": "Up to date status"
+    },
+    "openReleaseLabel": {
+        "message": "Open release",
+        "description": "Open release button"
+    },
+    "downloadZipLabel": {
+        "message": "Download ZIP",
+        "description": "Download ZIP button"
+    },
+    "updateManualInstallHint": {
+        "message": "Download the ZIP, unzip it, then load the folder again in chrome://extensions.",
+        "description": "Short manual update instruction"
+    },
+    "updateCheckFailedLabel": {
+        "message": "Could not check updates.",
+        "description": "Update check error"
     }
 }
