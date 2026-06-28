@@ -116,6 +116,8 @@ type PopupState = {
   confirmed: boolean,
   archiveConfirmOpen: boolean,
   connectionError?: string,
+  connectionChecking: boolean,
+  connectionReady?: boolean,
   activeTab: PopupTab,
   selectedAction: PopupAction | '',
   actionMenuOpen: boolean,
@@ -210,6 +212,8 @@ class Popup extends Component<{}, PopupState> {
       confirmed: true,
       archiveConfirmOpen: false,
       connectionError: undefined,
+      connectionChecking: false,
+      connectionReady: undefined,
       activeTab: 'modules',
       selectedAction: '',
       actionMenuOpen: false,
@@ -305,6 +309,9 @@ class Popup extends Component<{}, PopupState> {
   whatsappConnectedLabel = chrome.i18n.getMessage('whatsappConnectedLabel') || 'WhatsApp connected';
   whatsappNeedsConnectionLabel = chrome.i18n.getMessage('whatsappNeedsConnectionLabel') || 'Check WhatsApp connection';
   checkConnectionLabel = chrome.i18n.getMessage('checkConnectionLabel') || 'Check connection';
+  connectionCheckingLabel = chrome.i18n.getMessage('connectionCheckingLabel') || 'Checking connection...';
+  connectionStillLoadingLabel = chrome.i18n.getMessage('connectionStillLoadingLabel') || 'WhatsApp is still loading chats. Wait for the chat list to appear and try again.';
+  connectionRuntimeUnavailableLabel = chrome.i18n.getMessage('connectionRuntimeUnavailableLabel') || 'WA-JS is not ready in this tab yet. Reload WhatsApp Web and try again.';
   contactsHelperLabel = chrome.i18n.getMessage('contactsHelperLabel') || 'Paste contacts separated by comma, semicolon or line break.';
   todaySentLabel = chrome.i18n.getMessage('todaySentLabel') || 'Sent today';
   duplicatesTodayLabel = chrome.i18n.getMessage('duplicatesTodayLabel') || 'Duplicates';
@@ -553,23 +560,79 @@ class Popup extends Component<{}, PopupState> {
 
   updateStatus = () => {
     PopupMessageManager.sendMessage(ChromeMessageTypes.QUEUE_STATUS, undefined).then((status) => {
-      this.setState({ status, connectionError: undefined });
+      this.setState(prevState => ({
+        status,
+        connectionError: prevState.connectionReady === false ? prevState.connectionError : undefined
+      }));
     }).catch((error) => {
-      this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel });
+      this.setState({
+        connectionReady: false,
+        connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel
+      });
     });
   }
 
   updateArchiveStatus = () => {
     PopupMessageManager.sendMessage(ChromeMessageTypes.ARCHIVE_STATUS, undefined).then((archiveStatus) => {
-      this.setState({ archiveStatus, connectionError: undefined });
+      this.setState(prevState => ({
+        archiveStatus,
+        connectionError: prevState.connectionReady === false ? prevState.connectionError : undefined
+      }));
     }).catch((error) => {
       if (this.state.activeOperation === 'archive') {
         this.setState({
           archiveStatus: createLocalArchiveStatus('error', error instanceof Error ? error.message : this.archiveOpenWhatsAppLabel)
         });
       } else {
-        this.setState({ connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel });
+        this.setState({
+          connectionReady: false,
+          connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel
+        });
       }
+    });
+  }
+
+  getConnectionDiagnosticsMessage = (data?: Record<string, unknown>) => {
+    if (data?.hasInitialLoadingScreen) return this.connectionStillLoadingLabel;
+    return this.connectionRuntimeUnavailableLabel;
+  }
+
+  isDiagnosticsReady = (labResult: WaJsLabResponse) => {
+    const data = (labResult.data || {}) as Record<string, unknown>;
+    const runtimeReady = Boolean(data.isReady || data.hasRequiredRuntimeApi);
+    const chatReady = Boolean(data.isMainReady || data.hasChatListElement || data.hasUsableChatStore);
+    const authenticated = Boolean(data.isAuthenticated || runtimeReady);
+    const loading = Boolean(data.hasInitialLoadingScreen);
+
+    return Boolean(labResult.ok && authenticated && runtimeReady && chatReady && !loading);
+  }
+
+  checkConnection = () => {
+    this.setState({ connectionChecking: true, connectionError: undefined });
+    PopupMessageManager.sendMessage(ChromeMessageTypes.WAJS_LAB_EXECUTE, {
+      action: 'diagnostics',
+      limit: 10
+    }).then((labResult) => {
+      const ready = this.isDiagnosticsReady(labResult);
+      const data = (labResult.data || {}) as Record<string, unknown>;
+      this.setState({
+        labResult,
+        connectionChecking: false,
+        connectionReady: ready,
+        connectionError: ready ? undefined : labResult.error || this.getConnectionDiagnosticsMessage(data)
+      });
+
+      if (ready) {
+        this.updateStatus();
+        this.updateArchiveStatus();
+        this.updateScheduledExecutions();
+      }
+    }).catch((error) => {
+      this.setState({
+        connectionChecking: false,
+        connectionReady: false,
+        connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel
+      });
     });
   }
 
@@ -1501,7 +1564,7 @@ class Popup extends Component<{}, PopupState> {
     }, { sentToday: 0, duplicates: 0, completed: 0 });
   }
 
-  isConnectionHealthy = () => !this.state.connectionError;
+  isConnectionHealthy = () => this.state.connectionReady === true && !this.state.connectionError;
 
   renderShell(children: ReactNode) {
     return <main className="relative min-h-[38rem] w-[34rem] overflow-hidden bg-[#08111d] text-slate-100 shadow-2xl">
@@ -1575,14 +1638,20 @@ class Popup extends Component<{}, PopupState> {
 
   renderFooter() {
     const healthy = this.isConnectionHealthy();
+    const checking = this.state.connectionChecking;
     return <footer className="mt-auto flex items-center justify-between gap-3 border-t border-white/10 px-7 py-4 text-sm text-slate-400">
       <div className="flex min-w-0 items-center gap-3">
-        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${healthy ? 'bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,.85)]' : 'bg-amber-400 shadow-[0_0_18px_rgba(251,191,36,.65)]'}`}></span>
-        <span className="truncate">{healthy ? this.whatsappConnectedLabel : this.whatsappNeedsConnectionLabel}</span>
+        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${checking ? 'bg-sky-400 shadow-[0_0_18px_rgba(56,189,248,.75)]' : healthy ? 'bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,.85)]' : 'bg-amber-400 shadow-[0_0_18px_rgba(251,191,36,.65)]'}`}></span>
+        <span className="truncate">{checking ? this.connectionCheckingLabel : healthy ? this.whatsappConnectedLabel : this.whatsappNeedsConnectionLabel}</span>
       </div>
-      <button type="button" onClick={() => { this.updateStatus(); this.updateArchiveStatus(); }} className="inline-flex shrink-0 items-center gap-2 font-semibold text-slate-400 transition hover:text-emerald-300">
-        {this.checkConnectionLabel}
-        <Icon name="refresh" className="h-4 w-4" />
+      <button
+        type="button"
+        disabled={checking}
+        onClick={this.checkConnection}
+        className="inline-flex shrink-0 items-center gap-2 font-semibold text-slate-400 transition hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {checking ? this.connectionCheckingLabel : this.checkConnectionLabel}
+        <Icon name="refresh" className={`h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
       </button>
     </footer>;
   }

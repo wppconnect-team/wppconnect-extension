@@ -493,6 +493,18 @@
         "message": "Verificar conexão",
         "description": "Label de atualizar conexão"
     },
+    "connectionCheckingLabel": {
+        "message": "Verificando conexão...",
+        "description": "Label de diagnóstico de conexão em andamento"
+    },
+    "connectionStillLoadingLabel": {
+        "message": "O WhatsApp ainda está carregando as conversas. Aguarde a lista de chats aparecer e tente novamente.",
+        "description": "Mensagem quando o WhatsApp ainda está carregando"
+    },
+    "connectionRuntimeUnavailableLabel": {
+        "message": "A WA-JS ainda não está pronta nesta aba. Recarregue o WhatsApp Web e tente novamente.",
+        "description": "Mensagem quando a WA-JS ainda não está disponível"
+    },
     "contactsHelperLabel": {
         "message": "Cole contatos separados por vírgula, ponto e vírgula ou quebra de linha.",
         "description": "Texto de ajuda dos contatos"

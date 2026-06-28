@@ -493,6 +493,18 @@
         "message": "Check connection",
         "description": "Refresh connection label"
     },
+    "connectionCheckingLabel": {
+        "message": "Checking connection...",
+        "description": "Connection diagnostics in progress label"
+    },
+    "connectionStillLoadingLabel": {
+        "message": "WhatsApp is still loading chats. Wait for the chat list to appear and try again.",
+        "description": "Message shown while WhatsApp is still loading"
+    },
+    "connectionRuntimeUnavailableLabel": {
+        "message": "WA-JS is not ready in this tab yet. Reload WhatsApp Web and try again.",
+        "description": "Message shown when WA-JS is not available yet"
+    },
     "contactsHelperLabel": {
         "message": "Paste contacts separated by comma, semicolon or line break.",
         "description": "Contacts helper text"
