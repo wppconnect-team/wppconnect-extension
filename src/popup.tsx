@@ -1340,7 +1340,7 @@ class Popup extends Component<{}, PopupState> {
           error: labResult.error
         }
       });
-      this.setState(this.finishOperationState({ labResult, connectionError: undefined, activeTab: 'history' }));
+      this.setState(this.finishOperationState({ labResult, connectionError: undefined }));
     }).catch((error) => {
       const message = error instanceof Error ? error.message : this.whatsappConnectionHelpLabel;
       this.addLocalLog({
@@ -1360,7 +1360,6 @@ class Popup extends Component<{}, PopupState> {
       });
       this.setState(this.finishOperationState({
         connectionError: message,
-        activeTab: 'history',
         labResult: {
           ok: false,
           action,
@@ -1440,10 +1439,10 @@ class Popup extends Component<{}, PopupState> {
 
   getProgress = () => {
     const processed = this.state.status?.processedItems || 0;
-    const remaining = this.state.status?.remainingItems || 0;
-    const total = processed + remaining;
+    const failed = this.state.status?.failedItems || 0;
+    const total = this.state.status?.totalItems || processed + failed + (this.state.status?.remainingItems || 0);
 
-    return total === 0 ? 0 : Math.round((processed / total) * 100);
+    return total === 0 ? 0 : Math.round(((processed + failed) / total) * 100);
   }
 
   getArchiveProgress = () => {
@@ -2541,7 +2540,7 @@ class Popup extends Component<{}, PopupState> {
         {this.renderMiniMetric(this.messageTimePopup, this.formatTime(status?.elapsedTime || 0))}
         {status?.waiting ? this.renderMiniMetric(this.waitingPopup, this.formatTime(status.waiting)) : this.renderMiniMetric(this.duplicatedContactsPopup, this.state.duplicatedContacts)}
         {this.renderMiniMetric(this.messagesSentPopup, status?.processedItems || 0)}
-        {this.renderMiniMetric(status?.isProcessing ? this.messagesLeftPopup : this.messagesNotSentPopup, status?.remainingItems || 0)}
+        {this.renderMiniMetric(status?.isProcessing ? this.messagesLeftPopup : this.messagesNotSentPopup, status?.isProcessing ? status?.remainingItems || 0 : status?.failedItems || 0)}
       </>,
       () => PopupMessageManager.sendMessage(ChromeMessageTypes.STOP_QUEUE, undefined),
       () => this.setState({ confirmed: true, activeOperation: undefined }),

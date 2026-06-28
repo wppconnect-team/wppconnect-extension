@@ -6,8 +6,10 @@ export default interface QueueStatus {
     elapsedTime: number;
     sendingMessage: number | false;
     waiting: number | false;
+    failedItems: number;
     items: {
         detail: any;
         elapsedTime: number;
+        error?: string;
     }[];
 }
