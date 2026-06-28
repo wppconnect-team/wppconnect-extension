@@ -441,6 +441,14 @@
         "message": "History",
         "description": "History tab label"
     },
+    "modulesHomeLabel": {
+        "message": "Modules",
+        "description": "Back to modules hub label"
+    },
+    "backToModulesLabel": {
+        "message": "Back to modules",
+        "description": "Modules hub back button label"
+    },
     "newExecutionTitle": {
         "message": "New execution",
         "description": "New execution section title"
@@ -896,6 +904,14 @@
     "productModuleNextLabel": {
         "message": "Next",
         "description": "Planned module status"
+    },
+    "moduleWaExecutionsTitle": {
+        "message": "WA Executions",
+        "description": "WA-JS executions module title"
+    },
+    "moduleWaExecutionsDescription": {
+        "message": "Run, schedule and inspect WA-JS actions.",
+        "description": "WA-JS executions module description"
     },
     "moduleMessageTemplatesTitle": {
         "message": "Message templates",

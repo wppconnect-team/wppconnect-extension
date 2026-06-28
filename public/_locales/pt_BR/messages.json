@@ -441,6 +441,14 @@
         "message": "Histórico",
         "description": "Label da aba de histórico"
     },
+    "modulesHomeLabel": {
+        "message": "Módulos",
+        "description": "Label para voltar ao hub de módulos"
+    },
+    "backToModulesLabel": {
+        "message": "Voltar aos módulos",
+        "description": "Label do botão de retorno ao hub de módulos"
+    },
     "newExecutionTitle": {
         "message": "Nova execução",
         "description": "Título da seção de nova execução"
@@ -896,6 +904,14 @@
     "productModuleNextLabel": {
         "message": "Próximo",
         "description": "Status de módulo planejado"
+    },
+    "moduleWaExecutionsTitle": {
+        "message": "WA Execuções",
+        "description": "Título do módulo de execuções WA-JS"
+    },
+    "moduleWaExecutionsDescription": {
+        "message": "Execute, agende e inspecione ações da WA-JS.",
+        "description": "Descrição do módulo de execuções WA-JS"
     },
     "moduleMessageTemplatesTitle": {
         "message": "Modelos de Mensagem",

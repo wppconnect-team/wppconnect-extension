@@ -32,7 +32,20 @@ const createLocalArchiveStatus = (phase: ArchiveStatus['phase'], error?: string)
   error
 });
 
-type PopupTab = 'executions' | 'history' | 'settings';
+type PopupTab =
+  | 'modules'
+  | 'waExecutions'
+  | 'messageTemplates'
+  | 'broadcasts'
+  | 'automations'
+  | 'utilities'
+  | 'webhooksApi'
+  | 'improvements'
+  | 'businessTools'
+  | 'export'
+  | 'statistics'
+  | 'history'
+  | 'settings';
 type PopupAction =
   | 'sendMessage'
   | 'archiveChats'
@@ -197,7 +210,7 @@ class Popup extends Component<{}, PopupState> {
       confirmed: true,
       archiveConfirmOpen: false,
       connectionError: undefined,
-      activeTab: 'executions',
+      activeTab: 'modules',
       selectedAction: '',
       actionMenuOpen: false,
       labChatId: '',
@@ -279,6 +292,8 @@ class Popup extends Component<{}, PopupState> {
   dashboardSubtitle = chrome.i18n.getMessage('dashboardSubtitle') || 'Automate WhatsApp functions';
   executionsTabLabel = chrome.i18n.getMessage('executionsTabLabel') || 'Executions';
   historyTabLabel = chrome.i18n.getMessage('historyTabLabel') || 'History';
+  modulesHomeLabel = chrome.i18n.getMessage('modulesHomeLabel') || 'Modules';
+  backToModulesLabel = chrome.i18n.getMessage('backToModulesLabel') || 'Back to modules';
   newExecutionTitle = chrome.i18n.getMessage('newExecutionTitle') || 'New execution';
   newExecutionSubtitle = chrome.i18n.getMessage('newExecutionSubtitle') || 'Select a function to run on WhatsApp';
   selectFunctionLabel = chrome.i18n.getMessage('selectFunctionLabel') || 'Select function';
@@ -323,6 +338,8 @@ class Popup extends Component<{}, PopupState> {
   productModulesSubtitle = chrome.i18n.getMessage('productModulesSubtitle') || 'What already exists and what comes next';
   productModuleReadyLabel = chrome.i18n.getMessage('productModuleReadyLabel') || 'Ready';
   productModuleNextLabel = chrome.i18n.getMessage('productModuleNextLabel') || 'Next';
+  moduleWaExecutionsTitle = chrome.i18n.getMessage('moduleWaExecutionsTitle') || 'WA Executions';
+  moduleWaExecutionsDescription = chrome.i18n.getMessage('moduleWaExecutionsDescription') || 'Run, schedule and inspect WA-JS actions.';
   moduleMessageTemplatesTitle = chrome.i18n.getMessage('moduleMessageTemplatesTitle') || 'Message templates';
   moduleMessageTemplatesDescription = chrome.i18n.getMessage('moduleMessageTemplatesDescription') || 'Saved message, files and buttons.';
   moduleBroadcastsTitle = chrome.i18n.getMessage('moduleBroadcastsTitle') || 'Broadcasts';
@@ -527,10 +544,10 @@ class Popup extends Component<{}, PopupState> {
 
   componentDidUpdate(prevProps: Readonly<{}>, prevState: Readonly<PopupState>) {
     if (!prevState.status?.isProcessing && this.state.status?.isProcessing) {
-      this.setState({ confirmed: false, activeOperation: 'send', activeTab: 'executions' });
+      this.setState({ confirmed: false, activeOperation: 'send', activeTab: 'waExecutions' });
     }
     if (!prevState.archiveStatus?.isProcessing && this.state.archiveStatus?.isProcessing) {
-      this.setState({ confirmed: false, activeOperation: 'archive', activeTab: 'executions' });
+      this.setState({ confirmed: false, activeOperation: 'archive', activeTab: 'waExecutions' });
     }
   }
 
@@ -978,7 +995,7 @@ class Popup extends Component<{}, PopupState> {
 
   handleOptions = () => {
     this.setState(prevState => ({
-      activeTab: prevState.activeTab === 'settings' ? 'executions' : 'settings',
+      activeTab: prevState.activeTab === 'settings' ? 'modules' : 'settings',
       actionMenuOpen: false,
       archiveConfirmOpen: false,
       connectionError: undefined
@@ -987,6 +1004,99 @@ class Popup extends Component<{}, PopupState> {
 
   getSelectedAction = () => {
     return this.actions.find(action => action.value === this.state.selectedAction);
+  }
+
+  getPageTitle = (tab = this.state.activeTab) => {
+    switch (tab) {
+      case 'waExecutions':
+        return this.moduleWaExecutionsTitle;
+      case 'messageTemplates':
+        return this.moduleMessageTemplatesTitle;
+      case 'broadcasts':
+        return this.moduleBroadcastsTitle;
+      case 'automations':
+        return this.moduleAutomationsTitle;
+      case 'utilities':
+        return this.moduleUtilitiesTitle;
+      case 'webhooksApi':
+        return this.moduleWebhooksApiTitle;
+      case 'improvements':
+        return this.moduleImprovementsTitle;
+      case 'businessTools':
+        return this.moduleBusinessToolsTitle;
+      case 'export':
+        return this.moduleExportTitle;
+      case 'statistics':
+        return this.moduleStatsTitle;
+      case 'history':
+        return this.historyTabLabel;
+      case 'settings':
+        return this.optionsPageTitle;
+      default:
+        return this.productModulesTitle;
+    }
+  }
+
+  getPageDescription = (tab = this.state.activeTab) => {
+    switch (tab) {
+      case 'waExecutions':
+        return this.moduleWaExecutionsDescription;
+      case 'messageTemplates':
+        return this.moduleMessageTemplatesDescription;
+      case 'broadcasts':
+        return this.moduleBroadcastsDescription;
+      case 'automations':
+        return this.moduleAutomationsDescription;
+      case 'utilities':
+        return this.moduleUtilitiesDescription;
+      case 'webhooksApi':
+        return this.moduleWebhooksApiDescription;
+      case 'improvements':
+        return this.moduleImprovementsDescription;
+      case 'businessTools':
+        return this.moduleBusinessToolsDescription;
+      case 'export':
+        return this.moduleExportDescription;
+      case 'statistics':
+        return this.moduleStatsDescription;
+      case 'history':
+        return this.latestExecutionsTitle;
+      case 'settings':
+        return this.optionsPageSubtitle;
+      default:
+        return this.productModulesSubtitle;
+    }
+  }
+
+  getModuleDefaultAction = (tab: PopupTab): PopupAction | '' => {
+    switch (tab) {
+      case 'waExecutions':
+        return this.state.selectedAction || 'diagnostics';
+      case 'broadcasts':
+        return 'sendMessage';
+      case 'automations':
+        return 'allWaJsFunctions';
+      case 'utilities':
+        return 'openNewChat';
+      case 'improvements':
+        return 'markRead';
+      case 'businessTools':
+        return 'businessProfile';
+      default:
+        return '';
+    }
+  }
+
+  openModule = (tab: PopupTab) => {
+    const defaultAction = this.getModuleDefaultAction(tab);
+    this.setState({
+      activeTab: tab,
+      selectedAction: defaultAction || this.state.selectedAction,
+      actionMenuOpen: false,
+      archiveConfirmOpen: false,
+      connectionError: undefined,
+      labText: defaultAction === 'openNewChat' ? '' : this.state.labText
+    });
   }
 
   getLabPayload = (action: WaJsLabAction): WaJsLabPayload => {
@@ -1209,7 +1319,7 @@ class Popup extends Component<{}, PopupState> {
       this.setState({
         labResult,
         labLoading: false,
-        activeTab: 'executions',
+        activeTab: 'waExecutions',
         availableFunctions: data?.items || []
       });
     }).catch((error) => this.setState({
@@ -1237,9 +1347,13 @@ class Popup extends Component<{}, PopupState> {
   }
 
   selectQuickAction = (action: PopupAction) => {
+    const activeTab = ['modules', 'settings', 'history'].includes(this.state.activeTab)
+      ? 'waExecutions'
+      : this.state.activeTab;
+
     this.setState({
       selectedAction: action,
-      activeTab: 'executions',
+      activeTab,
       archiveConfirmOpen: false,
       connectionError: undefined,
       labText: action === 'openNewChat' ? '' : this.state.labText
@@ -1423,10 +1537,22 @@ class Popup extends Component<{}, PopupState> {
           {this.state.activeTab === 'settings' ? this.settingsBackLabel : this.optionsButtonLabel}
         </Button>
       </div>
-      <div className="mt-6 grid grid-cols-2 gap-3 rounded-[1.15rem] bg-slate-950/28 p-2 ring-1 ring-white/7">
-        {this.renderTab('executions', 'zap', this.executionsTabLabel)}
-        {this.renderTab('history', 'clock', this.historyTabLabel)}
-      </div>
+      {this.state.activeTab !== 'modules' && <div className="mt-6 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-[1.15rem] bg-slate-950/28 p-2 ring-1 ring-white/7">
+        <button
+          type="button"
+          aria-label={this.backToModulesLabel}
+          title={this.backToModulesLabel}
+          onClick={() => this.openModule('modules')}
+          className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold text-slate-300 transition hover:bg-white/5 hover:text-emerald-200"
+        >
+          <Icon name="list" className="h-5 w-5 text-emerald-300" />
+          {this.modulesHomeLabel}
+        </button>
+        <div className="min-w-0 rounded-xl bg-slate-700/50 px-4 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
+          <div className="truncate text-sm font-extrabold text-white">{this.getPageTitle()}</div>
+          <div className="truncate text-xs text-slate-400">{this.getPageDescription()}</div>
+        </div>
+      </div>}
     </header>;
   }
 
@@ -1769,32 +1895,20 @@ class Popup extends Component<{}, PopupState> {
     </button>;
   }
 
-  renderProductModule(title: string, description: string, icon: UiIcon, status: 'ready' | 'next', action?: PopupAction, tab?: PopupTab) {
-    const active = Boolean(action && this.state.selectedAction === action) || Boolean(tab && this.state.activeTab === tab);
-    const clickable = Boolean(action || tab);
+  renderProductModule(tab: PopupTab, title: string, description: string, icon: UiIcon, status: 'ready' | 'next') {
+    const active = this.state.activeTab === tab;
     const statusClass = status === 'ready'
       ? 'bg-emerald-400/12 text-emerald-300'
       : 'bg-amber-400/12 text-amber-300';
 
     return <button
       type="button"
-      disabled={!clickable}
-      onClick={() => {
-        if (action) {
-          this.selectQuickAction(action);
-          return;
-        }
-        if (tab) {
-          this.setState({ activeTab: tab, actionMenuOpen: false, archiveConfirmOpen: false, connectionError: undefined });
-        }
-      }}
+      onClick={() => this.openModule(tab)}
       className={[
-        'group flex min-h-[7.25rem] flex-col rounded-xl border p-4 text-left transition disabled:cursor-default disabled:opacity-80',
+        'group flex min-h-[7.25rem] flex-col rounded-xl border p-4 text-left transition',
         active
           ? 'border-emerald-400/50 bg-emerald-400/10 shadow-[0_18px_38px_rgba(16,185,129,.12)]'
-          : clickable
-            ? 'border-white/10 bg-slate-950/25 hover:border-emerald-400/35 hover:bg-white/10'
-            : 'border-dashed border-white/10 bg-slate-950/18'
+          : 'border-white/10 bg-slate-950/25 hover:border-emerald-400/35 hover:bg-white/10'
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-3">
@@ -1819,15 +1933,50 @@ class Popup extends Component<{}, PopupState> {
         </div>
       </div>
       <div className="mt-4 grid grid-cols-3 gap-3">
-        {this.renderProductModule(this.moduleMessageTemplatesTitle, this.moduleMessageTemplatesDescription, 'message', 'ready', undefined, 'settings')}
-        {this.renderProductModule(this.moduleBroadcastsTitle, this.moduleBroadcastsDescription, 'send', 'ready', 'sendMessage')}
-        {this.renderProductModule(this.moduleAutomationsTitle, this.moduleAutomationsDescription, 'clock', 'ready', 'allWaJsFunctions')}
-        {this.renderProductModule(this.moduleUtilitiesTitle, this.moduleUtilitiesDescription, 'search', 'ready', 'openNewChat')}
-        {this.renderProductModule(this.moduleWebhooksApiTitle, this.moduleWebhooksApiDescription, 'zap', 'ready')}
-        {this.renderProductModule(this.moduleImprovementsTitle, this.moduleImprovementsDescription, 'pin', 'ready', 'markRead')}
-        {this.renderProductModule(this.moduleBusinessToolsTitle, this.moduleBusinessToolsDescription, 'user', 'ready', 'businessProfile')}
-        {this.renderProductModule(this.moduleExportTitle, this.moduleExportDescription, 'file', 'ready')}
-        {this.renderProductModule(this.moduleStatsTitle, this.moduleStatsDescription, 'list', 'ready', undefined, 'history')}
+        {this.renderProductModule('waExecutions', this.moduleWaExecutionsTitle, this.moduleWaExecutionsDescription, 'zap', 'ready')}
+        {this.renderProductModule('messageTemplates', this.moduleMessageTemplatesTitle, this.moduleMessageTemplatesDescription, 'message', 'ready')}
+        {this.renderProductModule('broadcasts', this.moduleBroadcastsTitle, this.moduleBroadcastsDescription, 'send', 'ready')}
+        {this.renderProductModule('automations', this.moduleAutomationsTitle, this.moduleAutomationsDescription, 'clock', 'ready')}
+        {this.renderProductModule('utilities', this.moduleUtilitiesTitle, this.moduleUtilitiesDescription, 'search', 'ready')}
+        {this.renderProductModule('webhooksApi', this.moduleWebhooksApiTitle, this.moduleWebhooksApiDescription, 'zap', 'ready')}
+        {this.renderProductModule('improvements', this.moduleImprovementsTitle, this.moduleImprovementsDescription, 'pin', 'ready')}
+        {this.renderProductModule('businessTools', this.moduleBusinessToolsTitle, this.moduleBusinessToolsDescription, 'user', 'ready')}
+        {this.renderProductModule('export', this.moduleExportTitle, this.moduleExportDescription, 'file', 'ready')}
+        {this.renderProductModule('statistics', this.moduleStatsTitle, this.moduleStatsDescription, 'list', 'ready')}
+      </div>
+    </>);
+  }
+
+  getQuickActionDescription(action: PopupAction) {
+    switch (action) {
+      case 'sendMessage':
+        return this.functionSendMessageDescription;
+      case 'archiveChats':
+        return this.functionArchiveChatsDescription;
+      case 'listChats':
+        return this.functionListChatsDescription;
+      case 'queryContact':
+        return this.functionVerifyNumberDescription;
+      case 'openNewChat':
+        return this.functionOpenNewChatDescription;
+      case 'allWaJsFunctions':
+        return this.allWaJsFunctionsDescription;
+      default:
+        return this.executeButtonLabel;
+    }
+  }
+
+  renderModuleActions(actions: PopupAction[]) {
+    const availableActions = actions
+      .map(value => this.actions.find(action => action.value === value))
+      .filter((action): action is NonNullable<typeof action> => Boolean(action));
+
+    if (availableActions.length === 0) return null;
+
+    return this.renderPanel(<>
+      <h2 className="text-lg font-extrabold text-white">{this.quickExecutionsTitle}</h2>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        {availableActions.map(action => this.renderQuickAction(action.value, action.label, this.getQuickActionDescription(action.value), action.icon))}
       </div>
     </>);
   }
@@ -2134,18 +2283,92 @@ class Popup extends Component<{}, PopupState> {
     </button>;
   }
 
-  renderExecutions() {
+  renderModuleHub() {
+    return <div className="space-y-5 px-7 pb-6">
+      {this.renderProductModules()}
+      {this.renderSummary()}
+      {this.renderLatestExecutions()}
+    </div>;
+  }
+
+  renderWaExecutionsModule() {
     return <div className="space-y-5 px-7 pb-6">
       {this.renderNewExecution()}
-      {this.renderProductModules()}
-      {this.renderMessageTemplatesPanel()}
-      {this.renderWebhookApiPanel()}
-      {this.renderExportCenter()}
-      {this.renderStatisticsDashboard()}
       {this.renderScheduledExecutions()}
       {this.renderSummary()}
       {this.renderLatestExecutions()}
       {this.state.labResult && this.renderLabResult()}
+    </div>;
+  }
+
+  renderMessageTemplatesModule() {
+    return <div className="space-y-5 px-7 pb-6">
+      {this.renderMessageTemplatesPanel()}
+      {this.renderBulkMessagePreview()}
+    </div>;
+  }
+
+  renderBroadcastsModule() {
+    return <div className="space-y-5 px-7 pb-6">
+      {this.renderModuleActions(['sendMessage', 'sendText', 'sendImage', 'sendAudio', 'sendVideo', 'sendDocument', 'sendPoll', 'sendLocation', 'sendVCard'])}
+      {this.renderNewExecution()}
+      {this.renderScheduledExecutions()}
+      {this.renderLatestExecutions()}
+      {this.state.labResult && this.renderLabResult()}
+    </div>;
+  }
+
+  renderAutomationsModule() {
+    return <div className="space-y-5 px-7 pb-6">
+      {this.renderModuleActions(['allWaJsFunctions', 'diagnostics', 'listChats', 'activeChat'])}
+      {this.renderNewExecution()}
+      {this.renderScheduledExecutions()}
+      {this.state.labResult && this.renderLabResult()}
+    </div>;
+  }
+
+  renderUtilitiesModule() {
+    return <div className="space-y-5 px-7 pb-6">
+      {this.renderModuleActions(['openNewChat', 'openChat', 'queryContact', 'listChats', 'listUnreadChats', 'activeChat', 'diagnostics'])}
+      {this.renderNewExecution()}
+      {this.state.labResult && this.renderLabResult()}
+    </div>;
+  }
+
+  renderImprovementsModule() {
+    return <div className="space-y-5 px-7 pb-6">
+      {this.renderModuleActions(['markRead', 'markUnread', 'pinChat', 'unpinChat', 'muteChat', 'unmuteChat', 'archiveChat', 'unarchiveChat', 'typing', 'recording', 'pauseTyping', 'setInput'])}
+      {this.renderNewExecution()}
+      {this.renderScheduledExecutions()}
+      {this.state.labResult && this.renderLabResult()}
+    </div>;
+  }
+
+  renderBusinessToolsModule() {
+    return <div className="space-y-5 px-7 pb-6">
+      {this.renderModuleActions(['profile', 'businessProfile', 'profilePicture', 'contactStatus', 'commonGroups', 'sendVCard', 'sendImage', 'sendVideo', 'sendDocument'])}
+      {this.renderNewExecution()}
+      {this.state.labResult && this.renderLabResult()}
+    </div>;
+  }
+
+  renderWebhookApiModule() {
+    return <div className="space-y-5 px-7 pb-6">
+      {this.renderWebhookApiPanel()}
+    </div>;
+  }
+
+  renderExportModule() {
+    return <div className="space-y-5 px-7 pb-6">
+      {this.renderExportCenter()}
+    </div>;
+  }
+
+  renderStatisticsModule() {
+    return <div className="space-y-5 px-7 pb-6">
+      {this.renderStatisticsDashboard()}
+      {this.renderSummary()}
+      {this.renderScheduledExecutions()}
     </div>;
   }
 
@@ -2184,7 +2407,7 @@ class Popup extends Component<{}, PopupState> {
           type="button"
           variant="ghost"
           className="shrink-0"
-          onClick={() => this.setState({ activeTab: 'executions' })}
+          onClick={() => this.openModule('modules')}
           icon={<Icon name="list" className="h-4 w-4" />}
         >
           {this.settingsBackLabel}
@@ -2283,13 +2506,23 @@ class Popup extends Component<{}, PopupState> {
     if (this.state.activeOperation === 'archive') return this.renderArchiveProgress();
     if (this.state.activeOperation === 'send' || !this.state.confirmed) return this.renderSendProgress();
 
-    return this.renderShell(
-      this.state.activeTab === 'settings'
-        ? this.renderSettings()
-        : this.state.activeTab === 'executions'
-          ? this.renderExecutions()
-          : this.renderHistory()
-    );
+    const contentByTab: Record<PopupTab, ReactNode> = {
+      modules: this.renderModuleHub(),
+      waExecutions: this.renderWaExecutionsModule(),
+      messageTemplates: this.renderMessageTemplatesModule(),
+      broadcasts: this.renderBroadcastsModule(),
+      automations: this.renderAutomationsModule(),
+      utilities: this.renderUtilitiesModule(),
+      webhooksApi: this.renderWebhookApiModule(),
+      improvements: this.renderImprovementsModule(),
+      businessTools: this.renderBusinessToolsModule(),
+      export: this.renderExportModule(),
+      statistics: this.renderStatisticsModule(),
+      history: this.renderHistory(),
+      settings: this.renderSettings()
+    };
+
+    return this.renderShell(contentByTab[this.state.activeTab] || this.renderModuleHub());
   }
 }
 
