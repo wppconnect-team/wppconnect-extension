@@ -109,7 +109,8 @@ async function updateScheduledExecution(id: string, patch: Partial<ScheduledExec
 
 function sendWebpageMessage<K extends keyof ChromeMessageContentTypes>(
   type: K,
-  payload: ChromeMessageContentTypes[K]['payload']
+  payload: ChromeMessageContentTypes[K]['payload'],
+  timeoutMs = SCHEDULE_RESPONSE_TIMEOUT_MS
 ): Promise<ChromeMessageContentTypes[K]['response']> {
   const message: MessageData<K> = { source: 'Wppconnect', type, payload };
 
@@ -117,7 +118,7 @@ function sendWebpageMessage<K extends keyof ChromeMessageContentTypes>(
     const timeoutId = window.setTimeout(() => {
       window.removeEventListener('message', responseListener);
       reject(new Error(`Wppconnect message timeout: ${type}`));
-    }, SCHEDULE_RESPONSE_TIMEOUT_MS);
+    }, timeoutMs);
 
     const responseListener = (event: MessageEvent<MessageDataResponse<K>>) => {
       if (
@@ -137,6 +138,14 @@ function sendWebpageMessage<K extends keyof ChromeMessageContentTypes>(
   });
 }
 
+function getBulkQueueTimeoutMs(messages: Message[]) {
+  const delaySeconds = Math.max(...messages.map(message => Number(message.delay) || 0), 0);
+  const delayBudgetMs = delaySeconds * 1000 * Math.max(messages.length - 1, 0);
+  const sendBudgetMs = Math.max(60000, messages.length * 45000);
+
+  return Math.min(30 * 60 * 1000, delayBudgetMs + sendBudgetMs + 60000);
+}
+
 async function executeScheduledExecution(execution: ScheduledExecution) {
   const latest = await getScheduledExecutions();
   const current = latest.find(item => item.id === execution.id);
@@ -152,9 +161,9 @@ async function executeScheduledExecution(execution: ScheduledExecution) {
     executionDetails: executionDetailsFromSchedule(runningExecution)
   });
 
+  let result: unknown;
   try {
     const payload = execution.payload;
-    let result: unknown;
 
     if (payload.kind === 'wajs') {
       result = await sendWebpageMessage(ChromeMessageTypes.WAJS_LAB_EXECUTE, payload.labPayload);
@@ -163,16 +172,36 @@ async function executeScheduledExecution(execution: ScheduledExecution) {
     } else if (payload.kind === 'archiveChats') {
       result = await sendWebpageMessage(ChromeMessageTypes.ARCHIVE_ALL_CHATS, { delayMs: payload.delayMs });
     } else {
+      const batchId = execution.id;
       const messages: Message[] = payload.contacts.map(contact => ({
         contact,
         message: payload.message,
         attachment: payload.attachment,
         buttons: payload.buttons,
-        delay: payload.delay
+        delay: payload.delay,
+        batchId
       }));
+      const timeoutMs = getBulkQueueTimeoutMs(messages);
 
       for (const message of messages) {
         result = await sendWebpageMessage(ChromeMessageTypes.SEND_MESSAGE, message);
+      }
+
+      const queueStatus = await sendWebpageMessage(
+        ChromeMessageTypes.WAIT_QUEUE_IDLE,
+        { timeoutMs, batchId },
+        timeoutMs + 10000
+      );
+      result = {
+        queuedItems: messages.length,
+        queueStatus
+      };
+
+      if (queueStatus.isProcessing) {
+        throw new Error('Tempo limite aguardando a fila de envio terminar.');
+      }
+      if (queueStatus.failedItems > 0) {
+        throw new Error(`${queueStatus.failedItems} mensagem(ns) falharam no envio agendado.`);
       }
     }
 
@@ -187,8 +216,8 @@ async function executeScheduledExecution(execution: ScheduledExecution) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const failedExecution = { ...execution, status: 'failed' as const, error: message, updatedAt: Date.now() };
-    await updateScheduledExecution(execution.id, { status: 'failed', error: message });
+    const failedExecution = { ...execution, status: 'failed' as const, result, error: message, updatedAt: Date.now() };
+    await updateScheduledExecution(execution.id, { status: 'failed', result, error: message });
     addLog({
       level: 1,
       message: `Agendamento falhou: ${execution.label} - ${message}`,

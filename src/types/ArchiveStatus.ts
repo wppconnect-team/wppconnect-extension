@@ -4,6 +4,8 @@ export default interface ArchiveStatus {
     isProcessing: boolean;
     phase: ArchivePhase;
     totalItems: number;
+    totalChats?: number;
+    archivedChats?: number;
     processedItems: number;
     remainingItems: number;
     failedItems: number;

@@ -31,6 +31,8 @@ const emptyArchiveStatus = (): ArchiveStatus => ({
     isProcessing: false,
     phase: 'idle',
     totalItems: 0,
+    totalChats: 0,
+    archivedChats: 0,
     processedItems: 0,
     remainingItems: 0,
     failedItems: 0,
@@ -62,13 +64,6 @@ const getChatId = (chat: any) => {
 
 const getArchiveTarget = (chat: any) => getModelValue(chat, 'id') || getChatId(chat);
 const isArchivedChat = (chat: any) => Boolean(getModelValue(chat, 'archive'));
-const canArchiveChat = (chat: any) => {
-    try {
-        return typeof chat?.canArchive === 'function' ? chat.canArchive() !== false : true;
-    } catch (error) {
-        return true;
-    }
-};
 
 const getStoreChats = () => {
     const chatStore = (window.WPP as any)?.whatsapp?.ChatStore;
@@ -163,9 +158,11 @@ const getArchiveCandidateState = async () => {
     chats = uniqueChats([...chats, ...storeChats]);
 
     if (chats.length === 0 && listError) throw listError;
-    const candidates = chats.filter(chat => !isArchivedChat(chat) && canArchiveChat(chat));
+    const archivedChats = chats.filter(isArchivedChat).length;
+    const candidates = chats.filter(chat => !isArchivedChat(chat));
     return {
         candidates,
+        archivedChats,
         totalChats: chats.length
     };
 };
@@ -173,19 +170,23 @@ const getArchiveCandidateState = async () => {
 const waitForArchiveCandidates = async (timeoutMs = 20000) => {
     const startedAt = Date.now();
     let lastCandidates: any[] = [];
+    let lastArchivedChats = 0;
+    let lastTotalChats = 0;
 
     while (Date.now() - startedAt < timeoutMs) {
-        const { candidates, totalChats } = await getArchiveCandidateState();
+        const { candidates, archivedChats, totalChats } = await getArchiveCandidateState();
         lastCandidates = candidates;
+        lastArchivedChats = archivedChats;
+        lastTotalChats = totalChats;
 
         if (candidates.length > 0 || totalChats > 0) {
-            return candidates;
+            return { candidates, archivedChats, totalChats };
         }
 
         await wait(500);
     }
 
-    return lastCandidates;
+    return { candidates: lastCandidates, archivedChats: lastArchivedChats, totalChats: lastTotalChats };
 };
 
 const normalizeArchiveDelay = (delayMs: number) => Math.min(10000, Math.max(0, Number.isFinite(delayMs) ? delayMs : 500));
@@ -813,10 +814,10 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
                 return makeLabResponse(payload, startedAt, compactValue(await sendLabFileMessage(chatId, payload, 'document')));
             case 'sendPoll':
                 if (!chatId) throw new Error('Informe um chatId de grupo.');
-                return makeLabResponse(payload, startedAt, compactValue(await labWpp.chat?.sendCreatePollMessage?.(await resolvePreferredSendWid(chatId), payload.text || 'Teste WA-JS Lab', ['Sim', 'Não'], { selectableCount: 1 })));
+                return makeLabResponse(payload, startedAt, compactValue(await labWpp.chat?.sendCreatePollMessage?.(await resolveRawSendWid(chatId), payload.text || 'Teste WA-JS Lab', ['Sim', 'Não'], { selectableCount: 1 })));
             case 'sendLocation':
                 if (!chatId) throw new Error('Informe um chatId ou número.');
-                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendLocationMessage(await resolvePreferredSendWid(chatId), {
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendLocationMessage(await resolveRawSendWid(chatId), {
                     lat: payload.latitude ?? -23.55052,
                     lng: payload.longitude ?? -46.633308,
                     name: 'WA-JS Lab',
@@ -824,8 +825,8 @@ async function executeWaJsLab(payload: WaJsLabPayload): Promise<WaJsLabResponse>
                 })));
             case 'sendVCard':
                 if (!chatId || !contactId) throw new Error('Informe chatId e contactId.');
-                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendVCardContactMessage(await resolvePreferredSendWid(chatId), {
-                    id: await resolvePreferredSendWid(contactId),
+                return makeLabResponse(payload, startedAt, compactValue(await window.WPP.chat.sendVCardContactMessage(await resolveRawSendWid(chatId), {
+                    id: await resolveRawSendWid(contactId),
                     name: payload.text || 'Contato WA-JS Lab'
                 })));
             default:
@@ -860,10 +861,12 @@ async function archiveAllChats({ delayMs }: { delayMs: number }) {
             phase: 'listing'
         };
 
-        const archivableChats = await waitForArchiveCandidates();
+        const { candidates: archivableChats, archivedChats, totalChats } = await waitForArchiveCandidates();
         archiveStatus = {
             ...archiveStatus,
             phase: archivableChats.length > 0 ? 'archiving' : 'finished',
+            totalChats,
+            archivedChats,
             totalItems: archivableChats.length,
             remainingItems: archivableChats.length
         };
@@ -1020,7 +1023,7 @@ async function addToQueue(message: Message) {
     try {
         const messageHash = AsyncStorageManager.calculateMessageHash(message);
         await storageManager.storeMessage(message, messageHash);
-        asyncQueue.add({ eventHandler: sendMessage, detail: { contact: message.contact, hash: messageHash, delay: message.delay, scheduledAt: message.scheduledAt } });
+        asyncQueue.add({ eventHandler: sendMessage, detail: { contact: message.contact, hash: messageHash, delay: message.delay, scheduledAt: message.scheduledAt, batchId: message.batchId } });
         return true;
     } catch (error) {
         if (error instanceof Error) {
@@ -1028,6 +1031,17 @@ async function addToQueue(message: Message) {
         }
         throw error;
     }
+}
+
+async function waitForQueueIdle({ timeoutMs, batchId }: { timeoutMs?: number, batchId?: string } = {}) {
+    const maxWait = Math.min(30 * 60 * 1000, Math.max(1000, Number.isFinite(timeoutMs || NaN) ? Number(timeoutMs) : 5 * 60 * 1000));
+    const startedAt = Date.now();
+
+    while (asyncQueue.hasPendingItems(batchId) && Date.now() - startedAt < maxWait) {
+        await wait(500);
+    }
+
+    return asyncQueue.getStatus(batchId);
 }
 
 WebpageMessageManager.addHandler(ChromeMessageTypes.PAUSE_QUEUE, () => {
@@ -1063,6 +1077,7 @@ WebpageMessageManager.addHandler(ChromeMessageTypes.SEND_MESSAGE, async (message
 });
 
 WebpageMessageManager.addHandler(ChromeMessageTypes.QUEUE_STATUS, () => asyncQueue.getStatus());
+WebpageMessageManager.addHandler(ChromeMessageTypes.WAIT_QUEUE_IDLE, async (payload) => waitForQueueIdle(payload));
 WebpageMessageManager.addHandler(ChromeMessageTypes.ARCHIVE_STATUS, () => getArchiveStatus());
 
 WebpageMessageManager.addHandler(ChromeMessageTypes.ARCHIVE_ALL_CHATS, async (payload) => {

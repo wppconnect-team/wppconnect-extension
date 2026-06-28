@@ -303,6 +303,7 @@ class Popup extends Component<{}, PopupState> {
   archiveStartingTitle = chrome.i18n.getMessage('archiveStartingTitle') || 'Preparing archiving';
   archiveListingLabel = chrome.i18n.getMessage('archiveListingLabel') || 'Searching chats...';
   archiveNoChatsLabel = chrome.i18n.getMessage('archiveNoChatsLabel') || 'No non-archived chats were found.';
+  archiveInspectedChatsLabel = chrome.i18n.getMessage('archiveInspectedChatsLabel') || 'inspected chats';
   archiveCancelledTitle = chrome.i18n.getMessage('archiveCancelledTitle') || 'Archiving cancelled';
   archiveErrorTitle = chrome.i18n.getMessage('archiveErrorTitle') || 'Unable to archive chats';
   archiveOpenWhatsAppLabel = chrome.i18n.getMessage('archiveOpenWhatsAppLabel') || 'Open WhatsApp Web, keep it connected, then try again.';
@@ -1639,7 +1640,11 @@ class Popup extends Component<{}, PopupState> {
     const archiveStatus = this.state.archiveStatus;
     if (archiveStatus?.phase === 'starting' || archiveStatus?.phase === 'listing') return this.archiveListingLabel;
     if (archiveStatus?.phase === 'error') return archiveStatus.error || this.archiveOpenWhatsAppLabel;
-    if (archiveStatus?.phase === 'finished' && archiveStatus.totalItems === 0) return this.archiveNoChatsLabel;
+    if (archiveStatus?.phase === 'finished' && archiveStatus.totalItems === 0) {
+      return archiveStatus.totalChats
+        ? `${this.archiveNoChatsLabel} ${archiveStatus.totalChats} ${this.archiveInspectedChatsLabel}.`
+        : this.archiveNoChatsLabel;
+    }
     if (archiveStatus?.phase === 'cancelled') return this.archiveCancelledTitle;
     return archiveStatus?.currentChat || this.archiveChatsButtonLabel;
   }

@@ -19,6 +19,7 @@ class AsyncEventQueue {
     private aborted: boolean = false;
     private paused: boolean = false;
     private activeItem: boolean = false;
+    private activeItemDetail: any = undefined;
     private pausePromiseResolve: ((value?: unknown) => void) | null = () => { };
 
     private async wait(ms: number) {
@@ -62,6 +63,7 @@ class AsyncEventQueue {
                 if (item === undefined) continue;
                 const startTime = Date.now();
                 this.activeItem = true;
+                this.activeItemDetail = item.detail;
                 this.sendingMessage = Date.now();
                 try {
                     await item.eventHandler(item.detail);
@@ -80,6 +82,7 @@ class AsyncEventQueue {
                 } finally {
                     this.sendingMessage = false;
                     this.activeItem = false;
+                    this.activeItemDetail = undefined;
                 }
                 if (item.detail.delay && this.queue.length !== 0) {
                     this.waiting = Date.now();
@@ -108,6 +111,7 @@ class AsyncEventQueue {
             this.sendingMessage = false;
             this.waiting = false;
             this.activeItem = false;
+            this.activeItemDetail = undefined;
         }
     }
 
@@ -130,17 +134,36 @@ class AsyncEventQueue {
         }
     }
 
-    public getStatus(): QueueStatus {
+    public hasPendingItems(batchId?: string) {
+        if (!batchId) return this.isProcessing;
+
+        return this.queue.some(item => item.detail?.batchId === batchId)
+            || this.activeItemDetail?.batchId === batchId;
+    }
+
+    public getStatus(batchId?: string): QueueStatus {
+        const completedItems = batchId
+            ? this.items.filter(item => item.detail?.batchId === batchId)
+            : this.items;
+        const queueItems = batchId
+            ? this.queue.filter(item => item.detail?.batchId === batchId)
+            : this.queue;
+        const activeItemCount = this.activeItem && (!batchId || this.activeItemDetail?.batchId === batchId) ? 1 : 0;
+        const processedItems = completedItems.filter(item => !item.error).length;
+        const failedItems = completedItems.filter(item => item.error).length;
+
         return {
             elapsedTime: this.isProcessing ? Date.now() - this.startTime : this.endTime - this.startTime,
-            isProcessing: this.isProcessing,
-            items: this.items,
+            isProcessing: batchId ? this.hasPendingItems(batchId) : this.isProcessing,
+            items: completedItems,
             sendingMessage: this.sendingMessage === false ? this.sendingMessage : Date.now() - this.sendingMessage,
             waiting: this.waiting === false ? this.waiting : Date.now() - this.waiting,
-            processedItems: this.processedItems,
-            failedItems: this.failedItems,
-            remainingItems: this.aborted ? this.remainingItems : this.queue.length + (this.activeItem ? 1 : 0),
-            totalItems: this.processedItems + this.failedItems + this.queue.length + (this.activeItem ? 1 : 0),
+            processedItems: batchId ? processedItems : this.processedItems,
+            failedItems: batchId ? failedItems : this.failedItems,
+            remainingItems: batchId
+                ? queueItems.length + activeItemCount
+                : this.aborted ? this.remainingItems : this.queue.length + activeItemCount,
+            totalItems: (batchId ? processedItems + failedItems : this.processedItems + this.failedItems) + queueItems.length + activeItemCount,
         };
     }
 }

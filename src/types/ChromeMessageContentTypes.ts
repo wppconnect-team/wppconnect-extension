@@ -11,6 +11,13 @@ export default interface ChromeMessageContentTypes {
     payload: undefined;
     response: QueueStatus;
   };
+  [ChromeMessageTypes.WAIT_QUEUE_IDLE]: {
+    payload: {
+      timeoutMs?: number;
+      batchId?: string;
+    };
+    response: QueueStatus;
+  };
   [ChromeMessageTypes.SEND_MESSAGE]: {
     payload: Message;
     response: boolean;

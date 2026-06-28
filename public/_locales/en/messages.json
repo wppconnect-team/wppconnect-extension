@@ -302,7 +302,7 @@
         "description": "Archive delay help text"
     },
     "archiveFormFooter": {
-        "message": "Only non-archived chats that WhatsApp allows archiving will be processed.",
+        "message": "The extension will try to process every found chat that is not archived yet.",
         "description": "Archive settings footer"
     },
     "archiveChatsButtonLabel": {
@@ -340,6 +340,10 @@
     "archiveNoChatsLabel": {
         "message": "No non-archived chats were found.",
         "description": "Archive empty state"
+    },
+    "archiveInspectedChatsLabel": {
+        "message": "inspected chats",
+        "description": "Archive inspected chats count suffix"
     },
     "archiveCancelledTitle": {
         "message": "Archiving cancelled",

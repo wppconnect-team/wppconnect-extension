@@ -302,7 +302,7 @@
         "description": "Texto de ajuda do delay de arquivamento"
     },
     "archiveFormFooter": {
-        "message": "Somente chats não arquivados que o WhatsApp permite arquivar serão processados.",
+        "message": "A extensão tentará processar todos os chats encontrados que ainda não estão arquivados.",
         "description": "Rodapé da configuração de arquivamento"
     },
     "archiveChatsButtonLabel": {
@@ -340,6 +340,10 @@
     "archiveNoChatsLabel": {
         "message": "Nenhum chat não arquivado foi encontrado.",
         "description": "Estado vazio do arquivamento"
+    },
+    "archiveInspectedChatsLabel": {
+        "message": "chats inspecionados",
+        "description": "Complemento com quantidade de chats inspecionados no arquivamento"
     },
     "archiveCancelledTitle": {
         "message": "Arquivamento cancelado",
