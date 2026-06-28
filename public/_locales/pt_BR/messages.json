@@ -941,6 +941,34 @@
         "message": "Próximo",
         "description": "Status de módulo planejado"
     },
+    "operationCenterTitle": {
+        "message": "Central operacional",
+        "description": "Título da área inicial operacional"
+    },
+    "operationCenterSubtitle": {
+        "message": "Inicie uma ação do WhatsApp, revise agendamentos e acompanhe o status da sessão.",
+        "description": "Subtítulo da área inicial operacional"
+    },
+    "startExecutionLabel": {
+        "message": "Nova execução",
+        "description": "CTA para iniciar execução"
+    },
+    "reviewHistoryLabel": {
+        "message": "Ver histórico",
+        "description": "CTA para abrir histórico"
+    },
+    "quickAccessLabel": {
+        "message": "Acesso rápido",
+        "description": "Etiqueta da central operacional"
+    },
+    "moduleActionsAvailableLabel": {
+        "message": "ações",
+        "description": "Sufixo de quantidade de ações disponíveis em um módulo"
+    },
+    "openModuleLabel": {
+        "message": "Abrir",
+        "description": "Ação de abrir módulo"
+    },
     "moduleWaExecutionsTitle": {
         "message": "WA Execuções",
         "description": "Título do módulo de execuções WA-JS"

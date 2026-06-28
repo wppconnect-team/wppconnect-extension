@@ -370,6 +370,13 @@ class Popup extends Component<{}, PopupState> {
   productModulesSubtitle = chrome.i18n.getMessage('productModulesSubtitle') || 'What already exists and what comes next';
   productModuleReadyLabel = chrome.i18n.getMessage('productModuleReadyLabel') || 'Ready';
   productModuleNextLabel = chrome.i18n.getMessage('productModuleNextLabel') || 'Next';
+  operationCenterTitle = chrome.i18n.getMessage('operationCenterTitle') || 'Operation center';
+  operationCenterSubtitle = chrome.i18n.getMessage('operationCenterSubtitle') || 'Start a WhatsApp action, review schedules and keep the session status in sight.';
+  startExecutionLabel = chrome.i18n.getMessage('startExecutionLabel') || 'New execution';
+  reviewHistoryLabel = chrome.i18n.getMessage('reviewHistoryLabel') || 'Review history';
+  quickAccessLabel = chrome.i18n.getMessage('quickAccessLabel') || 'Quick access';
+  moduleActionsAvailableLabel = chrome.i18n.getMessage('moduleActionsAvailableLabel') || 'actions';
+  openModuleLabel = chrome.i18n.getMessage('openModuleLabel') || 'Open';
   moduleWaExecutionsTitle = chrome.i18n.getMessage('moduleWaExecutionsTitle') || 'WA Executions';
   moduleWaExecutionsDescription = chrome.i18n.getMessage('moduleWaExecutionsDescription') || 'Run, schedule and inspect WA-JS actions.';
   moduleMessageTemplatesTitle = chrome.i18n.getMessage('moduleMessageTemplatesTitle') || 'Message templates';
@@ -1261,6 +1268,32 @@ class Popup extends Component<{}, PopupState> {
     }
   }
 
+  getModuleActions = (tab: PopupTab): PopupAction[] => {
+    switch (tab) {
+      case 'waExecutions':
+        return ['sendMessage', 'archiveChats', 'diagnostics', 'listChats', 'queryContact', 'openNewChat'];
+      case 'broadcasts':
+        return ['sendMessage', 'sendText', 'sendImage', 'sendAudio', 'sendVideo', 'sendDocument', 'sendPoll', 'sendLocation', 'sendVCard'];
+      case 'automations':
+        return ['allWaJsFunctions', 'diagnostics', 'listChats', 'activeChat'];
+      case 'utilities':
+        return ['openNewChat', 'openChat', 'queryContact', 'listChats', 'listUnreadChats', 'activeChat', 'diagnostics'];
+      case 'improvements':
+        return ['markRead', 'markUnread', 'pinChat', 'unpinChat', 'muteChat', 'unmuteChat', 'archiveChat', 'unarchiveChat', 'typing', 'recording', 'pauseTyping', 'setInput'];
+      case 'businessTools':
+        return ['profile', 'businessProfile', 'profilePicture', 'contactStatus', 'commonGroups', 'sendVCard', 'sendImage', 'sendVideo', 'sendDocument'];
+      case 'messageTemplates':
+      case 'webhooksApi':
+      case 'export':
+      case 'statistics':
+        return [];
+      default:
+        return [];
+    }
+  }
+
+  getModuleActionCount = (tab: PopupTab) => this.getModuleActions(tab).length;
+
   openModule = (tab: PopupTab) => {
     const defaultAction = this.getModuleDefaultAction(tab);
     this.setState({
@@ -1693,6 +1726,8 @@ class Popup extends Component<{}, PopupState> {
   }
 
   renderHeader() {
+    const healthy = this.isConnectionHealthy();
+    const checking = this.state.connectionChecking;
     return <header className="px-7 pb-5 pt-7">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-4">
@@ -1704,15 +1739,26 @@ class Popup extends Component<{}, PopupState> {
             <p className="truncate text-sm text-slate-400">{this.dashboardSubtitle}</p>
           </div>
         </div>
-        <Button
-          type="button"
-          variant="glass"
-          className="shrink-0"
-          onClick={this.handleOptions}
-          icon={<Icon name={this.state.activeTab === 'settings' ? 'list' : 'settings'} className="h-5 w-5" />}
-        >
-          {this.state.activeTab === 'settings' ? this.settingsBackLabel : this.optionsButtonLabel}
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            disabled={checking}
+            onClick={this.checkConnection}
+            className={`hidden min-h-11 items-center gap-2 rounded-xl border px-3 text-xs font-extrabold transition sm:inline-flex ${healthy ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200' : 'border-amber-400/25 bg-amber-400/10 text-amber-100'} disabled:cursor-not-allowed disabled:opacity-70`}
+          >
+            <span className={`h-2 w-2 rounded-full ${checking ? 'bg-sky-300' : healthy ? 'bg-emerald-300' : 'bg-amber-300'}`}></span>
+            <span>{checking ? this.connectionCheckingLabel : healthy ? this.whatsappConnectedLabel : this.checkConnectionLabel}</span>
+          </button>
+          <Button
+            type="button"
+            variant="glass"
+            className="shrink-0"
+            onClick={this.handleOptions}
+            icon={<Icon name={this.state.activeTab === 'settings' ? 'list' : 'settings'} className="h-5 w-5" />}
+          >
+            {this.state.activeTab === 'settings' ? this.settingsBackLabel : this.optionsButtonLabel}
+          </Button>
+        </div>
       </div>
       {this.state.activeTab !== 'modules' && <div className="mt-6 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-[1.15rem] bg-slate-950/28 p-2 ring-1 ring-white/7">
         <button
@@ -2078,8 +2124,49 @@ class Popup extends Component<{}, PopupState> {
     </button>;
   }
 
+  renderOperationCenter() {
+    const summary = this.getSummary();
+    const pendingSchedules = this.state.scheduledExecutions.filter(execution => execution.status === 'scheduled').length;
+    const healthy = this.isConnectionHealthy();
+
+    return this.renderPanel(<div className="grid gap-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[0.68rem] font-extrabold uppercase text-emerald-300">
+            <Icon name="zap" className="h-3.5 w-3.5" />
+            {this.quickAccessLabel}
+          </div>
+          <h2 className="text-2xl font-extrabold tracking-normal text-white">{this.operationCenterTitle}</h2>
+          <p className="mt-2 max-w-[28rem] text-sm leading-5 text-slate-400">{this.operationCenterSubtitle}</p>
+        </div>
+        <button
+          type="button"
+          disabled={this.state.connectionChecking}
+          onClick={this.checkConnection}
+          className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-extrabold transition ${healthy ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200' : 'border-amber-400/25 bg-amber-400/10 text-amber-100'} disabled:cursor-not-allowed disabled:opacity-70`}
+        >
+          {this.state.connectionChecking ? this.connectionCheckingLabel : healthy ? this.whatsappConnectedLabel : this.checkConnectionLabel}
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Button type="button" variant="primary" onClick={() => this.openModule('waExecutions')} icon={<Icon name="play" className="h-5 w-5" />}>
+          {this.startExecutionLabel}
+        </Button>
+        <Button type="button" variant="glass" onClick={() => this.setState({ activeTab: 'history' })} icon={<Icon name="list" className="h-5 w-5" />}>
+          {this.reviewHistoryLabel}
+        </Button>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        {this.renderMiniMetric(this.todaySentLabel, summary.sentToday)}
+        {this.renderMiniMetric(this.scheduledPendingMetricLabel, pendingSchedules)}
+        {this.renderMiniMetric(this.templatesMetricLabel, this.state.messageTemplates.length)}
+      </div>
+    </div>, 'bg-slate-900/60');
+  }
+
   renderProductModule(tab: PopupTab, title: string, description: string, icon: UiIcon, status: 'ready' | 'next') {
     const active = this.state.activeTab === tab;
+    const actionCount = this.getModuleActionCount(tab);
     const statusClass = status === 'ready'
       ? 'bg-emerald-400/12 text-emerald-300'
       : 'bg-amber-400/12 text-amber-300';
@@ -2088,22 +2175,28 @@ class Popup extends Component<{}, PopupState> {
       type="button"
       onClick={() => this.openModule(tab)}
       className={[
-        'group flex min-h-[7.25rem] flex-col rounded-xl border p-4 text-left transition',
+        'group grid min-h-[7.5rem] grid-cols-[2.75rem_minmax(0,1fr)] gap-3 rounded-xl border p-4 text-left transition',
         active
           ? 'border-emerald-400/50 bg-emerald-400/10 shadow-[0_18px_38px_rgba(16,185,129,.12)]'
           : 'border-white/10 bg-slate-950/25 hover:border-emerald-400/35 hover:bg-white/10'
       ].join(' ')}
     >
-      <div className="flex items-start justify-between gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
-          <Icon name={icon} className="h-5 w-5 transition group-enabled:group-hover:scale-105" />
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+        <Icon name={icon} className="h-5 w-5 transition group-enabled:group-hover:scale-105" />
+      </span>
+      <span className="min-w-0">
+        <span className="flex justify-end">
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-extrabold uppercase ${statusClass}`}>
+            {status === 'ready' ? this.productModuleReadyLabel : this.productModuleNextLabel}
+          </span>
         </span>
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[0.68rem] font-extrabold uppercase ${statusClass}`}>
-          {status === 'ready' ? this.productModuleReadyLabel : this.productModuleNextLabel}
+        <span className="mt-1 block text-sm font-extrabold leading-5 text-white">{title}</span>
+        <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-400">{description}</span>
+        <span className="mt-3 flex items-center justify-between gap-2 text-[0.68rem] font-extrabold uppercase text-slate-500">
+          {actionCount > 0 && <span>{`${actionCount} ${this.moduleActionsAvailableLabel}`}</span>}
+          <span className="ml-auto text-emerald-300 transition group-hover:translate-x-0.5">{this.openModuleLabel}</span>
         </span>
-      </div>
-      <div className="mt-3 text-sm font-extrabold leading-5 text-white">{title}</div>
-      <div className="mt-1 text-xs leading-5 text-slate-400">{description}</div>
+      </span>
     </button>;
   }
 
@@ -2115,7 +2208,7 @@ class Popup extends Component<{}, PopupState> {
           <p className="mt-1 text-sm leading-5 text-slate-400">{this.productModulesSubtitle}</p>
         </div>
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-3">
+      <div className="mt-4 grid grid-cols-2 gap-3">
         {this.renderProductModule('waExecutions', this.moduleWaExecutionsTitle, this.moduleWaExecutionsDescription, 'zap', 'ready')}
         {this.renderProductModule('messageTemplates', this.moduleMessageTemplatesTitle, this.moduleMessageTemplatesDescription, 'message', 'ready')}
         {this.renderProductModule('broadcasts', this.moduleBroadcastsTitle, this.moduleBroadcastsDescription, 'send', 'ready')}
@@ -2530,8 +2623,8 @@ class Popup extends Component<{}, PopupState> {
 
   renderModuleHub() {
     return <div className="space-y-5 px-7 pb-6">
+      {this.renderOperationCenter()}
       {this.renderProductModules()}
-      {this.renderSummary()}
       {this.renderLatestExecutions()}
     </div>;
   }
@@ -2555,7 +2648,7 @@ class Popup extends Component<{}, PopupState> {
 
   renderBroadcastsModule() {
     return <div className="space-y-5 px-7 pb-6">
-      {this.renderModuleActions(['sendMessage', 'sendText', 'sendImage', 'sendAudio', 'sendVideo', 'sendDocument', 'sendPoll', 'sendLocation', 'sendVCard'])}
+      {this.renderModuleActions(this.getModuleActions('broadcasts'))}
       {this.renderNewExecution()}
       {this.renderScheduledExecutions()}
       {this.renderLatestExecutions()}
@@ -2565,7 +2658,7 @@ class Popup extends Component<{}, PopupState> {
 
   renderAutomationsModule() {
     return <div className="space-y-5 px-7 pb-6">
-      {this.renderModuleActions(['allWaJsFunctions', 'diagnostics', 'listChats', 'activeChat'])}
+      {this.renderModuleActions(this.getModuleActions('automations'))}
       {this.renderNewExecution()}
       {this.renderScheduledExecutions()}
       {this.state.labResult && this.renderLabResult()}
@@ -2574,7 +2667,7 @@ class Popup extends Component<{}, PopupState> {
 
   renderUtilitiesModule() {
     return <div className="space-y-5 px-7 pb-6">
-      {this.renderModuleActions(['openNewChat', 'openChat', 'queryContact', 'listChats', 'listUnreadChats', 'activeChat', 'diagnostics'])}
+      {this.renderModuleActions(this.getModuleActions('utilities'))}
       {this.renderNewExecution()}
       {this.state.labResult && this.renderLabResult()}
     </div>;
@@ -2582,7 +2675,7 @@ class Popup extends Component<{}, PopupState> {
 
   renderImprovementsModule() {
     return <div className="space-y-5 px-7 pb-6">
-      {this.renderModuleActions(['markRead', 'markUnread', 'pinChat', 'unpinChat', 'muteChat', 'unmuteChat', 'archiveChat', 'unarchiveChat', 'typing', 'recording', 'pauseTyping', 'setInput'])}
+      {this.renderModuleActions(this.getModuleActions('improvements'))}
       {this.renderNewExecution()}
       {this.renderScheduledExecutions()}
       {this.state.labResult && this.renderLabResult()}
@@ -2591,7 +2684,7 @@ class Popup extends Component<{}, PopupState> {
 
   renderBusinessToolsModule() {
     return <div className="space-y-5 px-7 pb-6">
-      {this.renderModuleActions(['profile', 'businessProfile', 'profilePicture', 'contactStatus', 'commonGroups', 'sendVCard', 'sendImage', 'sendVideo', 'sendDocument'])}
+      {this.renderModuleActions(this.getModuleActions('businessTools'))}
       {this.renderNewExecution()}
       {this.state.labResult && this.renderLabResult()}
     </div>;

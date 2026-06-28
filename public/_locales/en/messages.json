@@ -941,6 +941,34 @@
         "message": "Next",
         "description": "Planned module status"
     },
+    "operationCenterTitle": {
+        "message": "Operation center",
+        "description": "Operational home area title"
+    },
+    "operationCenterSubtitle": {
+        "message": "Start a WhatsApp action, review schedules and keep the session status in sight.",
+        "description": "Operational home area subtitle"
+    },
+    "startExecutionLabel": {
+        "message": "New execution",
+        "description": "Start execution CTA"
+    },
+    "reviewHistoryLabel": {
+        "message": "Review history",
+        "description": "Open history CTA"
+    },
+    "quickAccessLabel": {
+        "message": "Quick access",
+        "description": "Operation center eyebrow"
+    },
+    "moduleActionsAvailableLabel": {
+        "message": "actions",
+        "description": "Available module action count suffix"
+    },
+    "openModuleLabel": {
+        "message": "Open",
+        "description": "Open module action"
+    },
     "moduleWaExecutionsTitle": {
         "message": "WA Executions",
         "description": "WA-JS executions module title"
