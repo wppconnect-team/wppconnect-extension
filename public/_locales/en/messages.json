@@ -369,6 +369,14 @@
         "message": "Failed",
         "description": "Failed archive metric label"
     },
+    "archiveInspectedMetricLabel": {
+        "message": "Inspected",
+        "description": "Inspected archive chats metric label"
+    },
+    "archiveAlreadyArchivedMetricLabel": {
+        "message": "Already archived",
+        "description": "Already archived chats metric label"
+    },
     "archiveCurrentChatLabel": {
         "message": "Current chat",
         "description": "Current archive chat label"
@@ -852,6 +860,18 @@
     "scheduledDetailsCloseLabel": {
         "message": "Close details",
         "description": "Scheduled execution close details button"
+    },
+    "queueResultsLabel": {
+        "message": "Contact results",
+        "description": "Queue contact results list title"
+    },
+    "queueResultContactLabel": {
+        "message": "Contact",
+        "description": "Queue result contact label"
+    },
+    "queueResultElapsedLabel": {
+        "message": "Elapsed",
+        "description": "Queue result elapsed label"
     },
     "languageSettingsTitle": {
         "message": "Language",

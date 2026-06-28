@@ -12,6 +12,7 @@ export default interface ArchiveStatus {
     elapsedTime: number;
     currentChat?: string;
     error?: string;
+    failedChats?: Array<{ chatId?: string; message: string }>;
     waiting: number | false;
     aborted: boolean;
 }

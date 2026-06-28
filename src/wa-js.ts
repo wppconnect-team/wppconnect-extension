@@ -37,6 +37,7 @@ const emptyArchiveStatus = (): ArchiveStatus => ({
     remainingItems: 0,
     failedItems: 0,
     elapsedTime: 0,
+    failedChats: [],
     waiting: false,
     aborted: false
 });
@@ -495,8 +496,17 @@ function prepareButtonsForRawMessage(rawMessage: any, buttons: Message['buttons'
 
 async function findChatForRawMessage(targetChatId: string) {
     const chatApi = (window.WPP as any)?.chat;
+    let lastError: unknown;
+
     if (typeof chatApi?.find === 'function') {
-        return chatApi.find.call(chatApi, targetChatId);
+        for (const candidate of [...new Set([targetChatId, normalizeWid(targetChatId)])]) {
+            try {
+                const chat = await chatApi.find.call(chatApi, candidate);
+                if (chat) return chat;
+            } catch (error) {
+                lastError = error;
+            }
+        }
     }
 
     const chatStore = (window.WPP as any)?.whatsapp?.ChatStore;
@@ -504,24 +514,45 @@ async function findChatForRawMessage(targetChatId: string) {
         || chatStore?.find?.((item: any) => getChatId(item) === targetChatId);
     if (chat) return chat;
 
-    throw new Error(`Chat não encontrado para preparar mensagem: ${targetChatId}`);
+    const findChat = (window.WPP as any)?.whatsapp?.findChat;
+    if (typeof findChat === 'function') {
+        try {
+            const foundChat = await findChat.call((window.WPP as any).whatsapp, targetChatId, 'createChat');
+            if (foundChat) return foundChat;
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    const suffix = lastError instanceof Error ? `: ${lastError.message}` : '';
+    throw new Error(`Chat não encontrado para preparar mensagem: ${targetChatId}${suffix}`);
 }
 
 async function prepareRawMessageForSend(targetChatId: string, rawMessage: any, rawOptions: Record<string, unknown>) {
     const chatApi = (window.WPP as any)?.chat;
-    if (typeof chatApi?.prepareRawMessage !== 'function') return rawMessage;
+    if (typeof chatApi?.prepareRawMessage !== 'function') return { message: rawMessage };
 
-    const chat = await findChatForRawMessage(targetChatId);
-    return chatApi.prepareRawMessage.call(chatApi, chat, rawMessage, rawOptions);
+    try {
+        const chat = await findChatForRawMessage(targetChatId);
+        return { message: await chatApi.prepareRawMessage.call(chatApi, chat, rawMessage, rawOptions) };
+    } catch (error) {
+        const skippedReason = error instanceof Error ? error.message : String(error);
+        return { message: rawMessage, skippedReason };
+    }
 }
 
 async function sendRawPreparedMessage(targetChatId: string, rawMessage: any) {
     const rawOptions = { createChat: true, waitForAck: false };
 
     try {
-        const preparedMessage = await prepareRawMessageForSend(targetChatId, rawMessage, rawOptions);
+        const chatApi = (window.WPP as any)?.chat;
+        if (typeof chatApi?.sendRawMessage !== 'function') {
+            throw new Error('WA-JS não expôs chat.sendRawMessage nesta aba.');
+        }
+
+        const prepared = await prepareRawMessageForSend(targetChatId, rawMessage, rawOptions);
         return await Promise.race([
-            window.WPP.chat.sendRawMessage(targetChatId, preparedMessage, rawOptions),
+            chatApi.sendRawMessage.call(chatApi, targetChatId, prepared.message, rawOptions),
             wait(30000).then(() => {
                 throw new Error('Timeout ao aguardar o retorno do sendRawMessage.');
             })
@@ -887,14 +918,16 @@ async function archiveAllChats({ delayMs }: { delayMs: number }) {
                     remainingItems: Math.max(archiveStatus.remainingItems - 1, 0)
                 };
             } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Falha ao arquivar chat';
                 archiveStatus = {
                     ...archiveStatus,
                     failedItems: archiveStatus.failedItems + 1,
+                    failedChats: [...(archiveStatus.failedChats || []), { chatId, message: errorMessage }].slice(-20),
                     remainingItems: Math.max(archiveStatus.remainingItems - 1, 0)
                 };
                 WebpageMessageManager.sendMessage(ChromeMessageTypes.ADD_LOG, {
                     level: 1,
-                    message: error instanceof Error ? error.message : 'Falha ao arquivar chat',
+                    message: errorMessage,
                     attachment: false,
                     contact: chatId
                 });

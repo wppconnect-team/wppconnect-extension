@@ -6,6 +6,7 @@ const repo = 'wppconnect-team/wa-js';
 const assetName = 'wppconnect-wa.js';
 const requestedVersion = process.env.WA_JS_VERSION || 'latest';
 const skipDownload = /^(1|true|yes)$/i.test(process.env.WA_JS_SKIP_DOWNLOAD || '');
+const writeMetadata = /^(1|true|yes)$/i.test(process.env.WA_JS_WRITE_METADATA || '');
 const target = path.join(
   __dirname,
   '..',
@@ -15,6 +16,7 @@ const target = path.join(
   'dist',
   assetName
 );
+const metadataTarget = path.join(__dirname, '..', 'wa-js-release.json');
 
 function request(url, options = {}) {
   return new Promise((resolve, reject) => {
@@ -85,6 +87,14 @@ async function main() {
   const tag = await getLatestTag();
   const url = `https://github.com/${repo}/releases/download/${tag}/${assetName}`;
   await download(url, target);
+  if (writeMetadata) {
+    await fs.promises.writeFile(metadataTarget, `${JSON.stringify({
+      repo,
+      tag,
+      assetName,
+      assetUrl: url
+    }, null, 2)}\n`);
+  }
   console.log(`Downloaded ${repo} ${tag} ${assetName}`);
 }
 

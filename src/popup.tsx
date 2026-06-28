@@ -144,6 +144,7 @@ type PopupState = {
   deliveryMode: DeliveryMode,
   scheduledAt: string,
   scheduledExecutions: ScheduledExecution[],
+  selectedScheduledExecutionId?: string,
   labLoading: boolean,
   operationMode?: 'scheduling' | 'executing',
   labResult?: WaJsLabResponse,
@@ -247,6 +248,7 @@ class Popup extends Component<{}, PopupState> {
       deliveryMode: 'now',
       scheduledAt: '',
       scheduledExecutions: [],
+      selectedScheduledExecutionId: undefined,
       labLoading: false,
       operationMode: undefined,
       labResult: undefined,
@@ -310,6 +312,8 @@ class Popup extends Component<{}, PopupState> {
   whatsappConnectionHelpLabel = chrome.i18n.getMessage('whatsappConnectionHelpLabel') || 'Open or reload WhatsApp Web before using send or archive actions.';
   archivedChatsLabel = chrome.i18n.getMessage('archivedChatsLabel') || 'Archived';
   archiveFailedLabel = chrome.i18n.getMessage('archiveFailedLabel') || 'Failed';
+  archiveInspectedMetricLabel = chrome.i18n.getMessage('archiveInspectedMetricLabel') || 'Inspected';
+  archiveAlreadyArchivedMetricLabel = chrome.i18n.getMessage('archiveAlreadyArchivedMetricLabel') || 'Already archived';
   archiveCurrentChatLabel = chrome.i18n.getMessage('archiveCurrentChatLabel') || 'Current chat';
   wajsLabResultLabel = chrome.i18n.getMessage('wajsLabResultLabel') || 'Result';
   wajsLabPlaceholderResult = chrome.i18n.getMessage('wajsLabPlaceholderResult') || 'Run an action to see the WA-JS response.';
@@ -465,6 +469,9 @@ class Popup extends Component<{}, PopupState> {
   scheduledDetailsResultLabel = chrome.i18n.getMessage('scheduledDetailsResultLabel') || 'Result';
   scheduledDetailsErrorLabel = chrome.i18n.getMessage('scheduledDetailsErrorLabel') || 'Error';
   scheduledDetailsCloseLabel = chrome.i18n.getMessage('scheduledDetailsCloseLabel') || 'Close details';
+  queueResultsLabel = chrome.i18n.getMessage('queueResultsLabel') || 'Contact results';
+  queueResultContactLabel = chrome.i18n.getMessage('queueResultContactLabel') || 'Contact';
+  queueResultElapsedLabel = chrome.i18n.getMessage('queueResultElapsedLabel') || 'Elapsed';
   allWaJsFunctionsLabel = chrome.i18n.getMessage('allWaJsFunctionsLabel') || 'All WA-JS functions';
   allWaJsFunctionsDescription = chrome.i18n.getMessage('allWaJsFunctionsDescription') || 'Select any runtime WPP function';
   refreshFunctionsLabel = chrome.i18n.getMessage('refreshFunctionsLabel') || 'Load functions';
@@ -2328,15 +2335,70 @@ class Popup extends Component<{}, PopupState> {
     return this.scheduledExecutionRunningLabel;
   }
 
-  renderHistoryExecutionDetails(log?: Log) {
+  scheduledExecutionToLog(execution: ScheduledExecution): Log {
+    return {
+      id: `scheduled-detail-${execution.id}`,
+      level: execution.status === 'completed' ? 3 : execution.status === 'failed' ? 1 : 2,
+      message: execution.label,
+      attachment: execution.payload.kind === 'bulkSend' ? Boolean(execution.payload.attachment) : false,
+      contact: execution.target,
+      date: this.formatDateTime(execution.updatedAt),
+      executionDetails: {
+        label: execution.label,
+        status: execution.status,
+        target: execution.target,
+        scheduledAt: execution.scheduledAt,
+        createdAt: execution.createdAt,
+        updatedAt: execution.updatedAt,
+        payload: execution.payload,
+        result: execution.result,
+        error: execution.error
+      }
+    };
+  }
+
+  getQueueStatusFromResult(result: unknown): QueueStatus | undefined {
+    const queueStatus = (result as { queueStatus?: QueueStatus } | undefined)?.queueStatus;
+    return queueStatus?.items ? queueStatus : undefined;
+  }
+
+  renderQueueResultItems(result: unknown) {
+    const queueStatus = this.getQueueStatusFromResult(result);
+    if (!queueStatus?.items?.length) return null;
+
+    return <div className="mt-3">
+      <div className="mb-2 text-[0.68rem] font-bold uppercase text-slate-500">{this.queueResultsLabel}</div>
+      <div className="max-h-56 space-y-2 overflow-auto rounded-lg border border-white/10 bg-slate-950/40 p-2">
+        {queueStatus.items.map((item, index) => {
+          const contact = item.detail?.contact || '-';
+          const failed = Boolean(item.error);
+          return <div key={`${contact}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-lg border border-white/10 bg-slate-900/50 p-3 text-xs">
+            <div className="min-w-0">
+              <div className="truncate font-bold text-slate-200">{this.queueResultContactLabel}: {contact}</div>
+              {item.error && <div className="mt-1 break-words text-rose-200">{item.error}</div>}
+            </div>
+            <div className="text-right">
+              <span className={`rounded-full px-2 py-1 font-bold ${failed ? 'bg-rose-400/12 text-rose-300' : 'bg-emerald-400/12 text-emerald-300'}`}>
+                {failed ? this.scheduledExecutionFailedLabel : this.scheduledExecutionCompletedLabel}
+              </span>
+              <div className="mt-2 font-mono text-slate-400">{this.queueResultElapsedLabel}: {this.formatTime(item.elapsedTime || 0)}</div>
+            </div>
+          </div>;
+        })}
+      </div>
+    </div>;
+  }
+
+  renderHistoryExecutionDetails(log?: Log, closeDetails?: () => void) {
     const details = log?.executionDetails;
+    const onClose = closeDetails || (() => this.setState({ selectedHistoryLogKey: undefined }));
     return <div className="mb-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.04] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-extrabold text-white">{this.scheduledDetailsTitle}</h3>
           {!log && <p className="mt-1 text-xs leading-5 text-slate-400">{this.scheduledDetailsEmptyLabel}</p>}
         </div>
-        {log && <button type="button" onClick={() => this.setState({ selectedHistoryLogKey: undefined })} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-emerald-400/35 hover:text-emerald-100">
+        {log && <button type="button" onClick={onClose} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-emerald-400/35 hover:text-emerald-100">
           {this.scheduledDetailsCloseLabel}
         </button>}
       </div>
@@ -2362,6 +2424,7 @@ class Popup extends Component<{}, PopupState> {
             <div className="mb-2 text-[0.68rem] font-bold uppercase text-slate-500">{this.scheduledDetailsResultLabel}</div>
             <pre className="max-h-48 overflow-auto rounded-lg border border-white/10 bg-slate-950/60 p-3 text-xs leading-5 text-slate-200">{this.formatDetailsJson(details.result)}</pre>
           </div>}
+          {this.renderQueueResultItems(details?.result)}
         </div>
       </>}
     </div>;
@@ -2371,6 +2434,7 @@ class Popup extends Component<{}, PopupState> {
     const executions = this.state.scheduledExecutions
       .slice()
       .sort((a, b) => b.createdAt - a.createdAt);
+    const selectedExecution = executions.find(execution => execution.id === this.state.selectedScheduledExecutionId);
 
     return this.renderPanel(<>
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -2379,11 +2443,16 @@ class Popup extends Component<{}, PopupState> {
           {chrome.i18n.getMessage('updateButtonLabel') || 'Update'}
         </Button>
       </div>
+      {selectedExecution && this.renderHistoryExecutionDetails(
+        this.scheduledExecutionToLog(selectedExecution),
+        () => this.setState({ selectedScheduledExecutionId: undefined })
+      )}
       <div className="max-h-[28rem] space-y-2 overflow-auto pr-1">
         {executions.length === 0 && <div className="rounded-xl border border-dashed border-white/12 bg-slate-900/32 p-5 text-center text-sm text-slate-400">{this.scheduledExecutionsEmptyLabel}</div>}
         {executions.map(execution => {
           const isPending = execution.status === 'scheduled';
           const isFailed = execution.status === 'failed';
+          const isSelected = execution.id === this.state.selectedScheduledExecutionId;
           const statusClass = isFailed
             ? 'bg-rose-400/12 text-rose-300'
             : execution.status === 'completed'
@@ -2392,7 +2461,7 @@ class Popup extends Component<{}, PopupState> {
                 ? 'bg-slate-400/12 text-slate-300'
                 : 'bg-amber-400/12 text-amber-300';
 
-          return <div key={execution.id} className="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-white/10 bg-slate-800/42 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
+          return <div key={execution.id} role="button" tabIndex={0} onClick={() => this.setState({ selectedScheduledExecutionId: isSelected ? undefined : execution.id })} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.setState({ selectedScheduledExecutionId: isSelected ? undefined : execution.id }); } }} className={`grid w-full cursor-pointer grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,.04)] transition hover:border-emerald-400/35 hover:bg-slate-800/60 ${isSelected ? 'border-emerald-400/40 bg-emerald-400/[0.06]' : 'border-white/10 bg-slate-800/42'}`}>
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-400/25">
               <Icon name="clock" className="h-5 w-5" />
             </div>
@@ -2403,7 +2472,7 @@ class Popup extends Component<{}, PopupState> {
             </div>
             <div className="flex items-center gap-2">
               <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass}`}>{this.getScheduledStatusLabel(execution.status)}</span>
-              {isPending && <button type="button" onClick={() => this.cancelScheduledExecution(execution.id)} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-rose-400/40 hover:text-rose-200">
+              {isPending && <button type="button" onClick={(event) => { event.stopPropagation(); this.cancelScheduledExecution(execution.id); }} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-rose-400/40 hover:text-rose-200">
                 {this.cancelScheduledExecutionLabel}
               </button>}
             </div>
@@ -2723,6 +2792,8 @@ class Popup extends Component<{}, PopupState> {
         {archiveStatus?.waiting ? this.renderMiniMetric(this.waitingPopup, this.formatTime(archiveStatus.waiting)) : this.renderMiniMetric(this.archiveFailedLabel, archiveStatus?.failedItems || 0)}
         {this.renderMiniMetric(this.archivedChatsLabel, archiveStatus?.processedItems || 0)}
         {this.renderMiniMetric(this.messagesLeftPopup, archiveStatus?.remainingItems || 0)}
+        {this.renderMiniMetric(this.archiveInspectedMetricLabel, archiveStatus?.totalChats || 0)}
+        {this.renderMiniMetric(this.archiveAlreadyArchivedMetricLabel, archiveStatus?.archivedChats || 0)}
       </>,
       () => PopupMessageManager.sendMessage(ChromeMessageTypes.STOP_QUEUE, undefined),
       () => this.setState({ confirmed: true, activeOperation: undefined }),

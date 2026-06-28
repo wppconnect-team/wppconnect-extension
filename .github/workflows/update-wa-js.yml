@@ -12,7 +12,8 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
   update:
@@ -33,6 +34,8 @@ jobs:
         run: npm install
 
       - name: Download WA-JS release asset
+        env:
+          WA_JS_WRITE_METADATA: "true"
         run: node scripts/download-wa-js-release.js
 
       - name: Validate locale JSON
@@ -42,3 +45,23 @@ jobs:
 
       - name: Build extension
         run: npm run build
+
+      - name: Create WA-JS update pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update wa-js release"
+          title: "chore: update wa-js release"
+          body: |
+            ## Summary
+            - Downloads and validates the latest wppconnect-team/wa-js release asset.
+            - Updates `wa-js-release.json` so the extension tracks the validated WA-JS release.
+
+            ## Validation
+            - npm install
+            - node scripts/download-wa-js-release.js
+            - locale JSON parse check
+            - npm run build
+          branch: chore/update-wa-js-release
+          delete-branch: true
+          labels: dependencies

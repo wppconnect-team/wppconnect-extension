@@ -369,6 +369,14 @@
         "message": "Falhas",
         "description": "Label da métrica de falhas no arquivamento"
     },
+    "archiveInspectedMetricLabel": {
+        "message": "Inspecionados",
+        "description": "Label da métrica de chats inspecionados no arquivamento"
+    },
+    "archiveAlreadyArchivedMetricLabel": {
+        "message": "Já arquivados",
+        "description": "Label da métrica de chats que já estavam arquivados"
+    },
     "archiveCurrentChatLabel": {
         "message": "Chat atual",
         "description": "Label do chat atual no arquivamento"
@@ -852,6 +860,18 @@
     "scheduledDetailsCloseLabel": {
         "message": "Fechar detalhes",
         "description": "Botão de fechar detalhes da execução agendada"
+    },
+    "queueResultsLabel": {
+        "message": "Resultados por contato",
+        "description": "Título da lista de resultados por contato da fila"
+    },
+    "queueResultContactLabel": {
+        "message": "Contato",
+        "description": "Label do contato em resultado da fila"
+    },
+    "queueResultElapsedLabel": {
+        "message": "Tempo",
+        "description": "Label do tempo em resultado da fila"
     },
     "languageSettingsTitle": {
         "message": "Idioma",
