@@ -1,11 +1,15 @@
 
-# Wppconnect Chrome Extension
+# Wppconnect Extension
 
 This is an open-source Chrome Extension that allows you to send messages in bulk via WhatsApp™ Web. You need to have WhatsApp™ Web open in your browser while using this extension.
 
 ## Installation
 
-For now you can download the `extension.zip` file from the [latest release](https://github.com/wppconnect-team/wppconnect-extension/releases/latest) and load it as an [unpacked extension in Chrome](#loading-an-unpacked-extension).
+The extension is now published on the Chrome Web Store:
+
+- [Install Wppconnect Extension from the Chrome Web Store](https://chromewebstore.google.com/detail/wppconnect-extension/ejamgmkhipipigkanaefjklolfddmlel)
+
+For manual installation or testing unreleased versions, you can still download the `extension.zip` file from the [latest release](https://github.com/wppconnect-team/wppconnect-extension/releases/latest) and load it as an [unpacked extension in Chrome](#loading-an-unpacked-extension).
 
 ## Usage
 
@@ -36,7 +40,7 @@ If you prefer to build the extension from the source code, follow these steps:
 
 ```bash
 git clone https://github.com/wppconnect-team/wppconnect-extension.git
-cd wppconnect
+cd wppconnect-extension
 ```
 
 ### Install Dependencies
