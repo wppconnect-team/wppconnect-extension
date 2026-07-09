@@ -1,18 +1,20 @@
 import ChromeMessageContentTypes from "types/ChromeMessageContentTypes";
 
-type MessageData<K extends keyof ChromeMessageContentTypes> = {
+type MessageType = Extract<keyof ChromeMessageContentTypes, string>;
+
+type MessageData<K extends MessageType> = {
   source: 'Wppconnect';
   type: K;
   payload: ChromeMessageContentTypes[K]["payload"];
 };
 
-type MessageDataResponse<K extends keyof ChromeMessageContentTypes> = {
+type MessageDataResponse<K extends MessageType> = {
   source: 'Wppconnect';
   type: `${K}_RESPONSE`;
   payload: ChromeMessageContentTypes[K]["response"];
 };
 
-type MessageHandler<K extends keyof ChromeMessageContentTypes> = (
+type MessageHandler<K extends MessageType> = (
   payload: ChromeMessageContentTypes[K]["payload"]
 ) => ChromeMessageContentTypes[K]["response"] | Promise<ChromeMessageContentTypes[K]["response"]>;
 
@@ -51,7 +53,7 @@ export default class AsyncChromeMessageManager {
     });
   }
 
-  public addHandler<K extends keyof ChromeMessageContentTypes>(type: K, handler: MessageHandler<K>) {
+  public addHandler<K extends MessageType>(type: K, handler: MessageHandler<K>) {
     try {
       if (this.source !== "webpage") {
         this.addExtensionMessageHandler(type, handler);
@@ -64,7 +66,7 @@ export default class AsyncChromeMessageManager {
     }
   }
 
-  private addWebpageMessageHandler<K extends keyof ChromeMessageContentTypes>(type: K, handler: MessageHandler<K>) {
+  private addWebpageMessageHandler<K extends MessageType>(type: K, handler: MessageHandler<K>) {
     window.addEventListener("message", async (event) => {
       if (event.source === window && event.origin === window.location.origin && event.data.type === type && event.data.source === 'Wppconnect') {
         try {
@@ -77,7 +79,7 @@ export default class AsyncChromeMessageManager {
     });
   }
 
-  private addExtensionMessageHandler<K extends keyof ChromeMessageContentTypes>(type: K, handler: MessageHandler<K>) {
+  private addExtensionMessageHandler<K extends MessageType>(type: K, handler: MessageHandler<K>) {
     chrome.runtime.onMessage.addListener(async (message) => {
       if (message.source === 'Wppconnect' && message.type === type) {
         try {
@@ -94,7 +96,7 @@ export default class AsyncChromeMessageManager {
     });
   }
 
-  public async sendMessage<K extends keyof ChromeMessageContentTypes>(
+  public async sendMessage<K extends MessageType>(
     type: K,
     payload: ChromeMessageContentTypes[K]["payload"]
   ): Promise<ChromeMessageContentTypes[K]["response"]> {
@@ -142,7 +144,7 @@ export default class AsyncChromeMessageManager {
     });
   }
 
-  private sendWebpageMessage<K extends keyof ChromeMessageContentTypes>(
+  private sendWebpageMessage<K extends MessageType>(
     message: MessageData<K>, listener: (response: MessageDataResponse<K>) => void
   ) {
     window.postMessage(message, window.location.origin);
@@ -156,7 +158,7 @@ export default class AsyncChromeMessageManager {
     return () => window.removeEventListener("message", responseListener);
   }
 
-  private sendExtensionMessage<K extends keyof ChromeMessageContentTypes>(
+  private sendExtensionMessage<K extends MessageType>(
     message: MessageData<K>,
     listener: (response: MessageDataResponse<K>) => void,
     reject: (error: Error) => void
