@@ -10,13 +10,15 @@ const SCHEDULED_EXECUTIONS_KEY = 'scheduledExecutions';
 const SCHEDULE_RESPONSE_TIMEOUT_MS = 60000;
 const scheduledTimers: Record<string, number> = {};
 
-type MessageData<K extends keyof ChromeMessageContentTypes> = {
+type MessageType = Extract<keyof ChromeMessageContentTypes, string>;
+
+type MessageData<K extends MessageType> = {
   source: 'Wppconnect';
   type: K;
   payload: ChromeMessageContentTypes[K]['payload'];
 };
 
-type MessageDataResponse<K extends keyof ChromeMessageContentTypes> = {
+type MessageDataResponse<K extends MessageType> = {
   source: 'Wppconnect';
   type: `${K}_RESPONSE`;
   payload: ChromeMessageContentTypes[K]['response'];
@@ -107,7 +109,7 @@ async function updateScheduledExecution(id: string, patch: Partial<ScheduledExec
   return updated;
 }
 
-function sendWebpageMessage<K extends keyof ChromeMessageContentTypes>(
+function sendWebpageMessage<K extends MessageType>(
   type: K,
   payload: ChromeMessageContentTypes[K]['payload'],
   timeoutMs = SCHEDULE_RESPONSE_TIMEOUT_MS
