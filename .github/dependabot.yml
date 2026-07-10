@@ -11,6 +11,10 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
     allow:
       - dependency-name: "@wppconnect/wa-js"
       - dependency-name: "react"

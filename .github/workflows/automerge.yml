@@ -4,6 +4,14 @@ on:
   pull_request:
     types:
       - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+  check_suite:
+    types:
+      - completed
+  status: {}
 
 permissions:
   contents: write
@@ -21,5 +29,6 @@ jobs:
           MERGE_FILTER_AUTHOR: dependabot[bot]
           MERGE_LABELS: dependencies
           MERGE_METHOD: rebase
+          MERGE_READY_STATE: clean
           MERGE_FORKS: false
           MERGE_DELETE_BRANCH: true
