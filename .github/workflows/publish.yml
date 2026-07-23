@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-main
+  cancel-in-progress: true
+
 jobs:
   release:
     name: Build and publish GitHub release
@@ -20,6 +24,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Setup Node.js
