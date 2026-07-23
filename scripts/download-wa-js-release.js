@@ -7,6 +7,7 @@ const assetName = 'wppconnect-wa.js';
 const requestedVersion = process.env.WA_JS_VERSION || 'latest';
 const skipDownload = /^(1|true|yes)$/i.test(process.env.WA_JS_SKIP_DOWNLOAD || '');
 const writeMetadata = /^(1|true|yes)$/i.test(process.env.WA_JS_WRITE_METADATA || '');
+const githubToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 const target = path.join(
   __dirname,
   '..',
@@ -18,14 +19,24 @@ const target = path.join(
 );
 const metadataTarget = path.join(__dirname, '..', 'wa-js-release.json');
 
+function headersFor(url, options = {}) {
+  const headers = {
+    'User-Agent': 'wppconnect-extension-wa-js-updater',
+    Accept: 'application/vnd.github+json',
+    ...options.headers,
+  };
+
+  if (githubToken && new URL(url).hostname === 'api.github.com') {
+    headers.Authorization = `Bearer ${githubToken}`;
+  }
+
+  return headers;
+}
+
 function request(url, options = {}) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, {
-      headers: {
-        'User-Agent': 'wppconnect-extension-wa-js-updater',
-        Accept: 'application/vnd.github+json',
-        ...options.headers,
-      },
+      headers: headersFor(url, options),
     }, (res) => {
       if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
         res.resume();
