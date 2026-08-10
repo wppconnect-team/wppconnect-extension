@@ -1296,14 +1296,14 @@ class Popup extends Component<{}, PopupState> {
 
   openModule = (tab: PopupTab) => {
     const defaultAction = this.getModuleDefaultAction(tab);
-    this.setState({
+    this.setState(state => ({
       activeTab: tab,
-      selectedAction: defaultAction || this.state.selectedAction,
+      selectedAction: defaultAction || state.selectedAction,
       actionMenuOpen: false,
       archiveConfirmOpen: false,
       connectionError: undefined,
-      labText: defaultAction === 'openNewChat' ? '' : this.state.labText
-    });
+      labText: defaultAction === 'openNewChat' ? '' : state.labText
+    }));
   }
 
   getLabPayload = (action: WaJsLabAction): WaJsLabPayload => {
@@ -1541,11 +1541,11 @@ class Popup extends Component<{}, PopupState> {
       limit: 10000
     }).then((labResult) => {
       const data = labResult.data as { contactsText?: string } | undefined;
-      this.setState({
+      this.setState(state => ({
         labResult,
         labLoading: false,
-        contacts: data?.contactsText || this.state.contacts
-      });
+        contacts: data?.contactsText || state.contacts
+      }));
     }).catch((error) => this.setState({
       labLoading: false,
       connectionError: error instanceof Error ? error.message : this.whatsappConnectionHelpLabel
@@ -1553,17 +1553,15 @@ class Popup extends Component<{}, PopupState> {
   }
 
   selectQuickAction = (action: PopupAction) => {
-    const activeTab = ['modules', 'settings', 'history'].includes(this.state.activeTab)
-      ? 'waExecutions'
-      : this.state.activeTab;
-
-    this.setState({
+    this.setState(state => ({
       selectedAction: action,
-      activeTab,
+      activeTab: ['modules', 'settings', 'history'].includes(state.activeTab)
+        ? 'waExecutions'
+        : state.activeTab,
       archiveConfirmOpen: false,
       connectionError: undefined,
-      labText: action === 'openNewChat' ? '' : this.state.labText
-    }, () => {
+      labText: action === 'openNewChat' ? '' : state.labText
+    }), () => {
       if (action === 'listChats' || action === 'diagnostics') this.executeSelectedAction();
     });
   }
@@ -2008,7 +2006,7 @@ class Popup extends Component<{}, PopupState> {
     return <div>
       <button
         type="button"
-        onClick={() => this.setState({ actionMenuOpen: !this.state.actionMenuOpen })}
+        onClick={() => this.setState(state => ({ actionMenuOpen: !state.actionMenuOpen }))}
         className="flex min-h-[2.9rem] w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-4 py-2 text-left text-sm text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,.04)] outline-none transition hover:border-emerald-400/35 focus-visible:border-emerald-400 focus-visible:ring-2 focus-visible:ring-emerald-500"
       >
         <span className="flex min-w-0 items-center gap-3">
@@ -2030,13 +2028,13 @@ class Popup extends Component<{}, PopupState> {
           <button
             type="button"
             key={action.value}
-            onClick={() => this.setState({
+            onClick={() => this.setState(state => ({
               selectedAction: action.value,
               actionMenuOpen: false,
               archiveConfirmOpen: false,
               connectionError: undefined,
-              labText: action.value === 'openNewChat' ? '' : this.state.labText
-            })}
+              labText: action.value === 'openNewChat' ? '' : state.labText
+            }))}
             className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${this.state.selectedAction === action.value ? 'bg-emerald-500/15 text-emerald-100' : 'text-slate-200 hover:bg-white/10 hover:text-white'}`}
           >
             <Icon name={action.icon} className="h-4 w-4 shrink-0 text-emerald-300" />
@@ -2604,7 +2602,7 @@ class Popup extends Component<{}, PopupState> {
     return <button
       key={logKey}
       type="button"
-      onClick={() => this.setState({ selectedHistoryLogKey: logKey, activeTab: openHistoryOnClick ? 'history' : this.state.activeTab })}
+      onClick={() => this.setState(state => ({ selectedHistoryLogKey: logKey, activeTab: openHistoryOnClick ? 'history' : state.activeTab }))}
       className={`grid w-full grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,.04)] transition hover:border-emerald-400/35 hover:bg-slate-800/60 ${isSelected ? 'border-emerald-400/40 bg-emerald-400/[0.06]' : 'border-white/10 bg-slate-800/42'}`}
     >
       <div className={`flex h-9 w-9 items-center justify-center rounded-full ring-1 ${color}`}>

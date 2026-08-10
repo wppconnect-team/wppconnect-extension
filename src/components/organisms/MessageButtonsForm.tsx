@@ -107,10 +107,10 @@ export default class MessageButtonsForm extends Component<{ className?: string }
     }
 
     handleTypeChange = (event: ChangeEvent<HTMLSelectElement>, id: number) => {
-        this.setState({
-            buttons: this.state.buttons.map(button => {
+        const type = event.target.value;
+        this.setState(state => ({
+            buttons: state.buttons.map(button => {
                 if (button.id !== id) return button;
-                const type = event.target.value;
                 let value = button.value || '';
                 if (type === 'phoneNumber') {
                     value = value.replace(/\D/g, '');
@@ -124,14 +124,15 @@ export default class MessageButtonsForm extends Component<{ className?: string }
                     text: button.text || '',
                 };
             })
-        });
+        }));
     }
 
     handleValueChange = (event: ChangeEvent<HTMLInputElement>, id: number) => {
-        this.setState({
-            buttons: this.state.buttons.map(button => {
+        const inputValue = event.target.value;
+        this.setState(state => ({
+            buttons: state.buttons.map(button => {
                 if (button.id !== id) return button;
-                let value = event.target.value;
+                let value = inputValue;
                 if (button.type === 'phoneNumber') {
                     value = value.replace(/\D/g, '')
                 } else if (button.type === 'id') {
@@ -144,21 +145,22 @@ export default class MessageButtonsForm extends Component<{ className?: string }
                     text: button.text || '',
                 };
             })
-        });
+        }));
     }
 
     handleTextChange = (event: ChangeEvent<HTMLInputElement>, id: number) => {
-        this.setState({
-            buttons: this.state.buttons.map(button => {
+        const text = event.target.value;
+        this.setState(state => ({
+            buttons: state.buttons.map(button => {
                 if (button.id !== id) return button;
                 return {
                     id: button.id || 0,
                     type: button.type || '',
                     value: button.value || '',
-                    text: event.target.value,
+                    text,
                 };
             })
-        });
+        }));
     }
 
     handleDeleteButton = (id: number) => {
@@ -166,10 +168,10 @@ export default class MessageButtonsForm extends Component<{ className?: string }
     }
 
     confirmDeleteButton = (id: number) => {
-        this.setState({
-            buttons: this.state.buttons.filter(button => button.id !== id),
+        this.setState(state => ({
+            buttons: state.buttons.filter(button => button.id !== id),
             pendingDeleteId: null
-        });
+        }));
     }
 
     handleAddButton = () => {

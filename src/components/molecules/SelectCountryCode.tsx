@@ -60,7 +60,7 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
     };
 
     handleSelect = (selectedValue: CountryCode) => {
-        this.setState({ selectedValue, isOpen: false, searchValue: '', filteredOptions: this.state.options });
+        this.setState(state => ({ selectedValue, isOpen: false, searchValue: '', filteredOptions: state.options }));
     };
 
     handleClickOutside = (e: MouseEvent) => {
@@ -74,7 +74,7 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
         chrome.storage.local.get(
             { prefix: defaultPrefix() },
             data => {
-                this.setState({ selectedValue: this.state.options.find(option => option.value === data.prefix) });
+                this.setState(state => ({ selectedValue: state.options.find(option => option.value === data.prefix) }));
             });
     }
 
