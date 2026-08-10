@@ -335,15 +335,6 @@ const summarizeChat = (chat: any) => ({
     t: getModelValue(chat, 't') || null
 });
 
-const summarizeContact = (contact: any) => ({
-    id: stringifyWid(getModelValue(contact, 'id') || contact?.wid || contact),
-    name: getModelValue(contact, 'name') || getModelValue(contact, 'pushname') || getModelValue(contact, 'shortName') || null,
-    isBusiness: Boolean(getModelValue(contact, 'isBusiness')),
-    isMyContact: Boolean(getModelValue(contact, 'isMyContact')),
-    isUser: Boolean(getModelValue(contact, 'isUser')),
-    isWAContact: Boolean(getModelValue(contact, 'isWAContact'))
-});
-
 const summarizeMessage = (message: any) => ({
     id: stringifyWid(getModelValue(message, 'id') || message?.id),
     type: getModelValue(message, 'type') || null,
