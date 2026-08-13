@@ -138,7 +138,7 @@ export default class AsyncChromeMessageManager {
         }
       } catch (error) {
         cleanup();
-        console.error('Wppconnect.AsyncChromeMessageManager.sendMessage', error)
+        console.error('Wppconnect.AsyncChromeMessageManager.sendMessage', error);
         reject(error);
       }
     });
