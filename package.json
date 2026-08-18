@@ -19,7 +19,7 @@
     "url": "git+https://github.com/wppconnect-team/wppconnect-extension.git"
   },
   "dependencies": {
-    "@wppconnect/wa-js": "4.5.0",
+    "@wppconnect/wa-js": "4.6.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "scheduler": "^0.27.0"
