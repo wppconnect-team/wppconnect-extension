@@ -6,6 +6,7 @@ import { ControlInput, ControlTextArea } from './components/atoms/ControlFactory
 import ArchiveStatus from './types/ArchiveStatus';
 import Log from './types/Log';
 import QueueStatus from './types/QueueStatus';
+import type { Message } from './types/Message';
 import type { Attachment } from './types/Attachment';
 import type { ScheduledExecution } from './types/ScheduledExecution';
 import { WaJsLabAction, WaJsLabMediaType, WaJsLabPayload, WaJsLabResponse } from './types/WaJsLab';
@@ -91,6 +92,8 @@ type BulkDraft = {
   delay: number,
   prefix: number
 };
+type StoredMessageDraft = Omit<BulkDraft, 'buttons'> & { buttons: Message['buttons'] };
+type StoredWebhookConfig = { webhookEnabled: boolean; webhookUrl: string; webhookSecret: string };
 type MessageTemplate = {
   id: string,
   name: string,
@@ -684,20 +687,20 @@ class Popup extends Component<{}, PopupState> {
   }
 
   updateLogs = () => {
-    chrome.storage.local.get({ logs: [] }, data => this.setState({ logs: data.logs || [] }));
+    chrome.storage.local.get<{ logs: Log[] }>({ logs: [] }, data => this.setState({ logs: data.logs || [] }));
   }
 
   updateScheduledExecutions = () => {
     PopupMessageManager.sendMessage(ChromeMessageTypes.LIST_SCHEDULED_EXECUTIONS, undefined)
       .then((scheduledExecutions) => this.setState({ scheduledExecutions, connectionError: undefined }))
       .catch(() => {
-        chrome.storage.local.get({ scheduledExecutions: [] }, data => this.setState({ scheduledExecutions: data.scheduledExecutions || [] }));
+        chrome.storage.local.get<{ scheduledExecutions: ScheduledExecution[] }>({ scheduledExecutions: [] }, data => this.setState({ scheduledExecutions: data.scheduledExecutions || [] }));
       });
   }
 
   updateBulkDraft = () => {
     const language = getActiveLanguage();
-    chrome.storage.local.get({
+    chrome.storage.local.get<StoredMessageDraft>({
       message: this.defaultMessage,
       attachment: null,
       buttons: [],
@@ -717,13 +720,13 @@ class Popup extends Component<{}, PopupState> {
   }
 
   updateMessageTemplates = () => {
-    chrome.storage.local.get({ messageTemplates: [] }, data => {
+    chrome.storage.local.get<{ messageTemplates: MessageTemplate[] }>({ messageTemplates: [] }, data => {
       this.setState({ messageTemplates: Array.isArray(data.messageTemplates) ? data.messageTemplates : [] });
     });
   }
 
   updateWebhookConfig = () => {
-    chrome.storage.local.get({ webhookEnabled: false, webhookUrl: '', webhookSecret: '' }, data => {
+    chrome.storage.local.get<StoredWebhookConfig>({ webhookEnabled: false, webhookUrl: '', webhookSecret: '' }, data => {
       this.setState({
         webhookConfig: {
           enabled: Boolean(data.webhookEnabled),
@@ -815,7 +818,7 @@ class Popup extends Component<{}, PopupState> {
   }
 
   addLocalLog = (log: Omit<Log, 'date'>) => {
-    chrome.storage.local.get({ logs: [] }, data => {
+    chrome.storage.local.get<{ logs: Log[] }>({ logs: [] }, data => {
       const nextLog = {
         id: log.id || `log-${Date.now()}-${Math.random().toString(16).slice(2)}`,
         ...log,
@@ -833,7 +836,7 @@ class Popup extends Component<{}, PopupState> {
   }
 
   deliverWebhookLog = (log: Log) => {
-    chrome.storage.local.get({ webhookEnabled: false, webhookUrl: '', webhookSecret: '' }, async data => {
+    chrome.storage.local.get<StoredWebhookConfig>({ webhookEnabled: false, webhookUrl: '', webhookSecret: '' }, async data => {
       if (!data.webhookEnabled || !data.webhookUrl) return;
 
       const payload = JSON.stringify({
@@ -931,7 +934,7 @@ class Popup extends Component<{}, PopupState> {
 
   saveMessageTemplate = () => {
     const language = getActiveLanguage();
-    chrome.storage.local.get({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, data => {
+    chrome.storage.local.get<StoredMessageDraft>({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, data => {
       const now = Date.now();
       const name = this.state.templateName.trim() || `${this.moduleMessageTemplatesTitle} ${this.state.messageTemplates.length + 1}`;
       const template: MessageTemplate = {
@@ -1042,7 +1045,7 @@ class Popup extends Component<{}, PopupState> {
   }
 
   exportData = (kind: 'all' | 'logsCsv' | 'scheduled' | 'templates') => {
-    chrome.storage.local.get({
+    chrome.storage.local.get<StoredMessageDraft & StoredWebhookConfig & { logs: Log[]; scheduledExecutions: ScheduledExecution[]; messageTemplates: MessageTemplate[] }>({
       logs: [],
       scheduledExecutions: [],
       messageTemplates: [],
@@ -1123,7 +1126,7 @@ class Popup extends Component<{}, PopupState> {
   startSendMessages = () => {
     this.beginOperation('executing');
     const language = getActiveLanguage();
-    chrome.storage.local.get({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, async data => {
+    chrome.storage.local.get<StoredMessageDraft>({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, async data => {
       const contacts = this.parseContacts(data.prefix);
       if (contacts.length === 0) {
         this.setState(this.finishOperationState());
@@ -1160,7 +1163,7 @@ class Popup extends Component<{}, PopupState> {
       }
     }, 4500);
 
-    chrome.storage.local.get({ archiveDelayMs: 500 }, data => {
+    chrome.storage.local.get<{ archiveDelayMs: number }>({ archiveDelayMs: 500 }, data => {
       PopupMessageManager.sendMessage(ChromeMessageTypes.ARCHIVE_ALL_CHATS, { delayMs: data.archiveDelayMs })
         .then(() => {
           this.setState(this.finishOperationState());
@@ -1362,7 +1365,7 @@ class Popup extends Component<{}, PopupState> {
 
     if (selectedAction.value === 'sendMessage') {
       const language = getActiveLanguage();
-      chrome.storage.local.get({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, data => {
+      chrome.storage.local.get<StoredMessageDraft>({ message: this.defaultMessage, attachment: null, buttons: [], delay: 0, prefix: language === 'pt_BR' ? 55 : 0 }, data => {
         const contacts = this.parseContacts(data.prefix);
         if (contacts.length === 0) {
           this.setState(this.finishOperationState());
@@ -1386,7 +1389,7 @@ class Popup extends Component<{}, PopupState> {
     }
 
     if (selectedAction.value === 'archiveChats') {
-      chrome.storage.local.get({ archiveDelayMs: 500 }, data => {
+      chrome.storage.local.get<{ archiveDelayMs: number }>({ archiveDelayMs: 500 }, data => {
         const execution = this.createScheduledExecution(selectedAction.label, '-', {
           kind: 'archiveChats',
           delayMs: data.archiveDelayMs

@@ -21,7 +21,7 @@ export default class ArchiveForm extends Component<{ className?: string }, { arc
     archiveFormFooter = chrome.i18n.getMessage('archiveFormFooter') || 'Only non-archived chats that WhatsApp allows archiving will be processed.';
 
     componentDidMount() {
-        chrome.storage.local.get(
+        chrome.storage.local.get<{ archiveDelayMs: number }>(
             { archiveDelayMs: DEFAULT_ARCHIVE_DELAY_MS },
             data => this.setState({ archiveDelayMs: this.normalizeDelay(data.archiveDelayMs) })
         );

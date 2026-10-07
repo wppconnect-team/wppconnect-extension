@@ -23,7 +23,7 @@ export default class LogTable extends Component<{ className?: string }, { logs: 
     noLabel = chrome.i18n.getMessage('noLabel') || 'No';
 
     componentDidMount() {
-        chrome.storage.local.get({ logs: [] }, data => this.setState({ logs: data.logs }));
+        chrome.storage.local.get<{ logs: Log[] }>({ logs: [] }, data => this.setState({ logs: data.logs }));
     }
 
     handleClear = (event: MouseEvent<HTMLButtonElement>) => {
@@ -32,7 +32,7 @@ export default class LogTable extends Component<{ className?: string }, { logs: 
     }
 
     handleUpdate = (event: MouseEvent<HTMLButtonElement>) => {
-        chrome.storage.local.get({ logs: [] }, data =>
+        chrome.storage.local.get<{ logs: Log[] }>({ logs: [] }, data =>
             this.setState({ logs: data.logs })
         );
     }

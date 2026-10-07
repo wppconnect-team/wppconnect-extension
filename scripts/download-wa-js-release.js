@@ -4,7 +4,7 @@ const path = require('path');
 
 const repo = 'wppconnect-team/wa-js';
 const assetName = 'wppconnect-wa.js';
-const requestedVersion = process.env.WA_JS_VERSION || 'latest';
+const validatedRelease = require('../wa-js-release.json');
 const skipDownload = /^(1|true|yes)$/i.test(process.env.WA_JS_SKIP_DOWNLOAD || '');
 const writeMetadata = /^(1|true|yes)$/i.test(process.env.WA_JS_WRITE_METADATA || '');
 const githubToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
@@ -59,7 +59,7 @@ function request(url, options = {}) {
   });
 }
 
-async function getLatestTag() {
+async function getLatestTag(requestedVersion = process.env.WA_JS_VERSION || validatedRelease.tag) {
   if (requestedVersion !== 'latest') {
     return requestedVersion.startsWith('v') ? requestedVersion : `v${requestedVersion}`;
   }
@@ -109,7 +109,11 @@ async function main() {
   console.log(`Downloaded ${repo} ${tag} ${assetName}`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { getLatestTag };

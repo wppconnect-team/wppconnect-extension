@@ -46,7 +46,7 @@ cd wppconnect-extension
 ### Install Dependencies
 
 ```bash
-npm install
+npm ci
 ```
 
 ### Build the Extension
@@ -56,6 +56,12 @@ npm run build
 ```
 
 This will compile the TypeScript and bundle the JavaScript files into the `dist` directory, ready for local development and testing.
+
+Use Node.js 24, matching the CI runtime. The npm lockfile records the validated dependency versions, and normal builds download the WA-JS release recorded in `wa-js-release.json`. To test another release explicitly, set `WA_JS_VERSION` to its tag; use `latest` only when validating a new release.
+
+Run `npm run typecheck` and `npm run test:unit` for checks that do not require a WhatsApp session. The Playwright tests in `tests/` require an authenticated WhatsApp Web session and an authorized `TEST_CONTACT`.
+
+TypeScript remains on 6.0 while the build uses the TypeScript JavaScript compiler API through ts-loader 9. Node.js types stay on major 24 to match the supported runtime. Major upgrades of these two packages require a separate compatibility migration.
 
 ### Load the Extension in Chrome
 

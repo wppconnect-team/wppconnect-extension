@@ -26,7 +26,7 @@ export function getActiveLanguage(): AppLanguage {
 }
 
 function storageGet<T extends Record<string, unknown>>(defaults: T): Promise<T> {
-  return new Promise(resolve => chrome.storage.local.get(defaults, data => resolve(data as T)));
+  return new Promise(resolve => chrome.storage.local.get<T>(defaults, data => resolve(data)));
 }
 
 function storageSet(values: Record<string, unknown>): Promise<void> {

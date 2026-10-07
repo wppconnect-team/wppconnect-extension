@@ -29,15 +29,19 @@ export default class MessageForm extends Component<{ className?: string }, { mes
     selectedAttachmentLabel = chrome.i18n.getMessage('selectedAttachmentLabel') || 'Selected file';
 
     componentDidMount() {
-        chrome.storage.local.get(
+        chrome.storage.local.get<{ message: string; attachment: Attachment; delay: number }>(
             { message: this.defaultMessage, attachment: null, delay: 0 },
             data => {
                 this.setState({ message: data.message, attachment: data.attachment, delay: data.delay });
                 if (data.attachment != null && this.fileRef.current !== null) {
-                    fetch(data.attachment.url).then(response => response.blob()).then(blob => {
-                        const myFile = new File([blob], data.attachment.name, {
-                            type: data.attachment.type,
-                            lastModified: data.attachment.lastModified,
+                    const attachment = data.attachment;
+                    const blobPromise = typeof attachment.url === 'string'
+                        ? fetch(attachment.url).then(response => response.blob())
+                        : Promise.resolve(new Blob([attachment.url], { type: attachment.type }));
+                    blobPromise.then(blob => {
+                        const myFile = new File([blob], attachment.name, {
+                            type: attachment.type,
+                            lastModified: attachment.lastModified,
                         });
                         const dataTransfer = new DataTransfer();
                         dataTransfer.items.add(myFile);
