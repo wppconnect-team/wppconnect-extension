@@ -29,15 +29,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 24.15.0
+          node-version: 24
+          cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Download WA-JS release asset
         env:
           WA_JS_WRITE_METADATA: "true"
-        run: node scripts/download-wa-js-release.js
+        run: |
+          node scripts/download-wa-js-release.js
+          TAG="$(node -p "require('./wa-js-release.json').tag")"
+          npm install --save-exact "@wppconnect/wa-js@${TAG#v}"
+          echo "WA_JS_VERSION=$TAG" >> "$GITHUB_ENV"
+
+      - name: Test release downloader
+        run: npm run test:unit
 
       - name: Validate locale JSON
         run: |

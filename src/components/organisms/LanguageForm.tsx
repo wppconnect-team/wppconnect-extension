@@ -17,7 +17,7 @@ export default class LanguageForm extends Component<{}, { language: AppLanguage 
 
     componentDidMount() {
         const browserLanguage = detectBrowserLanguage();
-        chrome.storage.local.get({ language: browserLanguage }, data => {
+        chrome.storage.local.get<{ language: string }>({ language: browserLanguage }, data => {
             const language = data.language === 'auto' ? browserLanguage : normalizeLanguage(data.language);
             if (data.language !== language) void setLanguagePreference(language);
             this.setState({ language });

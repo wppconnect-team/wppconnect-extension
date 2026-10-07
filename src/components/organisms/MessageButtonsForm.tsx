@@ -42,7 +42,7 @@ export default class MessageButtonsForm extends Component<{ className?: string }
     dragButtonLabel = chrome.i18n.getMessage('dragButtonLabel') || 'Drag';
 
     componentDidMount() {
-        chrome.storage.local.get({ buttons: [] }, data => this.setState({
+        chrome.storage.local.get<{ buttons: Record<string, string>[] }>({ buttons: [] }, data => this.setState({
             buttons: data.buttons.map((button: { [key: string]: string }) => {
                 const [type = ''] = Object.keys(button).filter(
                     (prop) => !['text'].includes(prop)

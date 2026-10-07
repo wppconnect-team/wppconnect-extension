@@ -39,7 +39,7 @@ function executionDetailsFromSchedule(execution: ScheduledExecution): Log['execu
 }
 
 function deliverWebhookLog(log: Log) {
-  chrome.storage.local.get({ webhookEnabled: false, webhookUrl: '', webhookSecret: '' }, async data => {
+  chrome.storage.local.get<{ webhookEnabled: boolean; webhookUrl: string; webhookSecret: string }>({ webhookEnabled: false, webhookUrl: '', webhookSecret: '' }, async data => {
     if (!data.webhookEnabled || !data.webhookUrl) return;
 
     const payload = JSON.stringify({
@@ -69,7 +69,7 @@ function deliverWebhookLog(log: Log) {
 }
 
 function addLog({ id, level, message, attachment = false, contact, executionDetails }: Log) {
-  return chrome.storage.local.get({ logs: [] }, async data => {
+  return chrome.storage.local.get<{ logs: Log[] }>({ logs: [] }, async data => {
     const currentLogs = data.logs;
     const nextLog = {
       id: id || `log-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -88,8 +88,8 @@ function addLog({ id, level, message, attachment = false, contact, executionDeta
 
 function getScheduledExecutions(): Promise<ScheduledExecution[]> {
   return new Promise(resolve => {
-    chrome.storage.local.get({ [SCHEDULED_EXECUTIONS_KEY]: [] }, data => {
-      resolve((data[SCHEDULED_EXECUTIONS_KEY] || []) as ScheduledExecution[]);
+    chrome.storage.local.get<{ scheduledExecutions: ScheduledExecution[] }>({ [SCHEDULED_EXECUTIONS_KEY]: [] }, data => {
+      resolve(data[SCHEDULED_EXECUTIONS_KEY] || []);
     });
   });
 }

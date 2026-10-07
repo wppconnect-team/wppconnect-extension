@@ -71,7 +71,7 @@ export default class SelectCountryCode extends Component<{ options?: CountryCode
 
     componentDidMount() {
         document.addEventListener('mousedown', this.handleClickOutside);
-        chrome.storage.local.get(
+        chrome.storage.local.get<{ prefix: number }>(
             { prefix: defaultPrefix() },
             data => {
                 this.setState(state => ({ selectedValue: state.options.find(option => option.value === data.prefix) }));

@@ -10,6 +10,5 @@ tmp/
 .DS_Store
 dist.zip
 
-# lock files
-package-lock.json
+# Alternative package manager lock files
 yarn.lock

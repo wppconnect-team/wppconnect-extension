@@ -12,28 +12,14 @@ updates:
     schedule:
       interval: "daily"
     ignore:
+      # The WA-JS workflow updates the npm package, lockfile, and release asset together.
+      - dependency-name: "@wppconnect/wa-js"
       - dependency-name: "typescript"
         update-types:
           - "version-update:semver-major"
-    allow:
-      - dependency-name: "@wppconnect/wa-js"
-      - dependency-name: "react"
-      - dependency-name: "react-dom"
-      - dependency-name: "@types/react"
-      - dependency-name: "@types/react-dom"
-      - dependency-name: "typescript"
-      - dependency-name: "@playwright/test"
-      - dependency-name: "webpack-cli"
-      - dependency-name: "webpack-merge"
-      - dependency-name: "ts-loader"
-      - dependency-name: "copy-webpack-plugin"
-      - dependency-name: "tailwindcss"
-      - dependency-name: "postcss-loader"
-      - dependency-name: "autoprefixer"
-      - dependency-name: "css-loader"
-      - dependency-name: "cssnano"
-      - dependency-name: "style-loader"
-      - dependency-name: "rimraf"
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
     groups:
       wa-js:
         patterns:
@@ -42,6 +28,7 @@ updates:
         patterns:
           - "react"
           - "react-dom"
+          - "scheduler"
       react-types:
         patterns:
           - "@types/react"
@@ -55,7 +42,17 @@ updates:
           - "css-*"
           - "postcss-*"
           - "tailwindcss"
+          - "@tailwindcss/*"
+          - "@tsconfig/*"
+          - "postcss"
           - "autoprefixer"
+          - "mini-css-extract-plugin"
+          - "speed-measure-webpack-plugin"
+          - "rimraf"
+      platform-types:
+        patterns:
+          - "@types/chrome"
+          - "@types/node"
       test-tooling:
         patterns:
           - "@playwright/test"
