@@ -5,6 +5,11 @@ const { Readable } = require('node:stream');
 const { test } = require('node:test');
 const { getLatestTag } = require('../download-wa-js-release');
 const validatedRelease = require('../../wa-js-release.json');
+const packageJson = require('../../package.json');
+
+test('WA-JS npm types and the runtime asset use the same validated version', () => {
+  assert.equal(packageJson.dependencies['@wppconnect/wa-js'], validatedRelease.tag.replace(/^v/, ''));
+});
 
 function mockRelease(t, body, statusCode = 200) {
   t.mock.method(https, 'get', (url, options, callback) => {

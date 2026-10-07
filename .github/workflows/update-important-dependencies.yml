@@ -41,7 +41,7 @@ jobs:
           npx npm-check-updates \
             --upgrade \
             --target "${{ inputs.target || 'minor' }}" \
-            --reject "typescript,@types/node"
+            --reject "typescript,@types/node,@wppconnect/wa-js"
 
       - name: Update compatible compiler and Node types
         run: |
