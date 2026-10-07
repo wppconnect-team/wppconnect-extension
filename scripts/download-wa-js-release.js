@@ -59,7 +59,7 @@ function request(url, options = {}) {
   });
 }
 
-async function getLatestTag(requestedVersion = process.env.WA_JS_VERSION || validatedRelease.tag) {
+async function resolveReleaseTag(requestedVersion = process.env.WA_JS_VERSION || validatedRelease.tag) {
   if (requestedVersion !== 'latest') {
     return requestedVersion.startsWith('v') ? requestedVersion : `v${requestedVersion}`;
   }
@@ -95,7 +95,7 @@ async function main() {
     return;
   }
 
-  const tag = await getLatestTag();
+  const tag = await resolveReleaseTag();
   const url = `https://github.com/${repo}/releases/download/${tag}/${assetName}`;
   await download(url, target);
   if (writeMetadata) {
@@ -116,4 +116,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { getLatestTag };
+module.exports = { resolveReleaseTag };
