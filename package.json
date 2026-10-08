@@ -27,7 +27,7 @@
     "scheduler": "^0.28.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@tsconfig/recommended": "^1.0.13",
     "@types/chrome": "^0.3.4",
@@ -37,7 +37,7 @@
     "autoprefixer": "^10.6.1",
     "copy-webpack-plugin": "^14.0.0",
     "css-loader": "^7.1.5",
-    "cssnano": "^9.3.2",
+    "cssnano": "^9.4.0",
     "mini-css-extract-plugin": "^2.10.2",
     "postcss": "^8.5.29",
     "postcss-loader": "^8.2.1",
