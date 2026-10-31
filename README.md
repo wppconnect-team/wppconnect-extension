@@ -1,101 +1,111 @@
+**English** | [Português (Brasil)](./README.pt-BR.md)
+
+<p align="center">
+  <a href="https://wppconnect.io/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://wppconnect-team.github.io/brand/wppconnect-dark.png" />
+      <img src="https://wppconnect-team.github.io/brand/wppconnect-light.png" alt="WPPConnect" width="220" height="121" />
+    </picture>
+  </a>
+</p>
 
 # Wppconnect Extension
 
-This is an open-source Chrome Extension that allows you to send messages in bulk via WhatsApp™ Web. You need to have WhatsApp™ Web open in your browser while using this extension.
+Send configured messages and attachments through a Chrome extension for WhatsApp Web.
 
-## Installation
+A project in the WPPConnect ecosystem, maintained by WPPConnect Team.
 
-The extension is now published on the Chrome Web Store:
+[Getting started](#getting-started) | [Documentation](#documentation) | [Contributing](#contributing) | [Support WPPConnect](#support-the-project)
 
-- [Install Wppconnect Extension from the Chrome Web Store](https://chromewebstore.google.com/detail/wppconnect-extension/ejamgmkhipipigkanaefjklolfddmlel)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE) [![Documentation](https://img.shields.io/badge/docs-WPPConnect-blue)](https://wppconnect.io/) [![Open Collective](https://img.shields.io/badge/Open%20Collective-WPPConnect-blue)](https://opencollective.com/wppconnect)
 
-For manual installation or testing unreleased versions, you can still download the `extension.zip` file from the [latest release](https://github.com/wppconnect-team/wppconnect-extension/releases/latest) and load it as an [unpacked extension in Chrome](#loading-an-unpacked-extension).
+## Overview
 
-## Usage
+For users who want a browser UI over WA-JS for authorized messaging. WhatsApp Web must stay open and authenticated. The extension processes WhatsApp Web data locally as described in its privacy policy.
 
-1. Open WhatsApp™ Web in your Chrome browser.
-2. Click on the Wppconnect extension icon in the toolbar.
-3. Click on the **Options** button to configure the message and attachment you want to send.
-4. Paste the phone numbers list you want to send.
-5. Click on the **Send** button to start sending the messages.
+## Features
 
-Note that this extension is intended for legitimate and ethical use cases only. Any misuse or abuse of the extension is not the responsibility of the developers.
+- Configure recipient lists, message text and attachments in the options UI.
+- Chrome Web Store installation or a locally built unpacked extension.
+- Builds use the WA-JS release recorded in `wa-js-release.json`.
 
-## Privacy Policy
+## Getting started
 
-Wppconnect Extension processes WhatsApp Web data locally in the user's browser to provide its user-facing features. Read the full privacy policy here:
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/wppconnect-extension/ejamgmkhipipigkanaefjklolfddmlel), open WhatsApp Web, click the extension icon, and open **Options** to configure a message, attachment and authorized recipients. Use **Send** only after reviewing those settings.
 
-- [Privacy Policy](./PRIVACY.md)
-- [Static privacy policy page](./docs/privacy-policy.html)
+For source development use Node.js **24** and npm:
 
-## Building from Source
-
-If you prefer to build the extension from the source code, follow these steps:
-
-### Prerequisites
-
-- Ensure you have the latest Node.js and npm installed. You can follow the instructions to install them from [Node.js official website](https://nodejs.org/).
-
-### Clone the Repository
-
-```bash
+```sh
 git clone https://github.com/wppconnect-team/wppconnect-extension.git
 cd wppconnect-extension
-```
-
-### Install Dependencies
-
-```bash
 npm ci
-```
-
-### Build the Extension
-
-```bash
 npm run build
 ```
 
-This will compile the TypeScript and bundle the JavaScript files into the `dist` directory, ready for local development and testing.
+Open `chrome://extensions`, enable Developer mode, select **Load unpacked** and choose `dist`. Building downloads the pinned WA-JS release, so network access is required.
 
-Use Node.js 24, matching the CI runtime. The npm lockfile records the validated dependency versions, and normal builds download the WA-JS release recorded in `wa-js-release.json`. To test another release explicitly, set `WA_JS_VERSION` to its tag; use `latest` only when validating a new release.
+## Configuration
 
-Run `npm run typecheck` and `npm run test:unit` for checks that do not require a WhatsApp session. The Playwright tests in `tests/` require an authenticated WhatsApp Web session and an authorized `TEST_CONTACT`.
+`WA_JS_VERSION` explicitly overrides the recorded release during a build; use `latest` only when validating an upgrade. Node types stay on major 24 and TypeScript on 6.0 with ts-loader 9; changing these requires a compatibility migration. Use the extension only for legitimate, consent-based communication; do not send spam.
 
-TypeScript remains on 6.0 while the build uses the TypeScript JavaScript compiler API through ts-loader 9. Node.js types stay on major 24 to match the supported runtime. Major upgrades of these two packages require a separate compatibility migration.
+## Documentation
 
-### Load the Extension in Chrome
+- [Privacy policy](./PRIVACY.md)
+- [Published privacy page](./docs/privacy-policy.html)
+- [Pinned WA-JS release](./wa-js-release.json)
+- [Retained technical details and acknowledgments](documentation/readme-reference.md)
 
-1. Go to the Extensions page by entering `chrome://extensions` in a new tab.
-    - Alternatively, click on the Extensions menu puzzle button and select **Manage Extensions** at the bottom of the menu.
-    - Or, click the Chrome menu, hover over **More Tools**, then select **Extensions**.
-2. Enable Developer Mode by clicking the toggle switch next to **Developer mode**.
-3. Click the **Load unpacked** button and select the `dist` directory.
+## WPPConnect ecosystem
 
-Now, the Wppconnect Chrome Extension should be loaded in your Chrome browser, and you can start using it immediately.
+| Project | Purpose | When to use it |
+| --- | --- | --- |
+| [WPPConnect/WA-JS](https://github.com/wppconnect-team/wa-js) | Expose WhatsApp Web functions through the browser-side `WPP` API. | Run browser-side code in WhatsApp Web. |
+| [WPPConnect](https://github.com/wppconnect-team/wppconnect) | Control WhatsApp Web from Node.js applications. | Embed automation in a Node.js application. |
 
-## Disclaimer
+## Support the project
 
-This extension is not affiliated with or endorsed by WhatsApp™ or Facebook™. The use of this extension is at your own risk. The developers are not responsible for any damages, legal consequences, or other liabilities that may arise from the use of this extension.
+WPPConnect is maintained by an open-source community. Your support helps fund maintenance, infrastructure, documentation, and the people working on the ecosystem.
 
-## Acknowledgments
+If WPPConnect helps your project or business, consider making a one-time contribution or becoming a recurring supporter.
 
-This project uses the following packages:
+**[Support WPPConnect on Open Collective](https://opencollective.com/wppconnect)**
 
-- [@wppconnect/wa-js](https://github.com/wppconnect-team/wa-js) (Apache License 2.0)
-- [react](https://github.com/facebook/react) (MIT License)
-- [react-dom](https://github.com/facebook/react) (MIT License)
-- [@types](https://github.com/DefinitelyTyped/DefinitelyTyped) (MIT License)
-- [autoprefixer](https://github.com/postcss/autoprefixer) (MIT License)
-- [copy-webpack-plugin](https://github.com/webpack-contrib/copy-webpack-plugin) (MIT License)
-- [css-loader](https://github.com/webpack-contrib/css-loader) (MIT License)
-- [cssnano](https://github.com/cssnano/cssnano) (MIT License)
-- [postcss-loader](https://github.com/webpack-contrib/postcss-loader) (MIT License)
-- [rimraf](https://github.com/isaacs/rimraf) (ISC License)
-- [speed-measure-webpack-plugin](https://github.com/stephencookdev/speed-measure-webpack-plugin) (MIT License)
-- [tailwindcss](https://github.com/tailwindlabs/tailwindcss) (MIT License)
-- [ts-loader](https://github.com/TypeStrong/ts-loader) (MIT License)
-- [typescript](https://github.com/microsoft/TypeScript) (Apache License 2.0)
-- [webpack-cli](https://github.com/webpack/webpack-cli) (MIT License)
-- [webpack-merge](https://github.com/survivejs/webpack-merge) (MIT License)
-- [@playwright/test](https://github.com/microsoft/playwright) (Apache License 2.0)
-- [qrcode-terminal](https://github.com/gtanner/qrcode-terminal) (MIT License)
+Contributions are voluntary. See the official page for current financial information. You can also help with code, tests, documentation, translations and well-described issue reports.
+
+Additional official beneficiaries in [.github/FUNDING.yml](.github/FUNDING.yml): [joaosouz4dev](https://github.com/sponsors/joaosouz4dev), [manfe](https://github.com/sponsors/manfe).
+
+## Contributing
+
+Contributions of code, tests, examples, documentation and translations are welcome. For larger changes, discuss the approach in an issue first. Include the project/runtime versions, a minimal reproduction and sanitized logs when reporting a problem. Update both `README.md` and `README.pt-BR.md` in the same change when installation, configuration, features, examples, licensing or funding changes.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+After installing the development dependencies, use the repository checks relevant to your change:
+
+```sh
+npm run typecheck
+npm run test:unit
+npm run build
+```
+
+Account-dependent examples and tests require separate validation with an authorized test account. Never attach credentials or session files to an issue.
+
+## Community and support
+
+Use [repository issues](https://github.com/wppconnect-team/wppconnect-extension/issues) for reproducible bugs and feature proposals. For usage questions, join the community through the official channels:
+
+- [Discord](https://discord.gg/JU5JGGKGNG)
+- [Telegram](https://t.me/wppconnect)
+- [YouTube](https://www.youtube.com/c/wppconnect)
+
+This project is independent and is not affiliated with or endorsed by WhatsApp or Meta. Follow applicable terms and obtain authorization for account and messaging operations.
+
+## License
+
+[MIT License (MIT)](./LICENSE).
+
+Copyright (c) 2023 Marcos V. Rubido.
+
+The original legal document and existing copyright notices are preserved. Third-party components retain their own terms.
