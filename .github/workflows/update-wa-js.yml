@@ -41,7 +41,12 @@ jobs:
         run: |
           node scripts/download-wa-js-release.js
           TAG="$(node -p "require('./wa-js-release.json').tag")"
-          npm install --save-exact "@wppconnect/wa-js@${TAG#v}"
+          CURRENT_VERSION="$(node -p "require('./package.json').dependencies['@wppconnect/wa-js']")"
+          if [ "$CURRENT_VERSION" != "${TAG#v}" ]; then
+            npm install --save-exact "@wppconnect/wa-js@${TAG#v}"
+          else
+            echo "WA-JS ${TAG#v} is already pinned; preserve the existing lockfile."
+          fi
           echo "WA_JS_VERSION=$TAG" >> "$GITHUB_ENV"
 
       - name: Test release downloader
@@ -65,9 +70,11 @@ jobs:
             ## Summary
             - Downloads and validates the latest wppconnect-team/wa-js release asset.
             - Updates `wa-js-release.json` so the extension tracks the validated WA-JS release.
+            - Updates the npm dependency only when the exact pinned version differs.
 
             ## Validation
-            - npm install
+            - npm ci
+            - npm install when the WA-JS version changes
             - node scripts/download-wa-js-release.js
             - locale JSON parse check
             - npm run build
