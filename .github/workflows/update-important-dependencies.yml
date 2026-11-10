@@ -47,8 +47,13 @@ jobs:
         run: |
           npx npm-check-updates --upgrade --target minor --filter "typescript,@types/node"
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install updated dependencies
+        run: |
+          if ! git diff --quiet HEAD -- package.json; then
+            npm install
+          else
+            echo "Package ranges are unchanged; preserve the existing lockfile."
+          fi
 
       - name: Test release downloader
         run: npm run test:unit
@@ -70,10 +75,13 @@ jobs:
           body: |
             ## Summary
             - Updates important runtime, React, build, and test dependencies.
-            - Runs install, locale JSON validation, and production build before opening the PR.
+            - Preserves the lockfile when package ranges are unchanged.
+            - Runs clean install, unit tests, locale JSON validation, and production build before opening the PR.
 
             ## Validation
-            - npm install
+            - npm ci
+            - npm install when package ranges change
+            - npm run test:unit
             - locale JSON parse check
             - npm run build
           branch: chore/update-important-dependencies
