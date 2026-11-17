@@ -12,3 +12,6 @@ dist.zip
 
 # Alternative package manager lock files
 yarn.lock
+
+# Google authentication files must never enter a release artifact.
+gha-creds-*.json

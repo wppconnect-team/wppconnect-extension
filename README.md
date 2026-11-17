@@ -53,6 +53,7 @@ Open `chrome://extensions`, enable Developer mode, select **Load unpacked** and 
 - [Privacy policy](./PRIVACY.md)
 - [Published privacy page](./docs/privacy-policy.html)
 - [Pinned WA-JS release](./wa-js-release.json)
+- [Automatic Chrome Web Store publishing](documentation/chrome-web-store-publishing.md)
 - [Retained technical details and acknowledgments](documentation/readme-reference.md)
 
 ## WPPConnect ecosystem
