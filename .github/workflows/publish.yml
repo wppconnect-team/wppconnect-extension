@@ -11,13 +11,16 @@ permissions:
 
 concurrency:
   group: release-main
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   release:
     name: Build and publish GitHub release
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]')
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      sha256: ${{ steps.package.outputs.sha256 }}
     env:
       RELEASE_MESSAGE: ${{ github.event.head_commit.message || 'Manual release' }}
     steps:
@@ -39,6 +42,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Bump extension version
+        id: version
         run: |
           CURRENT_VERSION="$(node -p "require('./public/manifest.json').version")"
           npm pkg set version="$CURRENT_VERSION"
@@ -53,12 +57,13 @@ jobs:
 
           VERSION="$(npm pkg get version | tr -d '"')"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           VERSION="$VERSION" node -e "const fs=require('fs'); const file='public/manifest.json'; const manifest=JSON.parse(fs.readFileSync(file,'utf8')); manifest.version=process.env.VERSION; fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n');"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Test release downloader
+      - name: Test release and publishing scripts
         run: npm run test:unit
 
       - name: Validate locale JSON
@@ -78,12 +83,18 @@ jobs:
           if (!validVersion) {
             throw new Error(`Invalid Chrome extension version: ${manifest.version || '<missing>'}`);
           }
+          if (manifest.version !== process.env.VERSION) {
+            throw new Error('Built manifest does not match the release version');
+          }
           NODE
 
       - name: Create extension zip
+        id: package
         run: |
           cd dist
           zip -r "../wppconnect-extension-v${{ env.VERSION }}.zip" .
+          cd ..
+          echo "sha256=$(sha256sum "wppconnect-extension-v${VERSION}.zip" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
 
       - name: Commit version bump
         run: |
@@ -100,3 +111,14 @@ jobs:
           name: "Release v${{ env.VERSION }}"
           body: ${{ env.RELEASE_MESSAGE }}
           files: "wppconnect-extension-v${{ env.VERSION }}.zip"
+
+  webstore:
+    name: Submit release to Chrome Web Store
+    needs: release
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/publish-chrome-web-store.yml
+    with:
+      release_tag: ${{ needs.release.outputs.tag }}
+      expected_sha256: ${{ needs.release.outputs.sha256 }}

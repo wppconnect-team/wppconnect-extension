@@ -53,6 +53,7 @@ Abra `chrome://extensions`, ative o modo de desenvolvedor, selecione **Carregar 
 - [Política de privacidade](./PRIVACY.md)
 - [Página publicada de privacidade](./docs/privacy-policy.html)
 - [Versão WA-JS fixada](./wa-js-release.json)
+- [Publicação automática na Chrome Web Store](documentation/chrome-web-store-publishing.md)
 - [Detalhes técnicos e agradecimentos preservados](documentation/readme-reference.md)
 
 ## Ecossistema WPPConnect

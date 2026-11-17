@@ -1,0 +1,110 @@
+name: Publish Chrome Web Store release
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+      expected_sha256:
+        required: false
+        default: ""
+        type: string
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing stable GitHub release tag, for example v1.0.96"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chrome-web-store-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Upload verified release and submit for review
+    if: vars.CWS_PUBLISH_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: chrome-web-store
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CWS_RELEASE_TAG: ${{ inputs.release_tag }}
+      CWS_EXPECTED_SHA256: ${{ inputs.expected_sha256 || '' }}
+      CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+      CWS_EXTENSION_ID: ejamgmkhipipigkanaefjklolfddmlel
+
+    steps:
+      - name: Checkout trusted publishing scripts
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Validate configuration and release provenance
+        env:
+          CWS_WIF_PROVIDER: ${{ vars.CWS_WIF_PROVIDER }}
+          CWS_SERVICE_ACCOUNT: ${{ vars.CWS_SERVICE_ACCOUNT }}
+        run: |
+          node - <<'NODE'
+          for (const key of ['CWS_PUBLISHER_ID', 'CWS_WIF_PROVIDER', 'CWS_SERVICE_ACCOUNT']) {
+            if (!process.env[key]) throw new Error(`Set ${key}; see documentation/chrome-web-store-publishing.md`);
+          }
+          if (!/^v\d+\.\d+\.\d+$/.test(process.env.CWS_RELEASE_TAG || '')) throw new Error('Invalid release tag');
+          NODE
+          TAG_COMMIT="$(git rev-parse --verify "refs/tags/${CWS_RELEASE_TAG}^{commit}")"
+          git merge-base --is-ancestor "$TAG_COMMIT" origin/main
+          git show "refs/tags/${CWS_RELEASE_TAG}:public/manifest.json" > "$RUNNER_TEMP/cws-source-manifest.json"
+          gh release view "$CWS_RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,isPrerelease,assets > "$RUNNER_TEMP/cws-release.json"
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const { resolveReleaseAsset } = require('./scripts/publish-chrome-web-store');
+          const release = JSON.parse(fs.readFileSync(path.join(process.env.RUNNER_TEMP, 'cws-release.json'), 'utf8'));
+          const asset = resolveReleaseAsset(release, process.env.CWS_RELEASE_TAG, process.env.CWS_EXPECTED_SHA256);
+          const source = JSON.parse(fs.readFileSync(path.join(process.env.RUNNER_TEMP, 'cws-source-manifest.json'), 'utf8'));
+          if (source.version !== asset.version) throw new Error('Release tag manifest version mismatch');
+          const packagePath = path.join(process.env.RUNNER_TEMP, 'cws', asset.fileName);
+          fs.appendFileSync(process.env.GITHUB_ENV, `CWS_VERSION=${asset.version}\nCWS_FILE_NAME=${asset.fileName}\nCWS_SHA256=${asset.sha256}\nCWS_PACKAGE_PATH=${packagePath}\n`);
+          NODE
+
+      - name: Download and verify the exact GitHub release ZIP
+        run: |
+          mkdir -p "$RUNNER_TEMP/cws"
+          gh release download "$CWS_RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern "$CWS_FILE_NAME" --dir "$RUNNER_TEMP/cws"
+          printf '%s  %s\n' "$CWS_SHA256" "$CWS_PACKAGE_PATH" | sha256sum --check --status
+          unzip -p "$CWS_PACKAGE_PATH" manifest.json > "$RUNNER_TEMP/cws/manifest.json"
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const manifest = JSON.parse(fs.readFileSync(path.join(process.env.RUNNER_TEMP, 'cws/manifest.json'), 'utf8'));
+          if (manifest.version !== process.env.CWS_VERSION || manifest.manifest_version !== 3) throw new Error('Release ZIP manifest mismatch');
+          NODE
+
+      - name: Authenticate to Google without a permanent key
+        id: google
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.CWS_WIF_PROVIDER }}
+          service_account: ${{ vars.CWS_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/chromewebstore
+          create_credentials_file: false
+
+      - name: Upload and publish after Google approval
+        env:
+          CWS_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+        run: node scripts/publish-chrome-web-store.js
